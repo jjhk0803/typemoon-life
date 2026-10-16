@@ -21,6 +21,8 @@
   --gold:#d6b46c;       /* 희귀도, 경사 */
   --od:#6cc0b2;         /* 마력, 신비 */
   --risk:#e39155;       /* 위기 */
+  --fate:#8cc87e;       /* 운명력 */
+  --kp:#d987c8;         /* 각인 */
   --f-display:"Song Myung","Nanum Myeongjo","Batang",serif;
   --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
@@ -158,6 +160,77 @@ section.dex h2{font-family:var(--f-display);font-weight:400;font-size:22px;margi
 .recent li{margin-bottom:2px;overflow-wrap:anywhere}
 footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
 
+/* 시작 방식 */
+.sec-h{font-family:var(--f-display);font-weight:400;font-size:24px;margin:0 0 14px}
+.modes{padding-block:24px 8px}
+.mode-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.mode{border:1px solid var(--line);border-radius:14px;padding:20px;background:var(--night-2);display:flex;flex-direction:column;gap:8px;min-width:0}
+.mode.feat{border-color:var(--seal);background:linear-gradient(180deg,rgba(211,58,82,.10),transparent 60%),var(--night-2)}
+.mode h3{font-family:var(--f-display);font-weight:400;font-size:26px;margin:0}
+.mode p{color:var(--mute);margin:0 0 6px;flex:1;font-size:14px}
+.mode .btn{align-self:flex-start}
+
+/* 설계 */
+.builder{padding-block:20px 8px}
+.bbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--night);border-bottom:1px solid var(--line);padding-block:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pt{display:inline-flex;align-items:baseline;gap:6px;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;background:var(--night-2)}
+.pt b{font-family:var(--f-mono);font-weight:500;font-variant-numeric:tabular-nums}
+.pt small{color:var(--mute);font-family:var(--f-mono)}
+.pt.mp{border-color:rgba(108,192,178,.55)}.pt.mp b{color:var(--od)}
+.pt.fp{border-color:rgba(132,200,120,.55)}.pt.fp b{color:var(--fate)}
+.pt.cp{border-color:rgba(214,180,108,.55)}.pt.cp b{color:var(--gold)}
+.pt.kp{border-color:rgba(217,135,200,.55)}.pt.kp b{color:var(--kp)}
+.pt.ap{border-color:rgba(211,58,82,.6)}.pt.ap b{color:var(--seal)}
+.pt.rk b{color:var(--moon)}
+.pt.neg{background:rgba(211,58,82,.18)}
+.steps{display:flex;gap:6px;overflow-x:auto;padding-block:12px;scrollbar-width:thin}
+.steps button{flex:none;border:1px solid var(--line);background:transparent;border-radius:999px;padding:7px 12px;cursor:pointer;font-size:13px;color:var(--mute)}
+.steps button[aria-current="step"]{background:var(--moon);color:var(--night);border-color:var(--moon);font-weight:700}
+.steps button.done{color:var(--moon)}
+.bstep-head h2{font-family:var(--f-display);font-weight:400;font-size:28px;margin:4px 0 4px}
+.bstep-head p{color:var(--mute);margin:0 0 14px;max-width:70ch;font-size:14px}
+.bbody{display:grid;gap:18px}
+.ogroup h4{margin:0 0 8px;font-size:14px;font-weight:500;color:var(--mute);letter-spacing:.04em}
+.ogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.opt{text-align:left;border:1px solid var(--line);background:var(--night-2);border-radius:12px;padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:6px;min-width:0;transition:border-color .15s,background .15s}
+.opt:hover:not([disabled]){border-color:var(--mute)}
+.opt[aria-pressed="true"]{border-color:var(--moon);background:var(--night-3);box-shadow:inset 0 0 0 1px var(--moon)}
+.opt[disabled]{opacity:.45;cursor:not-allowed}
+.opt .on{font-weight:700;font-size:15px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.opt .on i{font-style:normal;font-family:var(--f-mono);font-size:12px;color:var(--gold)}
+.opt .od2{font-size:13px;color:var(--mute);line-height:1.5}
+.opt .why{font-size:12px;color:var(--risk)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-family:var(--f-mono);font-size:11px;border-radius:6px;padding:1px 6px;background:var(--night-3);color:var(--mute)}
+.chip.mp{color:var(--od)}.chip.fp{color:var(--fate)}.chip.cp{color:var(--gold)}.chip.kp{color:var(--kp)}.chip.ap{color:var(--seal)}.chip.good{color:var(--fate)}.chip.free{color:var(--moon)}
+.elchips{display:flex;flex-wrap:wrap;gap:8px}
+.elchips button{border:1px solid var(--line);background:var(--night-2);border-radius:10px;padding:8px 14px;cursor:pointer;font-size:15px}
+.elchips button[aria-pressed="true"]{border-color:var(--od);color:var(--od);background:var(--night-3)}
+.elchips button[disabled]{opacity:.4;cursor:not-allowed}
+.optwrap{display:flex;flex-direction:column;gap:6px;min-width:0}
+.optwrap .opt{flex:1}
+.counter{display:inline-flex;align-items:center;gap:8px;align-self:flex-end}
+.counter button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--night-3);cursor:pointer}
+.sheetbox{border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--night-2)}
+.sheetbox dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 16px;margin:0;font-size:14px}
+.sheetbox dt{color:var(--mute);font-size:12px;padding-top:2px}
+.sheetbox dd{margin:0;overflow-wrap:anywhere}
+.errs{margin:12px 0 0;padding-left:18px;color:var(--risk);font-size:14px}
+.bfoot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-block:18px;border-top:1px solid var(--line);margin-top:18px}
+
+/* 신상 카드: 설계한 인생 */
+.cy{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:13px}
+.cy-row{display:flex;justify-content:space-between;gap:10px;margin-bottom:4px}
+.cy-row span{color:var(--mute)}
+.cy-h{color:var(--mute);margin:10px 0 6px;font-size:12px;letter-spacing:.04em}
+.jr{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.jr li{display:flex;justify-content:space-between;gap:8px}
+.jr li span:last-child{font-family:var(--f-mono);font-size:11px;color:var(--mute);flex:none}
+.jr li.ok span:last-child{color:var(--fate)}
+.jr li.fail span:last-child{color:var(--risk)}
+.jr li.dead span:last-child{color:var(--seal)}
+.dex-h{font-size:14px;font-weight:500;color:var(--mute);margin:16px 0 8px}
+
 /* 소환 · 큰 사건 창 */
 .modal{position:fixed;inset:0;background:rgba(6,7,14,.78);display:flex;align-items:center;justify-content:center;z-index:50;
   padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
@@ -167,6 +240,15 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
 .sheet.summon{border-color:var(--seal);box-shadow:0 0 0 1px rgba(211,58,82,.3),0 0 80px rgba(211,58,82,.18)}
 .sheet.gold{border-color:var(--gold);box-shadow:0 0 80px rgba(214,180,108,.16)}
 .sheet .eyebrow{margin-bottom:6px}
+.sheet.choice{text-align:left;width:min(520px,100%)}
+.sheet.beast{border-color:var(--seal);background:linear-gradient(180deg,rgba(211,58,82,.16),transparent 70%),var(--night-2)}
+.opts{display:grid;gap:8px}
+.optbtn{text-align:left;border:1px solid var(--line);background:var(--night-3);border-radius:10px;padding:10px 14px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.optbtn:hover:not([disabled]){border-color:var(--moon)}
+.optbtn b{font-weight:500}
+.optbtn span{font-size:12px;color:var(--mute)}
+.optbtn[disabled]{opacity:.45;cursor:not-allowed}
+.ending p.etext{color:var(--moon);max-width:62ch;margin:6px 0 14px;line-height:1.75}
 .sheet h3{font-family:var(--f-display);font-weight:400;font-size:30px;margin:0 0 4px;text-wrap:balance}
 .sheet .cls{font-family:var(--f-mono);letter-spacing:.24em;color:var(--seal);font-size:13px}
 .stars{color:var(--gold);letter-spacing:.2em;font-size:18px;margin:6px 0 12px}
@@ -187,12 +269,12 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
     <div class="hero-l">
       <div class="eyebrow">80억분의 1 · 비공식 팬메이드</div>
       <h1>타입문 <span class="one">인생</span>게임</h1>
-      <p class="lede">80억 명 중 하나로 무작위로 태어나요. 대부분은 달빛 세계를 모른 채 평범하게 살다 가요. 아주 드물게 마술회로를 타고나거나, 사도를 마주치거나, 후유키에서 영주가 새겨지기도 해요.</p>
+      <p class="lede">80억 명 중 하나로 무작위로 태어나거나, 포인트로 직접 출생과 재능을 설계해 마술사의 인생을 살아요. 삶의 갈림길마다 선택지가 나와요.</p>
     </div>
   </header>
 
   <div class="controls" role="toolbar" aria-label="게임 조작">
-    <button class="btn primary" id="bBorn" type="button">태어나기</button>
+    <button class="btn primary" id="bBorn" type="button">새 인생</button>
     <button class="btn" id="bPause" type="button" disabled>일시정지</button>
     <div class="speed" role="group" aria-label="속도">
       <button type="button" data-s="1" aria-pressed="true">1×</button>
@@ -211,7 +293,46 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
     </form>
   </div>
 
-  <main>
+  <section class="modes" id="modes" aria-label="시작 방식">
+    <h2 class="sec-h">어떻게 태어날까요</h2>
+    <div class="mode-grid">
+      <article class="mode">
+        <div class="eyebrow">무작위 출생</div>
+        <h3>80억분의 1</h3>
+        <p>나라도 가문도 고를 수 없어요. 실제 인구 비율대로 태어나 대부분은 평범하게 살다 가요.</p>
+        <button class="btn primary" type="button" id="mRandom">태어나기</button>
+      </article>
+      <article class="mode feat">
+        <div class="eyebrow">포인트 설계 · CYOA</div>
+        <h3>마술사 되기</h3>
+        <p>마나·운명력·자본·각인 포인트로 기원, 종족, 출생, 마술계통, 능력, 예장을 고르고, 인생에서 겪을 행적을 미리 정해요.</p>
+        <button class="btn primary" type="button" id="mBuild">설계하기</button>
+      </article>
+      <article class="mode">
+        <div class="eyebrow">무작위 루트</div>
+        <h3>운명의 주사위</h3>
+        <p>포인트 설계를 주사위가 대신해요. 출생부터 행적까지 무작위로 정해진 루트를 확인하고 바로 태어나요.</p>
+        <button class="btn primary" type="button" id="mDice">굴리기</button>
+      </article>
+    </div>
+  </section>
+
+  <section class="builder" id="builder" hidden aria-label="마술사 되기 설계">
+    <div class="bbar" id="bBar"></div>
+    <nav class="steps" id="bSteps" aria-label="설계 단계"></nav>
+    <div class="bstep-head" id="bHead"></div>
+    <div class="bbody" id="bBody"></div>
+    <div class="bfoot">
+      <button class="btn" type="button" id="bPrev">이전</button>
+      <button class="btn" type="button" id="bRand">무작위로 채우기</button>
+      <button class="btn" type="button" id="bReset">처음부터</button>
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="bNext">다음</button>
+      <button class="btn primary" type="button" id="bGo">이대로 태어나기</button>
+    </div>
+  </section>
+
+  <main id="game" hidden>
     <aside class="card" aria-live="polite">
       <div class="agebox">
         <div class="age" id="vAge">-<small>세</small></div>
@@ -242,6 +363,12 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
         </svg>
         <div class="txt">영주 <b id="vSealN">3</b>획<br><span id="vServ"></span></div>
       </div>
+      <div class="cy" id="vCy" hidden>
+        <div class="cy-row"><span>계위</span><b id="vRank">-</b></div>
+        <div class="cy-row"><span>억지력</span><b id="vAP">-</b></div>
+        <div class="cy-h">행적</div>
+        <ol class="jr" id="vJr"></ol>
+      </div>
     </aside>
 
     <section class="chron" aria-label="연대기">
@@ -254,12 +381,6 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
           <span style="--c:var(--risk)">위기</span>
         </div>
       </div>
-      <div class="intro" id="intro">
-        <p><b>태어나기</b>를 누르면 한 해씩 인생이 흘러가요. 나라는 실제 인구 비율대로, 수명은 나라별 기대수명을 바탕으로 정해져요.</p>
-        <p>마술사 가문에 태어날 확률은 수만에서 수십만분의 1이에요. 1994년과 2004년 후유키에 있었다면 성배전쟁에 휘말릴 수도 있어요. 영주가 새겨지면 서번트를 소환해요.</p>
-        <p><b>운명 가속</b>을 켜 두면 달빛 세계 사건이 100배 자주 일어나요. 끄면 현실 확률 그대로라서, 수백 번을 태어나도 평범하게 살다 갈 수 있어요.</p>
-        <p>인생이 끝나면 그 삶이 몇분의 1이었는지, 어떤 결말이었는지 알려 줘요. 인생 코드를 넣으면 같은 인생을 다시 볼 수 있어요.</p>
-      </div>
       <ol id="log"></ol>
       <div id="endBox"></div>
     </section>
@@ -268,11 +389,11 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
   <section class="dex" aria-label="결말 도감">
     <h2>결말 도감</h2>
     <p class="dex-sub" id="dexSub">이 기기에서 본 결말이 모여요.</p>
-    <div class="dex-grid" id="dex"></div>
+    <div id="dex"></div>
     <div class="recent" id="recent"></div>
   </section>
 
-  <footer>TYPE-MOON 세계관(Fate · 월희 · 공의 경계)을 바탕으로 한 비공식 팬 게임이에요. 공식과 관계없고, 수치는 놀이용 근사치예요.</footer>
+  <footer>TYPE-MOON 세계관(Fate · 월희 · 공의 경계 · 마법사의 밤 · 로드 엘멜로이 2세의 사건부)을 바탕으로 한 비공식 비상업 팬 게임이에요. 공식과 관계없고, 수치는 놀이용 근사치예요. 「마술사 되기」의 포인트 구조와 선택지는 팬 CYOA 「Type Moon / Becoming Magus」(Made by Selina)를 바탕으로 했고, 설명 문장은 새로 썼어요.</footer>
 </div>
 
 <div class="modal" id="modal" hidden>
@@ -525,6 +646,7 @@ function major(m){majorQueue.push(m);}
 
 /* ================= 한 해 ================= */
 function step(){
+  if(S.cyoa){cyoaStep();return;}
   S.age++;S.year++;
   if(!S.apostle){
     if(S.age>45) S.health-=R()*(S.age>75?2.6:S.age>60?1.6:0.9);
@@ -575,7 +697,7 @@ function worldNews(){
   if(y===2000&&a>=6&&chance(.5)) log('새천년을 맞았다. 세상은 끝나지 않았다.','life');
   if(y===2020&&a>=1){
     log('세계적인 감염병이 돌았다. 한동안 집 밖에 거의 나가지 못했다.','risk');
-    if(!S.apostle&&a>70&&chance(.02)) die('감염병','감염병을 이겨 내지 못했다.');
+    if(!S.apostle&&a>70&&!(S.cyoa&&(S.long||S.year<=S.lastJY))&&chance(.02)) die('감염병','감염병을 이겨 내지 못했다.');
   }
   if(y===2026&&a>=10&&chance(.25)) log('「80억분의 1」이라는 인생 시뮬레이션이 유행했다. 해 보고는 내 인생과 비교해 보았다.','life');
 }
@@ -1015,6 +1137,7 @@ function render(){
   else if(S.academy==='시계탑')aff=`시계탑 ${S.dept} · ${RANKS[S.rank]}`;
   else if(S.academy==='아틀라스원')aff='아틀라스원';
   else if(S.mage)aff='프리랜서 마술사';
+  if(S.cyoa){aff=S.ancestor?'사도 27조':S.fugitive?'봉인지정 도망자':S.academy?'시계탑':S.church?'성당교회 대행자':S.b.race==='vamp'||S.b.race==='true'?'흡혈종':S.mage?'프리랜서 마술사':'없음';}
   $('vAff').innerHTML=aff==='없음'?unk('없음'):`<span class="od">${esc(aff)}</span>`;
   $('vJob').innerHTML=S.job?esc(S.job)+(S.retired?' (은퇴)':''):unk(S.mage?'마술 연구':'-');
   setGauge('gH','nH',S.health);setGauge('gM','nM',S.mental);setGauge('gW','nW',S.wealth);setGauge('gL','nL',S.luck);
@@ -1025,6 +1148,7 @@ function render(){
     ['s1','s2','s3'].forEach((id,i)=>$(id).classList.toggle('used',i>=S.seals));
     $('vServ').textContent=S.servant?`${S.servant.cls} · ${S.servant.name}`:(S.grailWin?'성배전쟁 승리':'서번트 없음');
   }
+  if(S.cyoa) renderCyoaCard(); else $('vCy').hidden=true;
 }
 
 function showModal(m){
@@ -1046,35 +1170,58 @@ function showModal(m){
   }
   $('modal').hidden=false;
   $('mOk').focus();
-  $('mOk').onclick=()=>{$('modal').hidden=true;if(majorQueue.length&&!skipping){showModal(majorQueue.shift());}else{majorQueue.length=0;if(running&&!paused)schedule();}};
+  $('mOk').onclick=()=>{$('modal').hidden=true;drain();};
 }
 
 function schedule(){clearTimeout(timer);timer=setTimeout(tick,Math.round(700/speed));}
 function tick(){
-  if(!running||paused)return;
+  if(!running||paused||(S&&S.pending)||!$('modal').hidden)return;
   step();render();scrollLog();
-  if(!S.alive){finish();return;}
+  drain();
+}
+/* 다음에 보여 줄 것: 큰 사건 창 → 선택지 → 결말 → 다음 해 */
+function drain(){
+  if(!S)return;
   if(majorQueue.length){
-    if($('autoPause').checked){showModal(majorQueue.shift());return;}
+    if($('autoPause').checked&&!skipping){showModal(majorQueue.shift());return;}
     majorQueue.length=0;
   }
-  schedule();
+  if(S.pending){showChoice(S.pending);return;}
+  if(!S.alive){finish();return;}
+  if(running&&!paused)schedule();
+}
+function showChoice(p){
+  const sh=$('sheet');
+  sh.className='sheet choice'+(p.tone?' '+p.tone:'');
+  sh.innerHTML=`<div class="eyebrow">${esc(p.eyebrow||'선택')}</div><h3 id="mTitle">${esc(p.title)}</h3>${p.body?`<p>${esc(p.body)}</p>`:''}
+    <div class="opts">${p.options.map((o,i)=>`<button type="button" class="optbtn" data-i="${i}"${o.disabled?' disabled':''}><b>${esc(o.label)}</b>${o.sub?`<span>${esc(o.sub)}</span>`:''}</button>`).join('')}</div>`;
+  $('modal').hidden=false;
+  const first=sh.querySelector('.optbtn:not([disabled])');if(first)first.focus();
+  sh.querySelectorAll('.optbtn').forEach(b=>b.onclick=()=>{
+    const o=p.options[+b.dataset.i];if(o.disabled)return;
+    $('modal').hidden=true;
+    if(S.pending===p)S.pending=null;
+    o.fn();
+    render();scrollLog();drain();
+  });
 }
 function start(seed,boost){
   if(boost===undefined||boost===null)boost=$('fateMode').checked;
   clearTimeout(timer);
-  logEl.innerHTML='';$('endBox').innerHTML='';$('intro').hidden=true;
+  showGame();
+  logEl.innerHTML='';$('endBox').innerHTML='';
   majorQueue.length=0;$('modal').hidden=true;
   logSink=renderEntry;
   newLife(seed,boost);
+  $('bSkip').textContent='끝까지';
   running=true;paused=false;skipping=false;
   $('bPause').disabled=false;$('bSkip').disabled=false;$('bPause').textContent='일시정지';
-  $('bBorn').textContent='다시 태어나기';
   render();
-  if(majorQueue.length&&$('autoPause').checked) showModal(majorQueue.shift()); else {majorQueue.length=0;schedule();}
+  drain();
 }
 function skipAll(){
   if(!running)return;
+  if(S.cyoa){skipToChoice();return;}
   skipping=true;clearTimeout(timer);$('modal').hidden=true;majorQueue.length=0;
   const frag=document.createDocumentFragment();
   logSink=e=>{const li=document.createElement('li');li.className=e.cat+(e.big?' big':'');li.innerHTML=`<span class="y">${e.y}</span><span class="a">${e.a}세</span><span class="t">${esc(e.text)}</span>`;frag.appendChild(li);};
@@ -1085,8 +1232,10 @@ function skipAll(){
   render();scrollLog();finish();
 }
 function finish(){
+  if(S.finished)return;S.finished=true;
   running=false;clearTimeout(timer);
   $('bPause').disabled=true;$('bSkip').disabled=true;
+  if(S.cyoa){cyoaFinish();return;}
   const key=endingKey();const ed=ENDINGS.find(e=>e[0]===key);
   const lg=rarity();const oneIn=Math.pow(10,-lg);
   const people=8e9*Math.pow(10,lg);
@@ -1104,6 +1253,7 @@ function finish(){
       <span>인생 코드 <code>${S.code}</code></span>
       <button class="btn" type="button" id="bCopy">결과 복사</button>
       <button class="btn primary" type="button" id="bAgain">다시 태어나기</button>
+      <button class="btn" type="button" id="bModes">다른 방식으로</button>
     </div>
     <input id="copyOut" readonly hidden value="${esc(share)}">
   </div>`;
@@ -1114,6 +1264,7 @@ function finish(){
     try{navigator.clipboard.writeText(share).then(ok,fallback);}catch(e){fallback();}
   };
   $('bAgain').onclick=()=>start(newSeed());
+  $('bModes').onclick=showModes;
   $('codeIn').value=S.code;
   saveResult(key,oneIn);
   renderDex();
@@ -1127,7 +1278,7 @@ function saveResult(key,oneIn){
   const st=loadStore();
   st.total=(st.total||0)+1;
   st.endings[key]=(st.endings[key]||0)+1;
-  st.lives.unshift({name:S.name,c:S.country.n,y:S.birthYear,a:S.deathAge,k:key,r:oneIn,code:S.code});
+  st.lives.unshift({name:S.name,c:S.country.n,y:S.birthYear,a:S.deathAge,k:key,r:oneIn,code:S.code||''});
   st.lives=st.lives.slice(0,10);
   try{localStorage.setItem(STORE,JSON.stringify(st));}catch(e){}
   lastStore=st;
@@ -1135,21 +1286,24 @@ function saveResult(key,oneIn){
 let lastStore=null;
 function renderDex(){
   const st=lastStore||loadStore();
-  const got=ENDINGS.filter(e=>st.endings[e[0]]).length;
-  $('dexSub').textContent=`이 기기에서 ${st.total||0}번 태어났고, 결말 ${ENDINGS.length}개 중 ${got}개를 봤어요.`;
-  $('dex').innerHTML=ENDINGS.map(e=>{
+  const all=ENDINGS.concat(CY_ENDINGS);
+  const got=all.filter(e=>st.endings[e[0]]).length;
+  $('dexSub').textContent=`이 기기에서 ${st.total||0}번 태어났고, 결말 ${all.length}개 중 ${got}개를 봤어요.`;
+  const item=e=>{
     const n=st.endings[e[0]];
     return n?`<div class="dex-item got"><b>${esc(e[1])}</b><span>${esc(e[2])}</span> <span class="n">×${n}</span></div>`
             :`<div class="dex-item locked"><b>？？？</b><span>${esc(e[2])}</span></div>`;
-  }).join('');
-  $('recent').innerHTML=st.lives.length?`최근 인생<ol>${st.lives.map(l=>{const ed=ENDINGS.find(e=>e[0]===l.k);return `<li>${esc(l.name)} · ${esc(l.c)} ${l.y}년생 · ${l.a}세 · ${esc(ed?ed[1]:'')} · ${fmtBig(l.r)}분의 1 · <code>${esc(l.code)}</code></li>`;}).join('')}</ol>`:'';
+  };
+  $('dex').innerHTML=`<h3 class="dex-h">80억분의 1</h3><div class="dex-grid">${ENDINGS.map(item).join('')}</div>
+    <h3 class="dex-h">마술사 되기</h3><div class="dex-grid">${CY_ENDINGS.map(item).join('')}</div>`;
+  $('recent').innerHTML=st.lives.length?`최근 인생<ol>${st.lives.map(l=>{const ed=all.find(e=>e[0]===l.k);return `<li>${esc(l.name)} · ${esc(l.c)} ${l.y}년생 · ${l.a}세 · ${esc(ed?ed[1]:'')}${l.r?` · ${fmtBig(l.r)}분의 1`:' · 설계한 인생'}${l.code?` · <code>${esc(l.code)}</code>`:''}</li>`;}).join('')}</ol>`:'';
 }
 
 /* ================= 이벤트 연결 ================= */
 function newSeed(){
   try{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0];}catch(e){return Math.floor(Math.random()*4294967296);}
 }
-$('bBorn').onclick=()=>start(newSeed());
+$('bBorn').onclick=showModes;
 $('bPause').onclick=()=>{
   if(!running)return;
   paused=!paused;$('bPause').textContent=paused?'계속':'일시정지';
@@ -1168,6 +1322,887 @@ $('codeForm').addEventListener('submit',ev=>{
   if(s.boost!==null)$('fateMode').checked=s.boost;
   start(s.seed,s.boost);
 });
+/* ================= 마술사 되기 (CYOA) =================
+   포인트 구조는 팬 CYOA 「Type Moon / Becoming Magus」(Selina)를 따른다.
+   MP 마나 · FP 운명력 · CP 자본 · KP 각인 · AP 억지력(쌓이면 나쁜 결말) */
+const CY_ORIGIN=[
+  {id:'plain',n:'평범함',d:'평범하게 다시 태어나요. 운명력을 5 더 받아요.',fp:5},
+  {id:'root',n:'근원접속자',d:'근원과 이어진 채 태어나요. 마술속성·계통·세부 항목에 포인트가 들지 않아요. 대신 마술예장을 고를 수 없고, 억지력이 5에서 시작하며 이후 얻는 억지력이 두 배가 돼요.'}
+];
+const CY_RACE=[
+  {id:'human',n:'인간',mp:3,fp:3,d:'가장 흔한 몸. 회로도 수명도 사람만큼이에요.'},
+  {id:'vamp',n:'흡혈귀·사도',mp:5,fp:1,d:'늙지 않고 피를 마셔요. 성당교회가 늘 뒤를 쫓아요.'},
+  {id:'homun',n:'호문쿨루스',mp:6,fp:0,d:'만들어진 몸. 마력은 풍부하지만 수명이 짧아요.'},
+  {id:'half',n:'혼혈',mp:4,fp:4,ap:1,d:'인간이 아닌 것의 피가 섞였어요. 피가 날뛰면 인외의 힘이 깨어나요.'},
+  {id:'dragon',n:'용종',mp:12,fp:4,ap:4,d:'최강의 환상종. 숨 쉬는 것만으로 마력이 넘쳐요.'},
+  {id:'true',n:'진조',mp:10,fp:6,ap:4,d:'별이 만든 흡혈종. 공상구현화로 자연을 다뤄요.'}
+];
+const CY_BIRTH=[
+  {id:'plain',n:'평범한 가정',kp:1,cp:2,d:'마술과 상관없는 집. 재능이 있다면 스스로 찾아야 해요.'},
+  {id:'magus',n:'마술사 가문',kp:3,cp:3,ap:1,d:'100년, 5대를 이어 온 마술사 가문.'},
+  {id:'noble',n:'귀족 가문',fp:1,kp:5,cp:5,ap:2,d:'500년 넘게 이어진 시계탑의 귀족.'},
+  {id:'lord',n:'로드 가문',fp:2,kp:7,cp:7,ap:3,d:'1000년의 역사. 시계탑 한 학과를 다스리는 로드의 집안.'},
+  {id:'church',n:'성당교회',fp:1,kp:4,cp:1,d:'교회에서 자랐어요. 이단을 사냥하는 대행자의 길.'},
+  {id:'user',n:'마술사용자',fp:1,kp:1,cp:4,d:'과학과 마술을 섞어 쓰는 집안. 근원보다 쓸모를 좇아요.'}
+];
+const CY_ELMODE=[
+  {id:'single',n:'단일 속성',fp:0,need:1,pool:['지','수','화','풍','공'],d:'지·수·화·풍·공 중 하나.'},
+  {id:'void',n:'허(虛)',fp:1,need:0,pool:[],d:'가공원소와 비물질을 다루는 드문 속성.'},
+  {id:'double',n:'2중 속성',fp:1,need:2,pool:['지','수','화','풍'],d:'공·허를 뺀 속성 둘.'},
+  {id:'triple',n:'3중 속성',fp:2,need:3,pool:['지','수','화','풍','공'],d:'허를 뺀 속성 셋.'},
+  {id:'avg',n:'애버리지 원',fp:3,need:0,pool:[],d:'허를 뺀 다섯 속성 전부.'}
+];
+const EL_NAME={'지':'지(땅)','수':'수(물)','화':'화(불)','풍':'풍(바람)','공':'공(에테르)','허':'허(虛)'};
+const CY_DEPTS=[
+  {id:'basic',n:'전체기초',els:[],d:'모든 계통의 기초.',det:[['allround','다재다능','모든 계통을 준전문가 수준으로 다뤄요.'],['leyline','영맥학','영맥을 읽어 대규모 의식과 공방 방어에 써요.']]},
+  {id:'indiv',n:'개체기초',els:['지','화'],d:'결계와 개체의 기초.',det:[['araya','아라야 결계식','억지력의 눈을 피하는 결계식.',{ap:-1}],['unify','통일언어(위)','어떤 말이든 그 자리에서 통역해요.']]},
+  {id:'spirit',n:'강령',els:['수','풍'],d:'영혼과 영령을 다뤄요.',det:[['ghostliner','고스트라이너','영령의 힘을 빌려 부려요.'],['reinc','전생','혼을 이어 다음 생으로 건너가요.']]},
+  {id:'mineral',n:'광석',els:null,cp:1,d:'보석과 룬. 속성과 상관없이 배우지만 돈이 들어요.',det:[['gandr','간드','보석의 마력을 풀어 영창 없이 대마술급 일격을 쏴요.'],['artieye','인공 마안','노블 컬러급 이상의 인공 마안을 만들어요.']]},
+  {id:'beast',n:'동물',els:['지','풍'],d:'사역마와 환상종.',det:[['phantom','환수의 총애','환수 하나가 곁을 지켜요.'],['shift','변화(진)','육체와 영기를 바꾸는 변신술.']]},
+  {id:'lore',n:'전승',els:['공','허'],ap:1,d:'바깥 별에서 온 지식.',det:[['prelati','프렐라티즈 스펠북','스스로 술식을 짜는 마도서.'],['outer','이성의 사도','확정된 미래를 이해하고 이성의 신의 힘을 빌려요.']]},
+  {id:'plant',n:'식물(마녀학)',els:['지','수'],d:'흑마술, 요정, 정령.',det:[['fly','비행','빗자루 없이도 하늘을 날아요.'],['fairy','플로이킥쇼','동화 속 대마술의 도움을 받아요.']]},
+  {id:'astro',n:'천체',els:['화','공'],d:'점성과 천체, 신학.',det:[['future','미래시','보이는 미래를 하나로 정해요.'],['astromagic','천체마술(원시)','별의 운행을 술식으로 끌어와요.']]},
+  {id:'create',n:'창조',els:['지','풍'],cp:1,d:'인형과 연금술. 재료비가 들어요.',det:[['galatea','갈라테아','궁극의 호문쿨루스를 만들어요.'],['puppeteer','색위의 인형사','자신과 똑같은 인형 육체를 만들어요.']]},
+  {id:'curse',n:'저주',els:['지','수'],d:'저주와 계약.',det:[['geas','셀프 기아스 스크롤','스스로에게 절대 계약을 걸어요.'],['verg','베르그 아베스타','받은 상처를 상대에게 되돌려요.']]},
+  {id:'arch',n:'고고학',els:null,cp:1,d:'신대의 마술을 발굴해요. 발굴비가 들어요.',det:[['rune','고대의 룬','신대의 원초 룬을 써요.'],['raiders','성유물 레이더스','유물을 찾아내 팔아요. 자본 +3.',{cp:3}]]},
+  {id:'modern',n:'현대마술',els:[],d:'해킹과 크래킹, 과학과 섞인 마술.',det:[['quantum','양자 마술','확률을 비트는 현대식 술식.'],['calif','캘리포니아 컨벤션','최신 마술 학회의 인맥. 각인 +1.',{kp:1}]]},
+  {id:'eighth',n:'제8비적',els:[],side:1,d:'성당교회의 비적. 대행자의 기술.',det:[['blackkey','흑건: 식전','흑건에 세례 효과를 담아 던져요.'],['baptism','세례영창','영체와 사도를 정화하는 성가.']]},
+  {id:'martial',n:'무(武)',els:[],side:1,d:'마술 대신 몸을 갈고닦은 무술.',det:[['snake','암살권(뱀)','기척 없이 다가가 급소를 쳐요.'],['bajiquan','팔극권','한 걸음으로 거리를 지우는 권법.']]},
+  {id:'imag',n:'허수마술',els:['허'],ap:1,side:1,d:'허수 공간을 다루는 드문 마술.',det:[['dive','허수잠항','허수 공간 속으로 잠수해요.'],['mimic','보이드 미믹','허수에 물건을 숨겨 두었다가 꺼내요. 자본 +1.',{cp:1}]]}
+];
+const CY_DET={};CY_DEPTS.forEach(d=>d.det.forEach(x=>{CY_DET[x[0]]={id:x[0],n:x[1],d:x[2],o:x[3]||{},dept:d.id};}));
+const CY_ABIL=[
+  ['proj','투영 마술','머릿속 이미지를 마력으로 형체화해요.',{}],
+  ['insect','충술','벌레를 몸 안팎에서 부려요.',{free:['beast','curse']}],
+  ['revive','소생 마술','죽은 직후의 몸을 되살려요.',{}],
+  ['juju','주술','오래된 저주와 축복을 다뤄요.',{free:['plant','arch']}],
+  ['galvan','갈바니즘','몸에 전류를 모아 마탄을 무효화하고 마력으로 바꿔요.',{pw:.2}],
+  ['fastcast','고속영창','남보다 두 배 빠르게 영창해요.',{free:['basic','arch'],pw:.2}],
+  ['animal','동물회화','동물과 말이 통해요.',{free:['beast','plant']}],
+  ['music','음악 마술','소리로 마술을 퍼뜨려요.',{free:['indiv','create']}],
+  ['antimagic','대마력','2소절 이하의 마술을 무효로 만들어요.',{pw:.4}],
+  ['appraise','감식안','남의 기원을 꿰뚫어 재능을 꽃피우게 도와요.',{}],
+  ['split','분할사고','생각을 여러 갈래로 나눠 동시에 굴려요.',{pw:.3}],
+  ['pureeye','정안','영혼이나 잔류사념처럼 있을 수 없는 것을 봐요.',{}],
+  ['enchant','인챈트','대상에 없던 성질을 새로 붙여요.',{pw:.2}],
+  ['mindeye','심안(위)','타고난 육감으로 위험을 피해요.',{pw:.3}],
+  ['battery','원시 전지','대기의 마나를 결정으로 굳혀 저장해요.',{}],
+  ['golem','골렘 제작','강철 몸과 엔진 심장의 골렘을 만들어요.',{free:['create','modern'],pw:.2}],
+  ['marble','고유결계','마음속 세계로 현실을 덮어써요.',{mp:2,ap:2,pw:1}],
+  ['truelang','통일언어(진)','듣는 이가 의심할 수 없는 태초의 언어.',{mp:3,ap:3,pw:1,cheap:['unify',2]}],
+  ['triple','삼중결계','몸 주위에 결계를 세 겹 둘러요.',{mp:2,ap:-2,pw:.5,cheap:['araya',1]}],
+  ['core','마력노심','숨 쉬는 것만으로 마력이 솟아요. 쓸 수 있는 마나가 두 배가 돼요.',{ap:3,pw:1,notRace:'dragon'}],
+  ['possess','빙의소환','전생에 영령이었던 자신의 힘을 끌어 써요.',{mp:2,ap:1,pw:.8}],
+  ['carrier','전승보균자','신대의 신비 하나를 현대에 재현해요.',{mp:2,ap:1,pw:.6}],
+  ['solo','단독현현','필요한 곳에 저도 모르게 나타나요. 자본 +2, 각인 +2.',{ap:6,cp:2,kp:2,pw:1.5}]
+].map(a=>({id:a[0],n:a[1],d:a[2],o:a[3]}));
+const CY_EYE=[
+  {id:'noble',n:'노블',d:'1공정 이하의 단순한 신비.',mp:1,g:'노블',art:1},
+  {id:'color',n:'노블 컬러',d:'남의 운명에 간섭해요. 환각, 강제.',mp:1,g:'노블 컬러',art:1},
+  {id:'gold',n:'황금',d:'신대의 대마술을 담은 고위 마안. 매료, 투시.',mp:1,g:'황금',pw:.4},
+  {id:'jewel',n:'보석',d:'어떤 마술로도 재현할 수 없는 신비. 석화, 천연.',mp:2,ap:1,g:'보석',pw:.7},
+  {id:'rainbow',n:'무지개',d:'신령의 권능에 가까운 마안. 직사.',mp:3,ap:2,g:'무지개',pw:1.2}
+];
+const CY_ITEMS=[
+  ['azoth','아조트 검','마력을 증폭하는 단검형 지팡이.',{cp:1,mp:.25}],
+  ['meter','마력 측정기','숨겨진 마나의 흔적을 찾아요.',{cp:1,fp:.5}],
+  ['grimoire','위신의 서','회로 없이도 단순한 마술을 쓰게 해 주는 외장 회로.',{cp:1,mp:.25}],
+  ['hydra','히드라의 독','어떤 해독제로도 못 고치는 맹독의 단검.',{cp:2,kp:1,pw:.3}],
+  ['manip','매니퓰레이터','손끝을 인간 이상으로 섬세하게 만들어요.',{cp:1,kp:.5}],
+  ['storch','슈토르히 리터','은실로 짠 새 모양의 간이 호문쿨루스.',{cp:1,kp:.5}],
+  ['love','사랑의 묘약','처음 본 사람에게 반하게 하는 금지된 약.',{cp:1,fp:.5}],
+  ['originb','기원탄','맞은 마술사의 회로와 각인을 망가뜨리는 탄환.',{cp:2,kp:1,pw:.5,concept:1}],
+  ['mercury','월령수액','명령에 따라 모양을 바꾸는 수은 예장.',{cp:2,mp:.5,pw:.4}],
+  ['pendant','오래된 펜던트','오랜 사념이 깃든 루비 펜던트.',{cp:2,mp:.5,cheapDept:['mineral',1]}],
+  ['shroud','적원예장','성해포의 일종. 외부의 신비를 막아요.',{cp:2,kp:1,pw:.3}],
+  ['atlas','아틀라스의 서','아틀라스원의 무조건적 지원을 부르는 계약서.',{cp:2,fp:1}],
+  ['kaleido','카레이도 스틱','평행세계에서 능력을 끌어오는 개념예장.',{cp:3,mp:1,ap:2,pw:.8}],
+  ['dress','하늘의 드레스','소성배의 권능을 주는 외장 회로.',{cp:3,kp:2,ap:2,cheapRace:['homun',2],pw:.6}],
+  ['seventh','제7성전','사도에게 절대적인 상성을 갖는 파일벙커.',{cp:3,ap:-2,cheapDept:['eighth',2],pw:.8,concept:1}],
+  ['kanesada','카네사다','마를 베는 500년 된 일본도.',{cp:3,ap:-2,apDept:['martial',-3],pw:.8,concept:1}],
+  ['lantern','환등기계','마수의 복제를 부리는 그림자 영사기.',{cp:3,fp:1,ap:1,cheapDept:['lore',2],pw:.4}],
+  ['zelretch','보석검 젤릿치','평행세계에서 마나를 끌어오는 제2법의 복제품.',{cp:5,mp:2,kp:2,ap:3,pw:1}]
+].map(a=>({id:a[0],n:a[1],d:a[2],o:a[3]}));
+const CY_FB=[
+  ['legs','신체 결손','태어날 때부터 다리를 쓸 수 없어요.',{}],
+  ['dark','영원한 어둠','마안이 폭주해 시력을 잃었어요. 마안과 함께 고를 수 없어요.',{noEye:1}],
+  ['small','작은 그릇','만들고 담을 수 있는 마나가 적어요. 마력노심과 함께 고를 수 없어요.',{noAbil:'core'}],
+  ['careless','방심','재능을 믿고 자주 방심해요.',{}],
+  ['numb','무감정','아무것도 느끼지 못해요. 웃음도 연기예요.',{}],
+  ['pacifist','평화주의','모두가 행복한 돌아가는 길을 골라요.',{}],
+  ['worldly','세속적','부와 명예를 포기하지 못해요.',{}],
+  ['depend','의존 성향','따르는 사람이 없으면 불안해져요.',{}],
+  ['home','자택연구원','실력과 상관없이 계위를 얻지 못해요. 운명력 −1.',{fp:-1}],
+  ['headache','두통앓이','가문의 저주로 하루 몇 번씩 두통이 와요.',{}],
+  ['crimson','홍적주','피가 폭주하면 환상종의 특성이 드러나요. 혼혈 전용.',{race:'half'}],
+  ['waste','낭비벽','가문이 기울 만큼 잡동사니를 사들여요. 자본 −3.',{cp:3}],
+  ['dual','듀얼만능주의','카드형 개념무장으로만 마술을 써요. 창조 전용.',{dept:'create'}],
+  ['last','마지막 후계자','가문은 당신을 끝으로 끊겨요. 평범한 가정과 함께 고를 수 없어요.',{notBirth:'plain'}],
+  ['knight','기사도','약자를 그냥 지나치지 못해요. 무(武) 전용.',{dept:'martial'}],
+  ['kmagic','카레이도 매직','마술이 쓸데없이 화려해 눈에 띄어요. 카레이도 스틱 전용.',{item:'kaleido'}],
+  ['wrongorigin','어긋난 기원','기원이 신비를 거부해요. 마술을 쓸수록 몸이 망가져요.',{ap:-2}],
+  ['redshadow','붉은 그림자','등 뒤에 붉은 그림자가 늘 서 있어요.',{ap:-3}]
+].map(a=>({id:a[0],n:a[1],d:a[2],o:a[3]}));
+
+/* 행적: [버튼, 설명, 기록 문장, 보정] */
+const CY_JR=[
+  {id:'clock',n:'시계탑 입학',src:'Original',fp:0,rec:1,age:[17,18],always:1,
+    intro:'런던 시계탑에 첫발을 디뎠어요. 배정받은 교실 문을 열자 검은 장발의 강사가 이쪽을 봐요. 얼마 뒤, 스승이 즐겨 찾던 카페의 주인이 연쇄 살인 사건에 휘말려요.',
+    ch:[['수사를 돕는다','강사와 함께 사건의 신비를 쫓아요','강사를 따라 사건의 단서를 모았다.',.3],['도서관에 틀어박힌다','안전하지만 얻는 게 적어요','사건은 남에게 맡기고 공부에 몰두했다.',1],['혼자 범인을 쫓는다','위험하지만 빨라요','밤거리로 혼자 나섰다.',-.4]],
+    win:'사건의 진상을 밝혀냈다. 시계탑의 정식 소속원이 되었다.',lose:'사건은 미궁에 빠졌지만 입학은 무사히 마쳤다.',die:'범인의 마술에 휘말려 런던의 밤에 쓰러졌다.',deadly:.6,r:{t:'academy'}},
+  {id:'watch',n:'감시파견임무',src:'마법사의 밤',fp:1,rec:3,year:1988,
+    intro:'감시자의 무덤이라 불리는 미사키 시. 협회 소속 관리자로 부임해 세컨드 오너인 아오자키 가문과 함께 신비의 은닉을 지켜야 해요.',
+    ch:[['아오자키 가문과 협력한다','현지의 힘을 빌려요','아오자키 가문과 보조를 맞췄다.',.4],['협회의 지시대로 움직인다','원칙대로','협회의 지시를 하나하나 따랐다.',0],['독자적으로 사고를 막는다','공을 세울 기회','혼자 움직여 사고의 싹을 잘랐다.',-.2]],
+    win:'목이 아직 붙어 있다는 데 만족했다. 언젠가 협회에 복수하리라 다짐하며 연줄과 돈을 조금 모았다.',lose:'사고를 막지 못해 문책을 받았지만 살아남았다.',die:'협회는 이번에도 감시자를 갈아 치웠다. 물리적으로.',r:{t:'cp',n:1}},
+  {id:'aoko',n:'제5법, 청(青)',src:'마법사의 밤',fp:3,rec:7,year:1989,deadly:1.2,
+    intro:'아오자키 토우코의 편지를 받고 찾은 미사키 고교 구교사. 눈앞에서 한 소녀가 다섯 번째 마법, 청에 각성했어요. 이제 마법사를 상대해야 해요.',
+    ch:[['정면으로 맞선다','마술사의 몸으로 마법사에게','모든 예장을 꺼내 정면으로 맞섰다.',-.3],['토우코와 함께 싸운다','관위의 인형사와 손을 잡아요','토우코와 등을 맞대고 싸웠다.',.3],['말로 풀어 본다','마법사의 자비를 기대해요','싸움을 멈추자고 외쳤다.',.5]],
+    win:'마술사의 몸으로 마법사를 상대해 살아남았다. 상대의 자비 덕분이었다 해도. 싸움의 경험으로 새 능력을 얻었다.',lose:'파란 빛에 휩쓸려 정신을 잃었다. 깨어나 보니 모든 것이 끝나 있었다.',die:'마법의 빛 속에서 흔적도 없이 사라졌다.',r:{t:'ability'}},
+  {id:'hgw4',n:'제4차 성배전쟁',src:'Fate/Zero',fp:1,rec:3,year:1994,war:1,
+    intro:'극동의 지방 도시 후유키. 만능의 소원기를 두고 일곱 마스터가 영령을 불러 싸우는 의식에 마스터로 참전해요.',
+    ch:[['정면으로 맞선다','서번트의 힘을 믿어요','서번트와 함께 정면 승부를 걸었다.',0],['동맹을 맺는다','다른 진영과 손잡아요','다른 마스터와 손을 잡고 기회를 엿봤다.',.4],['마스터를 노린다','비정하지만 확실해요','서번트 대신 적 마스터의 숨통을 노렸다.',.2]],
+    win:'마지막까지 살아남았다. 그러나 성배는 「이 세상의 모든 악」으로 더럽혀져 있었고, 그날 밤 신도에 불이 내렸다.',lose:'서번트를 잃었지만 교회로 피신해 살아남았다.',die:'서번트를 잃은 마스터는 다음 표적이었다.',r:{t:'pick',o:['kp','ability']}},
+  {id:'ogawa',n:'오가와 맨션',src:'공의 경계',fp:1,rec:3,year:1998,
+    intro:'미후네 시의 나선형 맨션. 초대받아 들어간 그곳에서 수도원장 후보가 검은 그림자에 먹혀 사라졌고, 괴물들이 몰려와요. 하루를 버텨야 해요.',
+    ch:[['탈출구를 찾는다','계단을 따라 내려가요','끝없는 계단을 따라 출구를 찾았다.',0],['결계를 치고 버틴다','한 방에서 농성해요','방 하나에 결계를 치고 버텼다.',.5],['구조를 역이용한다','맨션의 술식을 읽어요','맨션의 나선 구조를 읽어 함정을 피했다.',.2]],
+    win:'하루를 버텨 냈다. 맨션의 구조를 파악하며 아라야 결계식을 익혔다. 다시는 흥미 위주로 이런 곳에 오지 않겠다.',lose:'간신히 빠져나왔지만 얻은 것은 없었다.',die:'끝없이 되살아나는 시체 인형들 사이에 묻혔다.',r:{t:'detail',id:'araya'}},
+  {id:'chaos',n:'사도: 교수 추적',src:'월희',fp:1,rec:5,year:1999,need:'concept',
+    intro:'사도 27조 10위, 「교수」 네로 카오스가 미사키 시에 나타났어요. 포획조 여섯 명이 순식간에 쓰러지고 당신만 남았어요. 직사의 마안이나 개념무장 없이는 쓰러뜨릴 수 없어요.',
+    ch:[['혼돈의 몸을 직접 공격한다','개념무장이나 직사의 마안이 필요해요','혼돈의 몸에 정면으로 공격을 퍼부었다.',0],['금발의 소녀와 손을 잡는다','진조의 힘을 빌려요','근처에 있던 금발의 소녀와 안경 쓴 청년에게 도움을 청했다.',.6],['도망치며 기회를 노린다','살아남는 게 먼저예요','짐승들을 피해 밤거리를 달렸다.',.3]],
+    win:'창세의 흙 속 원초의 바다를 보고 새로운 착상을 얻었다. 「변화(진)」을 익혔다.',lose:'교수는 다른 누군가에게 쓰러졌다. 당신은 살아남은 것만으로 만족했다.',die:'창세의 흙에 삼켜져 짐승 하나가 되었다.',r:{t:'detail',id:'shift'}},
+  {id:'roa',n:'사도: 무한전생자',src:'월희',fp:1,rec:5,year:2000,
+    intro:'「아카샤의 뱀」 로아의 전생체를 쫓는 포획조. 또 혼자 남은 당신은 토오노 저택에서 사도, 진조, 살인귀, 대행자의 싸움에 휘말려요.',
+    ch:[['대행자와 손잡는다','매장기관 7위와 일시 협력해요','교회의 대행자와 잠시 손을 잡았다.',.4],['전생의 고리를 노린다','근본을 끊어요','로아의 전생 술식을 끊을 방법을 찾았다.',-.2],['저택에서 빠져나온다','살아남는 게 먼저예요','저택의 비밀 통로를 찾아 헤맸다.',.5]],
+    win:'사도는 이제 쳐다보기도 싫다. 로아의 전생에 관한 지식 일부를 얻어 「전생」을 익혔다.',lose:'싸움의 틈바구니에서 겨우 살아 나왔다.',die:'세 조직이 뒤엉킨 밤, 저택의 복도에서 쓰러졌다.',r:{t:'detail',id:'reinc'}},
+  {id:'walachia',n:'왈라키아의 밤',src:'멜티 블러드',fp:1,rec:3,year:2001,
+    intro:'소문을 매개로 악몽을 실체로 만드는 현상, 왈라키아의 밤이 눈앞에서 시작됐어요. 흡혈귀와 살인귀, 그리고 당신이 가장 두려워하는 것이 거리를 걸어요.',
+    ch:[['두려움과 마주한다','악몽의 정체를 직접 확인해요','가장 두려운 것과 정면으로 마주했다.',0],['동이 틀 때까지 숨는다','하룻밤만 버티면 돼요','몸을 숨긴 채 새벽을 기다렸다.',.4],['소문을 바꿔 퍼뜨린다','현상의 규칙을 역이용해요','거리에 새 소문을 흘려 악몽을 비틀었다.',.2]],
+    win:'환상일지언정 두려움의 상징을 이겨 냈다. 마술각인이 한층 깊어졌다.',lose:'새벽이 오자 악몽은 사라졌다. 남은 건 지독한 피로뿐이었다.',die:'가장 두려워하던 것의 모습을 한 악몽에게 삼켜졌다.',r:{t:'kp',n:1}},
+  {id:'adra',n:'박리성 아드라',src:'로드 엘멜로이 2세의 사건부',fp:1,rec:2,year:2003,
+    intro:'수복사 게뤼온 애시본의 성. 수수께끼를 푼 자에게 각인 수리의 비기를 주겠다는 유언장을 받고 찾아갔더니, 찌푸린 얼굴의 장발 남자가 한숨을 쉬어요.',
+    ch:[['로드 엘멜로이 2세를 돕는다','그의 추리를 믿어요','장발의 남자를 도와 수수께끼를 풀었다.',.4],['혼자 수수께끼를 푼다','비기를 독차지해요','홀로 성의 수수께끼에 매달렸다.',-.2],['괴물의 습격에 대비한다','살아남는 게 먼저예요','성의 괴물에 대비해 결계부터 쳤다.',.2]],
+    win:'게뤼온 애시본의 진실을 파헤쳐 사건 해결을 도왔다. 마술각인이 한층 깊어졌다.',lose:'사건은 해결됐지만 당신의 몫은 없었다.',die:'성의 괴물에게 습격당해 천사들의 로비에 쓰러졌다.',r:{t:'kp',n:1}},
+  {id:'hgw5',n:'제5차 성배전쟁',src:'Fate/stay night',fp:1,rec:2,year:2004,war:1,
+    intro:'60년 주기를 깨고 10년 만에 다시 열린 후유키의 성배전쟁. 손등의 영주를 쥐고 대성배의 진실을 향해 가요.',
+    ch:[['정면으로 맞선다','서번트의 힘을 믿어요','서번트와 함께 정면 승부를 걸었다.',0],['동맹을 맺는다','다른 진영과 손잡아요','학생 마스터들과 손을 잡았다.',.4],['대성배의 진실을 쫓는다','싸움보다 진상','류도사 지하의 대성배를 먼저 조사했다.',.2]],
+    win:'모든 시련을 넘어 끝까지 살아남았다. 더럽혀진 대성배는 결국 부서졌다.',lose:'서번트를 잃었지만 교회의 보호를 받아 살아남았다.',die:'서번트를 잃은 밤, 후유키의 언덕길에서 쓰러졌다.',r:{t:'pick',o:['kp','ability']}},
+  {id:'train',n:'마안수집열차',src:'로드 엘멜로이 2세의 사건부',fp:1,rec:3,year:2005,
+    intro:'사도 27조가 만든 마안 경매 열차, 레일 체펠린에 올랐어요. 객실마다 만만치 않은 경쟁자들이 있고, 또 그 장발의 남자가 있어요.',
+    ch:[['살인 사건을 함께 푼다','또 그와 협력해요','장발의 남자와 함께 객실을 조사했다.',.4],['경매에만 집중한다','마안을 손에 넣어요','사건은 모른 척하고 경매에 집중했다.',0],['열차의 주인을 조사한다','위험한 진실','열차를 만든 사도의 흔적을 쫓았다.',-.3]],
+    win:'빙설림을 잠재웠다. 이렇게 매번 사건에 휘말리는 걸 보면 범인은 사실 그가 아닐까. 마술각인이 한층 깊어졌다.',lose:'열차에서 무사히 내린 것만으로 다행이었다.',die:'눈 덮인 숲을 달리는 열차에서 돌아오지 못했다.',r:{t:'kp',n:1}},
+  {id:'apoc',n:'성배대전',src:'Fate/Apocrypha',fp:1,rec:3,year:2008,war:1,
+    intro:'대성배를 빼돌려 시계탑을 배신한 위그드밀레니아. 일곱 대 일곱의 성배대전에 시계탑 쪽 「적」의 진영 마스터로 참가해요.',
+    ch:[['진영과 보조를 맞춘다','일곱 대 일곱의 전쟁','적의 진영 동료들과 작전을 맞췄다.',.3],['단독으로 움직인다','공을 독차지해요','진영을 떠나 홀로 움직였다.',-.2],['감독관 신부를 경계한다','이 전쟁에는 숨은 손이 있어요','감독역으로 온 젊은 신부를 몰래 지켜봤다.',.4]],
+    win:'성배대전에 끝까지 참여해 살아남았다.',lose:'서번트를 잃고 트란실바니아를 떠났다.',die:'루마니아의 평원에서 돌아오지 못했다.',r:{t:'pick',o:['kp','ability']}},
+  {id:'dismantle',n:'해체전쟁',src:'로드 엘멜로이 2세',fp:2,rec:5,year:2014,
+    intro:'대성배를 되살리려는 협회의 중진들이 세력을 모았어요. 로드 엘멜로이 2세를 도와 후유키 대성배 해체 진영으로 참전해요. 전위와 색위, 관위까지 나선 전쟁이에요.',
+    ch:[['최전선에 선다','색위가 맞붙는 곳','해체 진영의 최전선에 섰다.',-.2],['결계 해체를 맡는다','대성배의 술식을 분해해요','대성배의 술식을 하나씩 풀어 나갔다.',.4],['적 진영을 교란한다','정보전으로 승부해요','적 진영 사이에 불신을 심었다.',.2]],
+    win:'대성배는 해체되었다. 해체 진영의 일원으로 이름을 떨쳤다.',lose:'전쟁은 끝났지만 당신의 이름은 남지 않았다.',die:'관위급 마술사들의 격돌에 휘말렸다.',r:{t:'rank'}},
+  {id:'lesser',n:'아종성배전쟁',src:'Original',fp:1,rec:1,minYear:2016,war:1,multi:1,
+    intro:'해체된 대성배를 흉내 낸 아종 성배전쟁. 근원에 닿기엔 모자라도, 소원 하나나 연구의 마력원으로는 충분한 유사 성배를 두고 싸워요.',
+    ch:[['정면으로 맞선다','서번트의 힘을 믿어요','서번트와 함께 정면으로 싸웠다.',0],['함정을 판다','유리한 땅에서 싸워요','공방을 진지로 바꾸고 적을 끌어들였다.',.4],['다른 마스터를 매수한다','돈으로 해결해요','경쟁자 하나를 돈으로 포섭했다.',.2]],
+    win:'싸움에서 이겼다. 작지만 깨끗한 성배가 손에 들어왔다.',lose:'서번트를 잃고 물러났다.',die:'외딴 땅의 의식장에서 쓰러졌다.',r:{t:'pick',o:['cp','kp','ability']}},
+  {id:'garan',n:'가람의 동',src:'공의 경계',fp:0,rec:4,age:[20,35],req:'puppeteer',
+    intro:'미완성 폐건물의 2층. 관위의 인형사 아오자키 토우코가 안경을 벗으며 웃어요. "우리 하룻강아지는 뭘 원해서 범의 굴로 왔을까?"',
+    ch:[['임시 직원으로 일한다','숙제처럼 떨어지는 사건을 해결해요','공방의 잡무와 사건 의뢰를 떠맡았다.',.3],['인형술을 훔쳐 본다','관위의 기술','그녀의 인형을 몰래 분석했다.',-.2],['거리를 둔다','위험한 사람이에요','조심스럽게 선을 지켰다.',.6]],
+    win:'짧은 공방 생활이 끝났다. 그녀가 떠나며 작은 선물로 환등기계를 남겼다.',lose:'그녀의 숙제를 다 풀지 못한 채 공방을 떠났다.',die:'그녀를 화나게 했다. 그걸로 끝이었다.',r:{t:'item',id:'lantern'}},
+  {id:'giant',n:'거인의 움막',src:'Original',fp:1,rec:4,age:[25,45],req:'create',
+    intro:'아틀라스원의 심부, 거인의 움막. 당신이 만든 창조물에 흥미를 느낀 연금술사들이 방문을 허락했어요. 그들의 연금술을 쓰려면 회로 조정이 필요해요.',
+    ch:[['회로 조정을 받아들인다','대가가 따라요','몸의 회로를 그들 식으로 조정받았다.',0],['창조물만 넘기고 배운다','몸은 지켜요','창조물을 넘기는 대신 강의를 들었다.',.3],['그들의 연구를 훔쳐본다','들키면 끝이에요','몰래 연구 기록을 들여다봤다.',-.3]],
+    win:'아틀라스원 구성원과의 연줄을 얻었다. 자본이 늘었다.',lose:'얻은 것 없이 사막을 떠났다.',die:'세계를 일곱 번 멸망시킬 발명품 중 하나에 휘말렸다.',r:{t:'cp',n:2}},
+  {id:'baltan',n:'발트안데르스',src:'Original',fp:0,rec:4,after:'chaos',req:'arch',
+    intro:'네로 카오스를 쓰러뜨린 덕에 방황의 바다에서 초청장이 왔어요. 1년에 한 번 문이 열리는 이동하는 산맥에서 다음 문이 열릴 때까지 지내야 해요.',
+    ch:[['신대의 신비를 배운다','신대회귀의 연구','신대의 마술을 배우는 데 몰두했다.',.2],['표본이 되지 않게 조심한다','그들은 당신을 연구하고 싶어 해요','언제나 탈출로를 확인하며 지냈다.',.5],['그들과 거래한다','교수의 연구를 대가로','교수가 남긴 천 년의 연구를 흥정거리로 삼았다.',0]],
+    win:'방황의 바다 구성원과의 연줄을 얻고 무사히 빠져나왔다. 마술각인이 한층 깊어졌다.',lose:'1년을 버티고 나왔지만 얻은 것이 없었다.',die:'연구 표본이 되어 산맥과 함께 사라졌다.',r:{t:'kp',n:1}},
+  {id:'zelretch',n:'마법사의 제자',src:'Original',fp:3,rec:6,age:[22,40],req:'aplow',
+    intro:'제2법의 마법사 젤릿치가 제자를 세 명 더 받겠다고 나섰고, 어째서인지 당신을 콕 집어 지명했어요. 그의 교육은 고난의 연속이에요.',
+    ch:[['혹독한 수련을 견딘다','스파르타식 교육','평행세계를 넘나드는 수련을 버텼다.',0],['시험의 허점을 찾는다','꾀로 넘어가요','시험의 규칙을 뒤집어 보았다.',-.3],['다른 제자와 협력한다','함께 버텨요','다른 제자들과 서로를 붙잡아 주었다.',.4]],
+    win:'마법사의 마지막 시험을 통과했다. 그의 애검을 본뜬 보석검 젤릿치를 받았다.',lose:'시험을 버티지 못하고 폐인이 될 뻔했다. 겨우 정신을 붙잡았다.',die:'평행세계의 틈에서 돌아오지 못했다.',r:{t:'item',id:'zelretch'}},
+  {id:'albion',n:'알비온 대탐험',src:'Original',fp:3,rec:6,age:[30,50],deadly:1.2,
+    intro:'시계탑 지하에 잠든 백룡의 무덤, 영묘 알비온. 탐사대장으로 뽑혀 인간의 한계라는 80km 지점 너머의 요정역을 노려요.',
+    ch:[['최단 경로로 내려간다','신대의 공기를 견뎌요','위험을 무릅쓰고 최단 경로로 내려갔다.',-.2],['층마다 거점을 세운다','느리지만 확실해요','층마다 거점을 세우며 천천히 내려갔다.',.4],['환수를 길잡이로 삼는다','미궁의 주민에게 길을 물어요','미궁의 환수와 거래해 길을 찾았다.',.2]],
+    win:'요정향 아발론에 닿았다. 그 경험으로 새 능력을 얻었다.',lose:'80km 지점을 넘지 못하고 돌아왔다. 살아 돌아온 것만으로 기적이었다.',die:'영묘의 심부, 신대의 공기 속에서 숨이 멎었다.',r:{t:'ability'}},
+  {id:'hakuyoku',n:'백익공의 초대',src:'Original',fp:3,rec:6,age:[30,80],req:'vamp',
+    intro:'사도 27조의 수장 백익공에게서 편지가 왔어요. 예언에 따라 당신이 비어 있던 27조 10위의 자리에 올랐다는 거예요. 어느 파벌에 설지, 배신하고 달아날지 정해야 해요.',
+    ch:[['백익공 파에 선다','27조의 수장 아래','백익공의 영지로 가 무릎을 꿇었다.',.2],['흡혈희 파에 선다','사도의 공주 아래','흡혈희의 편에 서겠다고 답했다.',.2],['둘 다 배신하고 달아난다','양쪽 모두의 표적이 돼요','편지를 불태우고 자취를 감췄다.',-.4]],
+    win:'사도 27조의 일원이 되었다. 싸움 속에서 새 능력을 얻었다.',lose:'27조의 자리는 다른 누군가에게 넘어갔다.',die:'매장기관과 반대 파벌의 사도들이 동시에 들이닥쳤다.',r:{t:'ancestor'}},
+  {id:'fortnia',n:'포트니아 테론',src:'■■',fp:0,rec:1,last:1,req:'root',deadly:0,
+    intro:'"안녕? 같은 처지라서 좀 안타까워서 말이야. 근원접속자로 태어난 탓에 운명력이 없어서 재밌는 모험을 거의 못 했잖아. 그래도 걱정 마. 진짜 재밌는 건 이제부터니까."',
+    ch:[['고개를 끄덕인다','',"소녀의 말에 조용히 고개를 끄덕였다.",0],['이름을 묻는다','','"이름까지는 알 필요 없어." 소녀가 웃었다.',0],['말없이 지나친다','','아무 말 없이 소녀를 지나쳤다.',0]],
+    win:'"그럼 끝이 찾아왔을 때 다시 보자." 여정의 끝이 가까워진다. 그래도 당신은, 여전히 인간을 사랑하니까.',lose:'',die:'',r:{t:'fortnia'}}
+];
+const CY_JRMAP={};CY_JR.forEach(j=>CY_JRMAP[j.id]=j);
+const RANK_FULL=['계위 없음','프레임(말자)','카운트(장자)','코즈(개위)','페스(제위)','브라이드(전위)','브랜드(색위)','그랜드(관위)'];
+const COLORS=['빨강','파랑','노랑','주황','초록','보라','검정'];
+
+const CY_ENDINGS=[
+  ['cy_true1','평온한 일상','True End 1 · 억지력 5 미만'],
+  ['cy_true2','마법사의 길','True End 2 · 그랜드(관위)'],
+  ['cy_true3','인류보장기관','True End 3 · 남은 자본 3 이상'],
+  ['cy_norm1','억지력의 수호자','Normal End 1 · 억지력 5 이상'],
+  ['cy_norm2','봉인지정','Normal End 2 · 억지력을 얻는 능력'],
+  ['cy_norm3','그리고, 다시','Normal End 3 · 그랜드(관위)'],
+  ['cy_beast1','유년기의 끝','Beast End 1'],
+  ['cy_beast2','소멸, 그리고','Beast End 2'],
+  ['cy_beast3','가지 못한 길','Beast End 3'],
+  ['cy_dead','여정의 도중','Dead End · 행적에서 쓰러짐']
+];
+const CY_END_TEXT={
+  cy_true1:'감고 있던 눈을 천천히 떴다. 오래 꾼 꿈의 내용은 잊었지만 얼굴에는 옅은 미소가 남아 있다. 생명의 위기도, 배신도 있었다. 그래도 가장 소중한 것은 끝내 잃지 않았고, 등을 맡길 동료도 찾았다. 평온한 일상 속에서 인생이 다시 흘러간다.',
+  cy_true2:'마법이란 그 시대의 인간에게는 불가능한 기적. 다섯 개의 마법이 남았다는 세상에서, 당신은 처음부터 여섯 번째 마법을 믿었다. 수많은 만남과 사건 끝에 마법사들이 마지막 조각을 건넸다. 다시 근원 앞에 선 당신은 손을 뻗는다. 제6법, 「모든 사람들의 행복」을 향해.',
+  cy_true3:'가진 모든 것을 쏟아부은 경매에서 간발의 차로 이겼다. 헬리콥터 창밖으로 남극의 설원과 산을 깎아 만든 시설이 보인다. 인리계속보장기관 피니스 칼데아. 인리소각 같은 일이 정말 일어나기야 하겠는가. 이제 소장 대리로서 편안한 일생이 시작된다.',
+  cy_norm1:'조금만 더 가면 근원에 닿을 수 있었다. 인류의 무의식이 보낸 억지력의 수호자가 이번에도 앞을 막았다. 불타는 공방을 뒤로하고 밤거리를 달리면서도 당신은 포기하지 않는다. 그 끝에 어떤 결말이 있을지는 당신조차 모르지만.',
+  cy_norm2:'비의재시국이 당신을 새 봉인지정 대상으로 골랐다. 보호 명령이라는 이름의 영구 보존. 네 시간 전 집행자들을 피해 공방을 빠져나온 당신에게 남은 건 머릿속 지식과 가방 하나의 예장뿐이다. 그래도 비원을 이룰 때까지 멈추지 않는다.',
+  cy_norm3:'형체조차 남지 않은 몸이 환희로 떨린다. 여기는 근원의 소용돌이. 그런데 기억이 돌아왔다. 근원에 닿은 건 이번이 처음이 아니다. 이대로는 「그 결말」을 피할 수 없기에, 당신은 사라져 가는 육신을 다시 짜기 시작한다. 다음에는 부디 성공하기를.',
+  cy_beast1:'화염, 폐허, 침묵. 지구의 문명은 당신의 손으로 끝났다. 시계탑도 영령도 마법사도 막지 못했다. 더 잔혹한 미래가 오기 전에 인류를 놓아준 것이라고, 당신은 믿는다. 인류는 이 선택을 영원히 기억할 것이다.',
+  cy_beast2:'협회와 교회가 신비를 세상에 밝히고, 온 인류가 손을 잡았다. 일곱 관위의 영령과 함께 수년을 싸운 끝에 그들은 당신을 쓰러뜨렸다. 사라져 가며 생각한다. 정말 아름다운 광경이었다고. 그러니 후회는 없다.',
+  cy_beast3:'영주가 새겨진 손을 꼭 쥔 채 물러서지 않는 소년, 그를 둘러싼 서번트와 관위의 영령들. 그리고 그 뒤에서 당신을 바라보는 한 사람. 당신이 가지 못한 길도 있었다. 조금만 더 빨리 알았더라면 좋았을 텐데.'
+};
+const BEAST_FORM=[['human','인간 형태','생전과 같은 모습. 가장 빠르게 움직여요.'],['small','소형','작은 생물이나 물체의 모습. 포착하기 어려워요.'],['large','대형','사람의 몇 배 크기. 가장 큰 공포를 불러요.'],['huge','초대형','수백 미터의 거체. 걷는 것만으로 재앙이에요.']];
+const BEAST_POW=[['summon','네가 서몬','일반 서번트의 보구에 완전 내성.'],['pillar','마신주 사역','마술사를 마신주로 바꿔 부려요.'],['savior','네가 세이비어','세이버·룰러의 능력과 보구를 무효화해요.'],['desire','네가 디자이어','주변의 욕망을 극대화해 반전시켜요.'],['multi','만욕응체','지구의 인간 수만큼 분신을 만들어요.'],['genesis','네가 제네시스','정(正) 영웅 영령의 능력에 완전 내성.'],['sea','창세의 바다','창조의 진흙으로 생명을 사역마로 바꿔요.'],['weapon','네가 웨폰','인간이 만든 모든 무구에 피해를 입지 않아요.'],['messiah','네가 메사이아','종교 계열 서번트의 스킬과 보구를 무효화해요.']];
+
+/* ----- 계산 ----- */
+function cyBlank(){return {origin:'plain',race:'human',birth:'plain',elMode:'single',els:['화'],depts:[],details:[],abil:[],eye:null,items:[],fb:[],jr:[],rankUp:false};}
+const byId=(arr,id)=>arr.find(x=>x.id===id);
+function cyEls(b){const m=byId(CY_ELMODE,b.elMode);if(b.elMode==='void')return['허'];if(b.elMode==='avg')return['지','수','화','풍','공'];return b.els.slice(0,m.need);}
+function deptMp(b,d){if(b.origin==='root'||d.els===null)return 0;const e=cyEls(b);return d.els.length&&d.els.some(x=>e.includes(x))?.5:1;}
+function deptCp(b,d){return b.origin==='root'?0:(d.cp||0);}
+function abilMp(b,a){
+  const o=a.o;
+  if(o.free&&o.free.every(x=>b.depts.includes(x)))return 0;
+  if(o.cheap&&b.details.includes(o.cheap[0]))return o.cheap[1];
+  return o.mp||1;
+}
+function eyeMp(b,e){if(e.art&&b.details.includes('artieye'))return 0;return e.mp;}
+function itemCp(b,it){const o=it.o;if(o.cheapDept&&b.depts.includes(o.cheapDept[0]))return o.cheapDept[1];if(o.cheapRace&&b.race===o.cheapRace[0])return o.cheapRace[1];return o.cp;}
+function itemAp(b,it){const o=it.o;if(o.apDept&&b.depts.includes(o.apDept[0]))return o.apDept[1];return o.ap||0;}
+function jrFp(b,j){if(j.id==='dismantle'&&b.jr.includes('hgw4')&&b.jr.includes('hgw5'))return 0;return j.fp;}
+function cyCalc(b){
+  const root=b.origin==='root';
+  const race=byId(CY_RACE,b.race),birth=byId(CY_BIRTH,b.birth),em=byId(CY_ELMODE,b.elMode);
+  const items=b.items.map(i=>byId(CY_ITEMS,i)),abil=b.abil.map(i=>byId(CY_ABIL,i)),eye=b.eye?byId(CY_EYE,b.eye):null;
+  const fbs=b.fb.map(i=>byId(CY_FB,i)),depts=b.depts.map(i=>byId(CY_DEPTS,i)),dets=b.details.map(i=>CY_DET[i]);
+  // 총량
+  let mpT=race.mp+items.reduce((s,i)=>s+(i.o.mp||0),0);
+  if(b.abil.includes('core'))mpT*=2;
+  let fpT=(b.origin==='plain'?5:0)+(race.fp||0)+items.reduce((s,i)=>s+(i.o.fp||0),0)+(b.fb.includes('home')?-1:0);
+  let cpT=birth.cp+(b.abil.includes('solo')?2:0)+dets.reduce((s,d)=>s+(d.o.cp||0),0);
+  let kpT=birth.kp+(b.abil.includes('solo')?2:0)+dets.reduce((s,d)=>s+(d.o.kp||0),0)+items.reduce((s,i)=>s+(i.o.kp||0),0);
+  // 사용
+  let mpU=depts.reduce((s,d)=>s+deptMp(b,d),0)+abil.reduce((s,a)=>s+abilMp(b,a),0)+(eye?eyeMp(b,eye):0);
+  let fpU=(birth.fp||0)+(root?0:em.fp)+b.jr.reduce((s,id)=>s+jrFp(b,CY_JRMAP[id]),0);
+  let cpU=depts.reduce((s,d)=>s+deptCp(b,d),0)+items.reduce((s,i)=>s+itemCp(b,i),0)+(b.rankUp?3:0)+(b.fb.includes('waste')?3:0);
+  let kpU=root?0:dets.length;
+  // 억지력
+  const gains=[race.ap||0,birth.ap||0,...depts.map(d=>d.ap||0),...dets.map(d=>d.o.ap||0),...abil.map(a=>a.o.ap||0),eye?(eye.ap||0):0,...items.map(i=>itemAp(b,i)),...fbs.map(f=>f.o.ap!==undefined?f.o.ap:-1)];
+  let ap=root?5:0;gains.forEach(g=>{ap+=g>0&&root?g*2:g;});
+  // 계위
+  const nEl=b.elMode==='avg'?5:b.elMode==='void'?1:em.need;
+  const na=abil.length+(eye?1:0),nd=depts.length,ndt=dets.length;
+  const rp=nEl+nd+ndt+na;
+  let rank=0;
+  if(nd>=1)rank=1;
+  if(rp>=5&&nd>=1)rank=2;
+  if(rp>=7&&nd>=1&&ndt>=1)rank=3;
+  if(nEl>=2&&na>=2)rank=Math.max(rank,4);
+  if(rp>=9&&nd>=2&&ndt>=2&&na>=1)rank=Math.max(rank,5);
+  if(rp>=11&&nd>=3&&ndt>=2&&na>=1)rank=Math.max(rank,6);
+  if(rp>=16&&nd>=4&&ndt>=3&&na>=2)rank=7;
+  if(b.rankUp&&rank>=1&&rank<7)rank++;
+  const noRank=b.fb.includes('home');
+  const apAbility=abil.some(a=>(a.o.ap||0)>0)||(eye&&(eye.ap||0)>0);
+  // 오류
+  const errs=[];
+  const left={mp:mpT-mpU,fp:fpT-fpU,cp:cpT-cpU,kp:kpT-kpU};
+  if(left.mp<-1e-9)errs.push(`마나가 ${fmtP(-left.mp)} 모자라요.`);
+  if(left.fp<-1e-9)errs.push(`운명력이 ${fmtP(-left.fp)} 모자라요.`);
+  if(left.cp<-1e-9)errs.push(`자본이 ${fmtP(-left.cp)} 모자라요.`);
+  if(left.kp<-1e-9)errs.push(`각인이 ${fmtP(-left.kp)} 모자라요.`);
+  if(em.need&&b.els.length<em.need)errs.push(`마술속성을 ${em.need}개 골라 주세요.`);
+  dets.forEach(d=>{if(!b.depts.includes(d.dept))errs.push(`세부 항목 「${d.n}」은(는) 해당 계통이 필요해요.`);});
+  b.jr.forEach(id=>{const why=jrReq(b,CY_JRMAP[id],true);if(why)errs.push(`행적 「${CY_JRMAP[id].n}」: ${why}`);});
+  b.fb.forEach(id=>{const why=fbReq(b,byId(CY_FB,id));if(why)errs.push(`피드백 「${byId(CY_FB,id).n}」: ${why}`);});
+  b.abil.forEach(id=>{const a=byId(CY_ABIL,id);if(a.o.notRace===b.race)errs.push(`「${a.n}」은(는) 이 종족으로 고를 수 없어요.`);});
+  if(root&&b.items.length)errs.push('근원접속자는 마술예장을 고를 수 없어요.');
+  if(b.rankUp&&(rank<=1&&!(nd>=1)))errs.push('계위가 없으면 계위를 올릴 수 없어요.');
+  return {mpT,fpT,cpT,kpT,mpU,fpU,cpU,kpU,left,ap,rp,rank,noRank,apAbility,errs,nEl,na,nd,ndt};
+}
+function fmtP(v){const r=Math.round(v*100)/100;return (Number.isInteger(r)?r:r.toFixed(2).replace(/0$/,''))+'';}
+function jrReq(b,j,final){
+  if(j.req==='puppeteer'&&!b.details.includes('puppeteer'))return '세부 항목 「색위의 인형사」가 필요해요.';
+  if(j.req==='create'&&!b.depts.includes('create'))return '마술계통 「창조」가 필요해요.';
+  if(j.req==='arch'&&(!b.depts.includes('arch')||!b.jr.includes('chaos')))return '마술계통 「고고학」과 행적 「사도: 교수 추적」이 필요해요.';
+  if(j.req==='vamp'&&b.race!=='vamp')return '종족 「흡혈귀·사도」가 필요해요.';
+  if(j.req==='root'&&b.origin!=='root')return '기원 「근원접속자」가 필요해요.';
+  if(j.req==='aplow'&&cyCalcApRaw(b)>=5)return '억지력이 5 미만이어야 해요.';
+  return '';
+}
+function cyCalcApRaw(b){const bb=Object.assign({},b,{jr:[]});return cyCalc(bb).ap;}
+function fbReq(b,f){
+  const o=f.o;
+  if(o.noEye&&b.eye)return '마안과 함께 고를 수 없어요.';
+  if(o.noAbil&&b.abil.includes(o.noAbil))return '마력노심과 함께 고를 수 없어요.';
+  if(o.race&&b.race!==o.race)return '혼혈만 고를 수 있어요.';
+  if(o.dept&&!b.depts.includes(o.dept))return `마술계통 「${byId(CY_DEPTS,o.dept).n}」이 필요해요.`;
+  if(o.notBirth&&b.birth===o.notBirth)return '평범한 가정과 함께 고를 수 없어요.';
+  if(o.item&&!b.items.includes(o.item))return '카레이도 스틱이 필요해요.';
+  return '';
+}
+
+/* ----- 설계 화면 ----- */
+let BLD=loadDraft()||cyBlank();
+let bStep=0;
+const STEPS=[
+  {k:'origin',n:'기원',h:'당신은 근원에 닿았고, 그 힘으로 새 몸을 짓습니다. 어떤 존재로 다시 태어날지 고르세요.'},
+  {k:'race',n:'종족',h:'종족이 기본 마나(MP)와 운명력(FP)을 정해요. 강한 종족일수록 억지력의 눈길을 끌어요.'},
+  {k:'birth',n:'출생',h:'출생이 자본(CP)과 각인(KP)을 정해요. 이름 있는 가문일수록 운명력이 들고 억지력이 붙어요.'},
+  {k:'element',n:'마술속성',h:'단일 속성은 무료예요. 드문 속성은 운명력이 들어요. 계통 속성과 맞으면 계통 비용이 절반이에요.'},
+  {k:'dept',n:'마술계통',h:'계통 하나에 마나 1(속성이 맞으면 0.5). 세부 항목은 하나에 각인 1이고, 그 계통을 골라야 고를 수 있어요.'},
+  {k:'abil',n:'능력',h:'능력은 기본 마나 1. 어떤 계통 둘을 함께 고르면 무료가 되는 능력도 있어요. 마안은 하나만 고를 수 있어요.'},
+  {k:'item',n:'마술예장',h:'예장은 인생 도중에 손에 들어와요. 자본(CP)으로 사요. 근원접속자는 고를 수 없어요.'},
+  {k:'fb',n:'피드백',h:'단점을 고르면 억지력이 줄어요. 고르지 않아도 돼요.'},
+  {k:'jr',n:'행적',h:'인생에서 겪을 사건을 미리 정해요. 운명력이 들고, 추천 계위보다 약하면 목숨을 잃을 수 있어요. 행적마다 선택지가 나와요.'},
+  {k:'rank',n:'계위·확인',h:'고른 속성·계통·세부 항목·능력의 개수가 계위 포인트가 되어 시계탑 계위를 정해요. 자본 3으로 한 단계 올릴 수 있어요.'}
+];
+function saveDraft(){try{localStorage.setItem('typemoon-life-draft',JSON.stringify(BLD));}catch(e){}}
+function loadDraft(){try{const d=JSON.parse(localStorage.getItem('typemoon-life-draft')||'null');if(d&&d.race&&Array.isArray(d.depts))return Object.assign(cyBlank(),d);}catch(e){}return null;}
+function chip(cls,t){return `<span class="chip ${cls}">${t}</span>`;}
+function apChip(v,root){if(!v)return '';const g=v>0&&root?v*2:v;return chip(g>0?'ap':'good',`억지력 ${g>0?'+':'−'}${fmtP(Math.abs(g))}`);}
+function optCard(o){
+  return `<button type="button" class="opt" data-k="${o.k}" data-id="${o.id}" aria-pressed="${o.on?'true':'false'}"${o.why&&!o.on?' disabled':''}>
+    <span class="on">${esc(o.n)}${o.tag?`<i>${esc(o.tag)}</i>`:''}</span>
+    ${o.chips?`<span class="chips">${o.chips}</span>`:''}
+    <span class="od2">${esc(o.d)}</span>
+    ${o.why&&!o.on?`<span class="why">${esc(o.why)}</span>`:''}
+  </button>`;
+}
+function renderBar(){
+  const c=cyCalc(BLD);
+  const pt=(cls,n,l,t)=>`<span class="pt ${cls}${l<-1e-9?' neg':''}">${n} <b>${fmtP(l)}</b><small>/${fmtP(t)}</small></span>`;
+  $('bBar').innerHTML=pt('mp','마나',c.left.mp,c.mpT)+pt('fp','운명력',c.left.fp,c.fpT)+pt('cp','자본',c.left.cp,c.cpT)+pt('kp','각인',c.left.kp,c.kpT)
+    +`<span class="pt ap">억지력 <b>${fmtP(c.ap)}</b></span><span class="pt rk">계위 <b>${c.noRank?'자택연구원':RANK_FULL[c.rank]}</b></span>`;
+  return c;
+}
+function renderBuilder(){
+  const c=renderBar();
+  $('bSteps').innerHTML=STEPS.map((s,i)=>`<button type="button" data-i="${i}"${i===bStep?' aria-current="step"':''} class="${i<bStep?'done':''}">${i+1}. ${s.n}</button>`).join('');
+  const st=STEPS[bStep];
+  $('bHead').innerHTML=`<div class="eyebrow">${bStep+1} / ${STEPS.length}</div><h2>${st.n}</h2><p>${esc(st.h)}</p>`;
+  const root=BLD.origin==='root';
+  let html='';
+  if(st.k==='origin'){
+    html=`<div class="ogrid">${CY_ORIGIN.map(o=>optCard({k:'origin',id:o.id,n:o.n,d:o.d,on:BLD.origin===o.id,chips:o.fp?chip('fp','운명력 +5'):chip('ap','억지력 5에서 시작')})).join('')}</div>`;
+  } else if(st.k==='race'){
+    html=`<div class="ogrid">${CY_RACE.map(r=>optCard({k:'race',id:r.id,n:r.n,d:r.d,on:BLD.race===r.id,chips:chip('mp','마나 '+r.mp)+chip('fp','운명력 '+r.fp)+apChip(r.ap,root)})).join('')}</div>`;
+  } else if(st.k==='birth'){
+    html=`<div class="ogrid">${CY_BIRTH.map(r=>optCard({k:'birth',id:r.id,n:r.n,d:r.d,on:BLD.birth===r.id,chips:(r.fp?chip('fp','운명력 −'+r.fp):'')+chip('kp','각인 '+r.kp)+chip('cp','자본 '+r.cp)+apChip(r.ap,root)})).join('')}</div>`;
+  } else if(st.k==='element'){
+    const em=byId(CY_ELMODE,BLD.elMode);
+    html=`<div class="ogrid">${CY_ELMODE.map(m=>optCard({k:'elmode',id:m.id,n:m.n,d:m.d,on:BLD.elMode===m.id,chips:m.fp&&!root?chip('fp','운명력 −'+m.fp):chip('free','무료')})).join('')}</div>`;
+    if(em.need) html+=`<div class="ogroup"><h4>속성 ${em.need}개 고르기 (${BLD.els.length}/${em.need})</h4><div class="elchips">${em.pool.map(e=>{const on=BLD.els.includes(e);return `<button type="button" data-el="${e}" aria-pressed="${on}"${!on&&BLD.els.length>=em.need?' disabled':''}>${EL_NAME[e]}</button>`;}).join('')}</div></div>`;
+  } else if(st.k==='dept'){
+    const mk=list=>list.map(d=>{
+      const on=BLD.depts.includes(d.id);const mp=deptMp(BLD,d),cp=deptCp(BLD,d);
+      let chips=(mp?chip('mp','마나 '+fmtP(mp)):'')+(cp?chip('cp','자본 '+cp):'')+(!mp&&!cp?chip('free','무료'):'')+apChip(d.ap,root);
+      const els=d.els===null?'속성 무관':d.els.length?d.els.map(e=>EL_NAME[e]).join('·'):'속성 없음';
+      let card=optCard({k:'dept',id:d.id,n:d.n,tag:els,d:d.d,on,chips});
+      if(on) card+=d.det.map(x=>{const dd=CY_DET[x[0]];const don=BLD.details.includes(dd.id);
+        return optCard({k:'detail',id:dd.id,n:'└ '+dd.n,d:dd.d,on:don,chips:(root?chip('free','무료'):chip('kp','각인 1'))+(dd.o.cp?chip('cp','자본 +'+dd.o.cp):'')+(dd.o.kp?chip('kp','각인 +'+dd.o.kp):'')+apChip(dd.o.ap,root)});}).join('');
+      return card;
+    }).join('');
+    html=`<div class="ogroup"><h4>시계탑 12학과</h4><div class="ogrid">${mk(CY_DEPTS.filter(d=>!d.side))}</div></div><div class="ogroup"><h4>외전</h4><div class="ogrid">${mk(CY_DEPTS.filter(d=>d.side))}</div></div>`;
+  } else if(st.k==='abil'){
+    html=`<div class="ogroup"><h4>능력</h4><div class="ogrid">${CY_ABIL.map(a=>{
+      const on=BLD.abil.includes(a.id);const mp=abilMp(BLD,a);
+      let why=a.o.notRace===BLD.race?'이 종족으로는 고를 수 없어요.':'';
+      if(a.id==='core'&&BLD.fb.includes('small'))why='작은 그릇과 함께 고를 수 없어요.';
+      const chips=(mp?chip('mp','마나 '+mp):chip('free','무료'))+(a.o.cp?chip('cp','자본 +'+a.o.cp):'')+(a.o.kp?chip('kp','각인 +'+a.o.kp):'')+apChip(a.o.ap,root)+(a.o.free&&mp?chip('','무료 조건: '+a.o.free.map(x=>byId(CY_DEPTS,x).n).join('+')):'');
+      return optCard({k:'abil',id:a.id,n:a.n,d:a.d,on,chips,why});}).join('')}</div></div>
+      <div class="ogroup"><h4>마안 (하나만)</h4><div class="ogrid">${CY_EYE.map(e=>{const on=BLD.eye===e.id;const mp=eyeMp(BLD,e);
+        return optCard({k:'eye',id:e.id,n:e.n,d:e.d,on,chips:(mp?chip('mp','마나 '+mp):chip('free','무료'))+apChip(e.ap,root),why:BLD.fb.includes('dark')?'영원한 어둠과 함께 고를 수 없어요.':''});}).join('')}</div></div>`;
+  } else if(st.k==='item'){
+    html=`<div class="ogrid">${CY_ITEMS.map(it=>{const on=BLD.items.includes(it.id);const cp=itemCp(BLD,it),ap=itemAp(BLD,it);
+      const g=it.o;const chips=chip('cp','자본 '+cp)+(g.mp?chip('mp','마나 +'+fmtP(g.mp)):'')+(g.fp?chip('fp','운명력 +'+fmtP(g.fp)):'')+(g.kp?chip('kp','각인 +'+fmtP(g.kp)):'')+apChip(ap,false);
+      return optCard({k:'item',id:it.id,n:it.n,d:it.d,on,chips,why:root?'근원접속자는 예장을 고를 수 없어요.':''});}).join('')}</div>`;
+  } else if(st.k==='fb'){
+    html=`<div class="ogrid">${CY_FB.map(f=>{const on=BLD.fb.includes(f.id);const ap=f.o.ap!==undefined?f.o.ap:-1;
+      return optCard({k:'fb',id:f.id,n:f.n,d:f.d,on,chips:apChip(ap,false)+(f.o.cp?chip('cp','자본 −'+f.o.cp):'')+(f.o.fp?chip('fp','운명력 −1'):''),why:fbReq(BLD,f)});}).join('')}</div>`;
+  } else if(st.k==='jr'){
+    html=`<div class="ogrid">${CY_JR.map(j=>{
+      const cnt=BLD.jr.filter(x=>x===j.id).length,on=cnt>0;const fp=jrFp(BLD,j);
+      const when=j.year?`${j.year}년`:j.minYear?`${j.minYear}년 이후`:j.age?`${j.age[0]}~${j.age[1]}세`:j.last?'여정의 끝':j.after?'교수 추적 이후':'';
+      const chips=(fp?chip('fp','운명력 −'+fp):chip('free','운명력 0'))+chip('','추천 '+RANK_FULL[j.rec])+chip('',when)+(j.war?chip('ap','서번트 소환'):'');
+      let card=optCard({k:'jr',id:j.id,n:j.n,tag:j.src,d:j.intro.length>110?j.intro.slice(0,108)+'…':j.intro,on,chips,why:jrReq(BLD,j)});
+      if(j.multi&&on) card=`<div class="optwrap">${card}<div class="counter" data-multi="${j.id}"><button type="button" data-d="-1" aria-label="한 번 빼기">−</button><b>${cnt}회</b><button type="button" data-d="1" aria-label="한 번 더">+</button></div></div>`;
+      return card;}).join('')}</div>`;
+  } else if(st.k==='rank'){
+    const race=byId(CY_RACE,BLD.race),birth=byId(CY_BIRTH,BLD.birth);
+    const nm=(arr,ids)=>ids.map(i=>byId(arr,i).n).join(', ')||'없음';
+    html=`<div class="ogrid">${optCard({k:'rankup',id:'up',n:'계위 한 단계 올리기',d:'자본 3을 써서 지금 계위에서 딱 한 단계 올라가요.',on:BLD.rankUp,chips:chip('cp','자본 3'),why:c.rank<1?'계위가 있어야 해요.':c.rank>=7&&!BLD.rankUp?'이미 최고 계위예요.':''})}</div>
+    <div class="sheetbox"><dl>
+      <dt>기원 · 종족</dt><dd>${byId(CY_ORIGIN,BLD.origin).n} · ${race.n}</dd>
+      <dt>출생</dt><dd>${birth.n}</dd>
+      <dt>마술속성</dt><dd>${byId(CY_ELMODE,BLD.elMode).n} (${cyEls(BLD).map(e=>EL_NAME[e]).join(', ')})</dd>
+      <dt>마술계통</dt><dd>${nm(CY_DEPTS,BLD.depts)}</dd>
+      <dt>세부 항목</dt><dd>${BLD.details.map(i=>CY_DET[i].n).join(', ')||'없음'}</dd>
+      <dt>능력</dt><dd>${[...BLD.abil.map(i=>byId(CY_ABIL,i).n),BLD.eye?byId(CY_EYE,BLD.eye).n+' 마안':null].filter(Boolean).join(', ')||'없음'}</dd>
+      <dt>마술예장</dt><dd>${nm(CY_ITEMS,BLD.items)}</dd>
+      <dt>피드백</dt><dd>${nm(CY_FB,BLD.fb)}</dd>
+      <dt>행적</dt><dd>${BLD.jr.map(i=>CY_JRMAP[i].n).join(', ')||'없음 (무지의 인생)'}</dd>
+      <dt>계위 포인트</dt><dd>${c.rp} → ${c.noRank?'자택연구원 (계위 없음)':RANK_FULL[c.rank]}</dd>
+      <dt>억지력</dt><dd>${fmtP(c.ap)} ${c.ap>=10?'· 위험':c.ap>=5?'· 노멀 엔딩 쪽':'· 트루 엔딩 쪽'}</dd>
+    </dl>${c.errs.length?`<ul class="errs">${c.errs.map(e=>`<li>${esc(e)}</li>`).join('')}</ul>`:''}</div>`;
+  }
+  $('bBody').innerHTML=html;
+  $('bPrev').disabled=bStep===0;
+  $('bNext').hidden=bStep===STEPS.length-1;
+  $('bGo').disabled=c.errs.length>0;
+  $('bGo').title=c.errs.length?c.errs[0]:'';
+  saveDraft();
+}
+function pruneBuild(b){
+  b.details=b.details.filter(d=>b.depts.includes(CY_DET[d].dept));
+  if(b.origin==='root')b.items=[];
+  for(let k=0;k<3;k++){
+    b.fb=b.fb.filter(id=>!fbReq(b,byId(CY_FB,id)));
+    b.jr=b.jr.filter(id=>!jrReq(b,CY_JRMAP[id]));
+  }
+  b.abil=b.abil.filter(id=>byId(CY_ABIL,id).o.notRace!==b.race);
+  const em=byId(CY_ELMODE,b.elMode);b.els=b.els.filter(e=>em.pool.includes(e)).slice(0,em.need);
+}
+function toggle(arr,id){const i=arr.indexOf(id);if(i>=0)arr.splice(i,1);else arr.push(id);}
+function onBuilderClick(ev){
+  const st=ev.target.closest('.steps button');if(st){bStep=+st.dataset.i;renderBuilder();window.scrollTo({top:$('builder').offsetTop-8});return;}
+  const el=ev.target.closest('[data-el]');if(el&&!el.disabled){toggle(BLD.els,el.dataset.el);renderBuilder();return;}
+  const mc=ev.target.closest('.counter button');if(mc){ev.stopPropagation();const id=mc.parentElement.dataset.multi;
+    if(+mc.dataset.d>0)BLD.jr.push(id);else{const i=BLD.jr.indexOf(id);if(i>=0)BLD.jr.splice(i,1);}pruneBuild(BLD);renderBuilder();return;}
+  const o=ev.target.closest('.opt');if(!o||o.disabled)return;
+  const k=o.dataset.k,id=o.dataset.id;
+  if(k==='origin')BLD.origin=id;
+  else if(k==='race')BLD.race=id;
+  else if(k==='birth')BLD.birth=id;
+  else if(k==='elmode'){BLD.elMode=id;const em=byId(CY_ELMODE,id);BLD.els=BLD.els.filter(e=>em.pool.includes(e)).slice(0,em.need);if(em.need&&!BLD.els.length)BLD.els=[em.pool[0]];}
+  else if(k==='dept')toggle(BLD.depts,id);
+  else if(k==='detail')toggle(BLD.details,id);
+  else if(k==='abil')toggle(BLD.abil,id);
+  else if(k==='eye')BLD.eye=BLD.eye===id?null:id;
+  else if(k==='item')toggle(BLD.items,id);
+  else if(k==='fb')toggle(BLD.fb,id);
+  else if(k==='jr'){if(BLD.jr.includes(id))BLD.jr=BLD.jr.filter(x=>x!==id);else BLD.jr.push(id);}
+  else if(k==='rankup')BLD.rankUp=!BLD.rankUp;
+  pruneBuild(BLD);renderBuilder();
+}
+
+/* ----- 무작위 루트 ----- */
+function randomBuild(){
+  const r=Math.random;const pk=a=>a[Math.floor(r()*a.length)];
+  const wp=(list)=>{let t=list.reduce((s,x)=>s+x[1],0),v=r()*t;for(const x of list){v-=x[1];if(v<=0)return x[0];}return list[0][0];};
+  const ok=b=>{const c=cyCalc(b);return c.errs.length===0;};
+  let b=cyBlank();
+  b.origin=r()<.88?'plain':'root';
+  b.race=wp([['human',50],['vamp',10],['homun',10],['half',15],['dragon',6],['true',6]]);
+  b.birth=wp([['plain',30],['magus',30],['noble',12],['lord',6],['church',12],['user',10]]);
+  if(!ok(b))b.birth='plain';
+  b.elMode=wp([['single',68],['void',8],['double',13],['triple',8],['avg',3]]);
+  const em=byId(CY_ELMODE,b.elMode);const pool=em.pool.slice().sort(()=>r()-.5);b.els=pool.slice(0,em.need);
+  if(!ok(b)){b.elMode='single';b.els=[pk(['지','수','화','풍','공'])];}
+  const tryAdd=f=>{const nb=JSON.parse(JSON.stringify(b));f(nb);pruneBuild(nb);if(ok(nb)){b=nb;return true;}return false;};
+  for(let it=0;it<260;it++){
+    const act=wp([['dept',5],['det',4],['abil',4],['eye',1],['item',3],['jr',4],['rank',.4]]);
+    if(act==='dept')tryAdd(x=>{const d=pk(CY_DEPTS);if(!x.depts.includes(d.id))x.depts.push(d.id);});
+    else if(act==='det'&&b.depts.length)tryAdd(x=>{const d=byId(CY_DEPTS,pk(x.depts));const dd=pk(d.det)[0];if(!x.details.includes(dd))x.details.push(dd);});
+    else if(act==='abil')tryAdd(x=>{const a=pk(CY_ABIL);if(a.id==='solo'&&r()<.7)return;if(!x.abil.includes(a.id))x.abil.push(a.id);});
+    else if(act==='eye'&&!b.eye)tryAdd(x=>{x.eye=wp([['noble',4],['color',3],['gold',2],['jewel',1],['rainbow',.3]]);});
+    else if(act==='item'&&b.origin!=='root')tryAdd(x=>{const i=pk(CY_ITEMS);if(!x.items.includes(i.id))x.items.push(i.id);});
+    else if(act==='jr')tryAdd(x=>{const j=pk(CY_JR);if(j.multi||!x.jr.includes(j.id))x.jr.push(j.id);});
+    else if(act==='rank'&&!b.rankUp)tryAdd(x=>{x.rankUp=true;});
+  }
+  const nfb=wp([[0,5],[1,4],[2,2]]);
+  for(let i=0;i<nfb;i++)tryAdd(x=>{const f=pk(CY_FB);if(!x.fb.includes(f.id))x.fb.push(f.id);});
+  // 남은 운명력은 행적에
+  for(let i=0;i<40;i++)tryAdd(x=>{const j=pk(CY_JR);if(j.multi||!x.jr.includes(j.id))x.jr.push(j.id);});
+  return b;
+}
+
+/* ----- 설계한 인생 ----- */
+function pickCountryFor(b){
+  const C=n=>COUNTRIES.find(c=>c.n===n);
+  const w=list=>C(wpick(list,x=>x[1])[0]);
+  if(b.race==='true')return w([['핀란드',5],['독일',3],['루마니아',2]]);
+  if(b.race==='dragon')return w([['영국',6],['독일',2],['중국',2]]);
+  if(b.race==='homun')return w([['독일',8],['이집트',1],['일본',1]]);
+  if(b.race==='vamp'&&chance(.35))return C('루마니아');
+  if(b.birth==='lord'||b.birth==='noble')return chance(.6)?C('영국'):w([['독일',3],['프랑스',3],['이탈리아',2],['핀란드',1],['루마니아',1]]);
+  if(b.birth==='magus')return w([['영국',30],['독일',15],['일본',15],['이탈리아',10],['프랑스',10],['이집트',5],['미국',10],['러시아',5]]);
+  if(b.birth==='church')return w([['이탈리아',35],['프랑스',15],['스페인',15],['필리핀',10],['폴란드',10],['브라질',15]]);
+  if(b.birth==='user')return w([['미국',50],['일본',20],['영국',10],['독일',20]]);
+  return wpick(COUNTRIES,x=>x.w);
+}
+function scheduleJourneys(b,birthYear){
+  const list=[];
+  const used=new Set();
+  const put=(id,year)=>{while(used.has(year))year++;used.add(year);list.push({id,year,st:'plan'});};
+  const fixed=b.jr.filter(id=>CY_JRMAP[id].year).map(id=>[id,CY_JRMAP[id].year]);
+  fixed.forEach(([id,y])=>put(id,y));
+  let lesserN=0;
+  b.jr.forEach(id=>{
+    const j=CY_JRMAP[id];
+    if(j.year||j.last||j.after)return;
+    if(j.minYear){put(id,Math.max(j.minYear,birthYear+18)+lesserN*ri(1,3)+ri(0,4));lesserN++;return;}
+    if(j.age)put(id,birthYear+ri(j.age[0],j.age[1]));
+  });
+  b.jr.forEach(id=>{const j=CY_JRMAP[id];if(j.after){const a=list.find(x=>x.id===j.after);put(id,(a?a.year:birthYear+30)+ri(1,4));}});
+  list.sort((a,b2)=>a.year-b2.year);
+  if(b.jr.includes('fortnia')){const lastY=list.length?list[list.length-1].year:birthYear+40;put('fortnia',Math.max(lastY+ri(2,6),birthYear+45));}
+  list.sort((a,b2)=>a.year-b2.year);
+  return list;
+}
+function cyBirthYear(b){
+  const ys=b.jr.map(id=>CY_JRMAP[id]).filter(j=>j.year||j.minYear).map(j=>j.year||j.minYear);
+  if(!ys.length)return ri(1965,1998);
+  const mn=Math.min(...ys),mx=Math.max(...ys);
+  let by=mn-ri(19,27);
+  const longLived=['vamp','true','dragon'].includes(b.race);
+  if(!longLived&&mx-by>62)by=mx-62;
+  if(mn-by<15)by=mn-15;
+  return clamp(by,1900,2008);
+}
+function newLifeCyoa(b,seed){
+  rng=mulberry32(seed);
+  const c=cyCalc(b);
+  const country=pickCountryFor(b);
+  const g=chance(.5)?'m':'f';
+  const birthYear=cyBirthYear(b);
+  S={seed,code:'',cyoa:true,b:JSON.parse(JSON.stringify(b)),calc:c,country,gender:g,name:makeName(country.nm,g),
+    birthYear,age:0,alive:true,rar:[],events:[],
+    health:clamp(Math.round(75+gauss()*10),35,100),mental:clamp(Math.round(62+gauss()*12),20,100),luck:ri(1,100),
+    wealth:0,edu:'none',job:null,married:false,kids:0,parents:2,retired:false,
+    mage:b.depts.length>0||['magus','noble','lord','user'].includes(b.birth),church:b.birth==='church',
+    heir:['magus','noble','lord'].includes(b.birth),crestGen:{plain:0,magus:5,noble:15,lord:30,church:0,user:2}[b.birth],
+    famType:byId(CY_BIRTH,b.birth).n,circuits:0,qual:'C',element:cyEls(b).map(e=>EL_NAME[e]).join('·'),
+    origin:b.origin==='root'?'근원':pick(ORIGINS),originKnown:b.origin==='root',
+    eyes:b.eye?{n:byId(CY_EYE,b.eye).n+' 마안',g:byId(CY_EYE,b.eye).g}:null,eyesKnown:true,aware:true,
+    academy:null,dept:null,rank:-1,apostle:false,seals:0,servant:null,warCount:0,grailWin:false,
+    halfblood:b.race==='half',leBonus:0,mil:true,
+    targetRank:c.noRank?0:c.rank,curRank:0,noRank:c.noRank,cpLeft:c.left.cp,ap:c.ap,apAbility:c.apAbility,
+    jexp:0,gotAbil:[],gotItems:[],gotDet:[],color:null,fortnia:false,ancestor:false,fugitive:false,sealDone:false,
+    pending:null,deadEnd:null};
+  S.year=birthYear;
+  S.circuits=Math.round(c.mpT*7+ri(2,8));
+  S.qual=c.mpT<3?'D':c.mpT<5?'C':c.mpT<8?'B':'A';
+  S.wealth=clamp(Math.round({plain:(country.le-50)*1.3,magus:55,noble:70,lord:85,church:35,user:65}[b.birth]+gauss()*10),3,98);
+  if(b.fb.includes('waste'))S.wealth=clamp(S.wealth-25,2,98);
+  S.sched=scheduleJourneys(b,birthYear);
+  const lastY=S.sched.length?S.sched[S.sched.length-1].year:birthYear;
+  S.lastJY=lastY;
+  S.long=['vamp','true','dragon'].includes(b.race);
+  if(S.long)S.endYear=Math.max(lastY,birthYear+40)+ri(30,140);
+  if(b.race==='homun')S.lifespan=Math.max(ri(28,42),lastY-birthYear+2);
+  S.city=country.n==='일본'&&(b.jr.includes('hgw4')||b.jr.includes('hgw5'))?'후유키 시':pick(country.cities);
+  S.itemAt=b.items.map(id=>({id,age:ri(14,40)}));
+  S.awakenAge=ri(9,15);
+  const place=country.n+' '+S.city;
+  log(`근원에서 빠져나와 새 몸으로 태어났다. ${place}, ${g==='m'?'남자':'여자'}아이. 이름은 ${S.name}.`,'moon',true);
+  log({plain:'평범한 가정이다. 이 아이가 마술을 알게 되는 건 한참 뒤의 일이다.',magus:'5대째 이어진 마술사 가문. 지하에는 공방이 있다.',noble:'500년을 이어 온 시계탑의 귀족 가문. 아이가 태어난 날, 가문 문장이 새로 걸렸다.',lord:'시계탑 한 학과를 다스리는 로드의 가문. 천 년의 무게가 요람 위에 내려앉았다.',church:'교회의 고아원에서 자랐다. 신부들은 아이의 손에 일찍 흑건을 쥐여 줄 것이다.',user:'과학과 마술을 함께 쓰는 집안. 근원보다는 쓸모를 좇는 사람들이다.'}[b.birth],b.birth==='plain'?'life':'moon');
+  const rl={vamp:'심장은 뛰지만 몸은 늙지 않는다. 피의 맛을 알게 되는 건 시간문제다.',homun:'만들어진 몸. 정해진 수명이 몸 안에서 째깍거린다.',half:'핏속에 사람이 아닌 것이 섞여 있다.',dragon:'숨을 쉴 때마다 마력이 넘친다. 이 몸은 용의 것이다.',true:'별이 빚은 흡혈종, 진조로 깨어났다.'}[b.race];
+  if(rl)log(rl,'moon');
+  if(b.origin==='root')log('근원과의 마지막 연결이 아직 가늘게 남아 있다.','moon');
+  if(S.sched.length)log(`앞으로 겪을 행적: ${S.sched.map(j=>CY_JRMAP[j.id].n+'('+j.year+')').join(', ')}. 태어나는 순간 잊어버렸다.`,'moon');
+}
+function cyPower(){
+  const b=S.b;
+  let p=S.targetRank*.7+S.curRank*.3;
+  b.abil.forEach(id=>{p+=.3+(byId(CY_ABIL,id).o.pw||0);});
+  S.gotAbil.forEach(()=>p+=.4);
+  if(b.eye)p+=.2+(byId(CY_EYE,b.eye).pw||0);
+  b.items.concat(S.gotItems).forEach(id=>{p+=byId(CY_ITEMS,id).o.pw||0;});
+  p+={human:0,vamp:1,homun:.3,half:.6,dragon:2,true:2.5}[b.race];
+  p+=Math.min(b.depts.length,5)*.15+S.jexp+(S.luck-50)/120;
+  if(b.fb.includes('careless'))p-=.3;
+  if(b.fb.includes('legs'))p-=.3;
+  if(b.fb.includes('wrongorigin'))p-=.5;
+  return p;
+}
+function hasConcept(){return S.b.eye==='rainbow'||S.b.items.concat(S.gotItems).some(id=>byId(CY_ITEMS,id).o.concept);}
+function cyoaStep(){
+  S.age++;S.year++;
+  if(!S.long){
+    if(S.age>45)S.health-=R()*(S.age>75?2.6:S.age>60?1.6:.9);
+    if(S.age>18&&S.age<45)S.health+=R()*.6;
+  } else if(S.age>18) S.health+=1;
+  S.health=clamp(S.health,1,100);S.mental=clamp(S.mental,1,100);S.wealth=clamp(S.wealth,0,100);
+  worldNews();
+  lifeStage();
+  if(!S.alive)return;
+  const j=S.sched.find(x=>x.year===S.year&&x.st==='plan');
+  if(j){runJourney(j);return;}
+  cyFlavor();
+  if(!S.alive||S.pending)return;
+  if(chance(.4))mundane();
+  cyDeath();
+}
+function cyDeath(){
+  if(!S.alive)return;
+  if(S.year<=S.lastJY)return; // 운명이 다할 때까지는 죽지 않는다
+  if(S.long){
+    if(S.year>=S.endYear){S.alive=false;S.deathAge=S.age;S.cause='여정의 끝';log('긴 세월이 흘렀다. 이 세상에서 해야 할 일은 모두 끝났다.','death',true);}
+    return;
+  }
+  if(S.b.race==='homun'&&S.age>=S.lifespan){die('수명','만들어진 몸이 수명을 다했다. 조용히 눈을 감았다.');return;}
+  naturalDeath();
+}
+function cyFlavor(){
+  const a=S.age,b=S.b;
+  if(a===4&&b.birth!=='plain')log({magus:'마술 수련이 시작됐다. 몸 안의 회로를 여는 감각을 배웠다.',noble:'가정교사들이 붙었다. 하루의 절반은 마술, 나머지는 예법이었다.',lord:'로드의 후계자로서 교육이 시작됐다. 실수는 허락되지 않았다.',church:'성경 대신 흑건을 쥐는 법부터 배웠다.',user:'첫 장난감은 마력을 재는 기계였다.'}[b.birth],'moon');
+  if(a===9&&S.heir){
+    S.health-=6;
+    log(b.fb.includes('last')?'마술각인을 이식받았다. 이것을 물려줄 다음 대는 없다. 당신이 마지막 후계자다.':`${S.crestGen}대의 마술각인을 이식받았다. 몇 주 동안 열이 내리지 않았다.`,'moon',true);
+  }
+  if(b.birth==='plain'&&S.mage&&a===S.awakenAge)log('어느 날 몸 안에서 뜨거운 것이 흘렀다. 떠돌이 마술사가 그걸 알아보고 제자로 삼았다.','moon',true);
+  S.itemAt.forEach(x=>{if(x.age===a)log(`마술예장 「${byId(CY_ITEMS,x.id).n}」을(를) 손에 넣었다.`,'joy');});
+  // 시계탑과 계위
+  if(!S.noRank&&S.targetRank>0){
+    const clockPlanned=S.sched.some(x=>x.id==='clock'&&x.st==='plan');
+    if(!S.academy&&a===19&&!clockPlanned){S.academy='시계탑';log('런던의 시계탑에 들어갔다.','moon',true);}
+    if(S.academy&&S.curRank===0){S.curRank=1;log(`계위 「${RANK_FULL[1]}」을(를) 받았다.`,'moon');}
+    else if(S.academy&&S.curRank<S.targetRank&&a>=19&&(chance(.18)||a>=46)){
+      S.curRank++;log(`계위가 「${RANK_FULL[S.curRank]}」(으)로 올랐다.`,S.curRank>=5?'joy':'moon',S.curRank>=5);
+      if(S.curRank===7)major({kind:'gold',eyebrow:'시계탑',title:'그랜드(관위)',body:'시계탑의 긴 역사에서도 손에 꼽는 전설의 계위에 올랐다.'});
+    }
+  }
+  if(S.noRank&&a===24)log('실력은 충분했지만 어떤 자리도 얻지 못했다. 집에 틀어박혀 연구를 이어 갔다.','moon');
+  // 능력과 피드백, 종족
+  if(a>=12&&chance(.16)){
+    const all=b.abil.map(id=>byId(CY_ABIL,id).n).concat(S.gotAbil);
+    if(all.length)log(`「${pick(all)}」을(를) ${pick(['처음으로 제대로 써 보았다','밤새 갈고닦았다','실전에서 썼다','제자에게 보여 주었다','몰래 시험해 보았다'])}.`,'moon');
+  }
+  if(b.fb.length&&a>=10&&chance(.07)){
+    const f=pick(b.fb);
+    const t={legs:'휠체어 바퀴가 또 계단 앞에서 멈췄다.',dark:'어둠 속에서 소리로 세상을 그렸다.',small:'마나가 모자라 술식이 중간에 꺼졌다.',careless:'상대를 얕보다 큰코다칠 뻔했다.',numb:'남들이 우는 장면에서 우는 연기를 했다.',pacifist:'싸움을 피하려고 먼 길을 돌아갔다.',worldly:'근원보다 좋은 혼처와 명예가 먼저 눈에 들어왔다.',depend:'스승의 연락이 끊기자 불안해서 잠을 못 잤다.',home:'오늘도 집 밖에 나가지 않았다.',headache:'두통이 찾아왔다. 하루 종일 날이 서 있었다.',crimson:'피가 끓어올라 잠시 기억이 끊겼다.',waste:'또 쓸데없는 골동품을 샀다. 빚 독촉장이 쌓였다.',dual:'카드를 미리 만들어 두지 않아 손을 쓰지 못했다.',last:'친척들이 후계자 이야기를 꺼낼 때마다 숨이 막혔다.',knight:'모르는 사람을 돕다가 일에 휘말렸다.',kmagic:'마술이 쓸데없이 화려해서 또 협회의 경고를 받았다.',wrongorigin:'마술을 쓴 뒤 피를 토했다.',redshadow:'뒤돌아보면 붉은 그림자가 서 있다. 오늘은 조금 가까워졌다.'}[f];
+    log(t,f==='wrongorigin'||f==='crimson'?'risk':'life');
+    if(f==='waste')S.wealth-=5;
+  }
+  if(b.race==='vamp'&&a>=16&&chance(.12))log(pick(['피를 마셨다. 이번에는 아무도 죽지 않았다.','교회 대행자의 추적을 따돌렸다.','이름과 얼굴을 바꿨다.']),'moon');
+  if(b.race==='true'&&a>=16&&chance(.08))log('공상구현화로 하룻밤 사이에 숲 하나를 바꿔 놓았다.','moon');
+  if(b.race==='dragon'&&a>=16&&chance(.08))log('숨을 고르자 마력이 넘쳐 주변의 기계가 멈췄다.','moon');
+  if(b.race==='half'&&a>=14&&chance(.06))log('피가 날뛰어 머리카락이 붉게 물들었다. 한동안 사람을 피했다.','risk');
+  if(S.mage&&a>=15&&chance(.22))log(pick(['새로운 술식을 완성했다. 논문은 동료들에게 무시당했다.','공방의 결계를 다시 짰다.','라이벌 마술사와 결투했다. 무승부였다.','오래된 마도서를 해독했다.','실패한 실험이 공방 절반을 날려 버렸다.','제자를 하나 받았다.','근원에 관한 가설을 하나 세웠다.','이국의 영지를 조사하러 떠났다.']),'moon');
+  if(S.church&&a>=16&&a<=55&&chance(.25))log(pick(['이단 마술사를 처단하는 임무에 나섰다.','사도의 권속을 정화했다.','성유물을 회수했다.','마술협회와 신경전을 벌였다.']),'moon');
+  // 봉인지정
+  if(S.apAbility&&!S.sealDone&&a>=25&&a<=55&&chance(.03)){
+    S.sealDone=true;
+    log('비의재시국의 지표가 당신을 가리켰다. 「봉인지정」. 집행자들이 공방으로 오고 있다.','risk',true);
+    S.pending={eyebrow:'봉인지정',title:'집행자가 온다',body:'봉인지정은 보호 명령이라는 이름의 영구 보존이에요. 어떻게 할까요?',tone:'',options:[
+      {label:'공방을 버리고 달아난다',sub:'계속 쫓기며 살아요',fn:()=>{S.fugitive=true;log('공방을 불태우고 이름을 버린 채 달아났다.','risk',true);}},
+      {label:'집행자와 맞서 싸운다',sub:'이기면 자유, 지면 끝이에요',fn:()=>{
+        const p=clamp(1/(1+Math.exp(-(cyPower()-5)*1.1)),.05,.95);
+        if(chance(p)){S.fugitive=true;log('집행자들을 물리쳤다. 그래도 협회의 추적은 끝나지 않는다.','risk',true);}
+        else{S.deadEnd='봉인지정 집행자';S.deadText='집행자들을 이기지 못했다. 회로와 각인은 표본 병 속에 보존되었다.';die('봉인지정 집행자',S.deadText);}
+      }},
+      {label:'봉인지정을 받아들인다',sub:'여기서 인생이 끝나요',fn:()=>{S.deadEnd='봉인지정';S.deadText='저항하지 않았다. 시계탑은 당신을 표본으로 영원히 보존했다.';S.alive=false;S.deathAge=S.age;S.cause='봉인지정';log(S.deadText,'death',true);}}
+    ]};
+  }
+}
+function runJourney(j){
+  const J=CY_JRMAP[j.id];
+  const cat=J.war?'grail':'moon';
+  log(`행적 「${J.n}」(${J.src})이(가) 시작됐다.`,cat,true);
+  let sv=null;
+  if(J.war){
+    const cat2=S.wealth>=60||S.b.birth==='lord'||S.b.birth==='noble';
+    sv=rollServant(cat2);S.servant=sv;S.seals=3;S.warCount++;
+    log(`오른손 등에 영주가 새겨졌다. 소환에 응한 것은 ${sv.cls}, 진명 「${sv.name}」. ${'★'.repeat(sv.tier)}${'☆'.repeat(5-sv.tier)}`,'grail',true);
+    major({kind:'summon',sv,war:J.n});
+  }
+  const pw=cyPower()+(sv?(sv.tier-3)*.7:0)-(J.need==='concept'&&!hasConcept()?2:0);
+  const gap=pw-J.rec;
+  const hint=J.deadly===0?'':gap>=1?'당신에게는 쉬운 일이에요.':gap>=0?'해볼 만해요.':gap>=-1.5?'버거운 상대예요.':'추천 계위에 한참 못 미쳐요. 목숨이 걸렸어요.';
+  S.pending={eyebrow:`${J.src} · 추천 ${RANK_FULL[J.rec]}`,title:J.n,body:J.intro+(hint?' '+hint:''),tone:J.war?'summon':'',
+    options:J.ch.map((c,i)=>({label:c[0],sub:c[1],fn:()=>resolveJourney(j,J,i,sv)}))};
+}
+function resolveJourney(j,J,i,sv){
+  const c=J.ch[i];
+  log(c[2],J.war?'grail':'moon');
+  let pw=cyPower()+(sv?(sv.tier-3)*.7:0)+c[3];
+  if(J.need==='concept'&&!hasConcept())pw-=2;
+  if(sv&&S.seals>0&&pw<J.rec){S.seals--;pw+=.6;log(`영주 1획을 사용했다. "${pick(['이겨라','보구를 해방해','물러서지 마'])}!"`,'grail');}
+  const p=J.deadly===0?1:clamp(1/(1+Math.exp(-(pw-J.rec)*1.1)),.05,.97);
+  if(chance(p)){
+    j.st='ok';S.jexp+=.3;S.mental+=4;
+    log(J.win,'joy',true);
+    if(sv){S.grailWin=J.id!=='apoc';S.servantSurvived=true;log(`${sv.name}이(가) 마지막으로 웃으며 사라졌다.`,'grail');S.servant=null;}
+    giveReward(J);
+  } else {
+    const dp=clamp(.3+(J.rec-pw)*.12,.08,.85)*(J.deadly===undefined?1:J.deadly);
+    if(sv){S.servant=null;}
+    if(chance(dp)){j.st='dead';S.deadEnd=J.n;S.deadText=J.die;die(J.n,J.die);}
+    else{j.st='fail';S.health-=18;S.mental-=10;log(J.lose,'risk',true);if(J.r.t==='academy'&&J.always)S.academy='시계탑';}
+  }
+}
+function giveAbility(){
+  const pool=CY_ABIL.filter(a=>a.id!=='solo'&&!S.b.abil.includes(a.id)&&!S.gotAbil.includes(a.n));
+  if(!pool.length){log('이미 모든 능력을 가지고 있었다. 대신 실력이 한층 깊어졌다.','joy');S.jexp+=.3;return;}
+  const a=pick(pool);S.gotAbil.push(a.n);
+  log(`싸움의 경험으로 능력 「${a.n}」을(를) 얻었다. 억지력은 움직이지 않았다.`,'joy',true);
+}
+function giveReward(J){
+  const r=J.r;
+  if(r.t==='academy'){S.academy='시계탑';}
+  else if(r.t==='cp'){S.cpLeft+=r.n;S.wealth+=8*r.n;}
+  else if(r.t==='kp'){
+    const pool=S.b.depts.flatMap(d=>byId(CY_DEPTS,d).det.map(x=>x[0])).filter(id=>!S.b.details.includes(id)&&!S.gotDet.includes(id));
+    if(pool.length){const id=pick(pool);S.gotDet.push(id);log(`세부 항목 「${CY_DET[id].n}」을(를) 익혔다.`,'joy');}
+    else S.jexp+=.3;
+  }
+  else if(r.t==='detail'){S.gotDet.push(r.id);}
+  else if(r.t==='item'){S.gotItems.push(r.id);}
+  else if(r.t==='ability'){giveAbility();}
+  else if(r.t==='rank'){
+    if(S.targetRank>=7||S.curRank>=7){S.color=pick(COLORS);log(`관위를 넘어 「${S.color}」의 색(色) 칭호를 받았다.`,'joy',true);}
+    else{S.targetRank=Math.min(7,S.targetRank+1);if(S.curRank<S.targetRank&&S.academy){S.curRank=Math.max(S.curRank,S.targetRank);}log(`그 공으로 계위가 「${RANK_FULL[S.targetRank]}」이(가) 되었다.`,'joy',true);}
+  }
+  else if(r.t==='ancestor'){S.ancestor=true;giveAbility();}
+  else if(r.t==='fortnia'){S.fortnia=true;}
+  else if(r.t==='pick'){
+    const lab={kp:['각인 포인트 1','세부 항목 하나를 새로 익혀요'],cp:['자본 포인트 1','돈과 연줄. 남은 자본이 늘어요'],ability:['능력 하나','억지력 없이 능력을 하나 얻어요']};
+    S.pending={eyebrow:J.n+' · 보상',title:'보상을 고르세요',body:'',options:r.o.map(k=>({label:lab[k][0],sub:lab[k][1],fn:()=>giveReward({r:k==='ability'?{t:'ability'}:{t:k,n:1}})}))};
+  }
+}
+function skipToChoice(){
+  skipping=true;clearTimeout(timer);$('modal').hidden=true;majorQueue.length=0;
+  const frag=document.createDocumentFragment();
+  logSink=e=>{const li=document.createElement('li');li.className=e.cat+(e.big?' big':'');li.innerHTML=`<span class="y">${e.y}</span><span class="a">${e.a}세</span><span class="t">${esc(e.text)}</span>`;frag.appendChild(li);};
+  let g=0;
+  while(S.alive&&!S.pending&&g++<1500){step();majorQueue.length=0;}
+  if(S.alive&&!S.pending){S.alive=false;S.deathAge=S.age;S.cause='여정의 끝';}
+  logEl.appendChild(frag);logSink=renderEntry;
+  skipping=false;
+  render();scrollLog();drain();
+}
+function renderCyoaCard(){
+  $('vCy').hidden=false;
+  $('vRank').textContent=S.noRank?'자택연구원':RANK_FULL[S.curRank]+(S.curRank<S.targetRank?` → ${RANK_FULL[S.targetRank]}`:'')+(S.color?` · ${S.color}`:'');
+  $('vAP').textContent=fmtP(S.ap)+(S.ap>=10?' · 위험':S.ap>=5?' · 높음':'');
+  const lab={plan:'예정',ok:'완료',fail:'실패',dead:'사망'};
+  $('vJr').innerHTML=S.sched.length?S.sched.map(j=>`<li class="${j.st}"><span>${esc(CY_JRMAP[j.id].n)}</span><span>${j.year} · ${lab[j.st]}</span></li>`).join(''):'<li><span class="unk">없음</span><span></span></li>';
+}
+function cyEndOptions(){
+  const ap=S.ap,grand=S.targetRank>=7||S.curRank>=7;
+  const hasSolo=S.b.abil.includes('solo'),red=S.b.fb.includes('redshadow');
+  return [
+    {id:'cy_true1',g:'True End',ok:ap<5,cond:'억지력 5 미만'},
+    {id:'cy_true2',g:'True End',ok:ap<5&&grand,cond:'억지력 5 미만 · 그랜드(관위)'},
+    {id:'cy_true3',g:'True End',ok:ap<5&&S.cpLeft>=3,cond:`억지력 5 미만 · 남은 자본 3 이상 (지금 ${fmtP(S.cpLeft)})`},
+    {id:'cy_norm1',g:'Normal End',ok:ap>=5,cond:'억지력 5 이상'},
+    {id:'cy_norm2',g:'Normal End',ok:ap>=5&&S.apAbility,cond:'억지력 5 이상 · 억지력을 얻는 능력'},
+    {id:'cy_norm3',g:'Normal End',ok:ap>=5&&grand,cond:'억지력 5 이상 · 그랜드(관위)'},
+    {id:'beast',g:'??? End',ok:ap>=10&&hasSolo&&!red&&S.fortnia,cond:'？？？'}
+  ];
+}
+function cyoaFinish(){
+  if(S.deadEnd){showCyoaEnd('cy_dead','Dead End',S.deadEnd+'에서 쓰러졌다',S.deadText||'');return;}
+  log('어느덧 시간이 찾아왔다. 근원과 세상을 잇는 통로의 끝이 눈앞에 있다.','moon',true);
+  render();scrollLog();
+  const opts=cyEndOptions();
+  S.pending={eyebrow:'결말',title:'최후의 선택',body:'지금까지의 선택이 당신에게 걸맞은 결말을 열어 두었어요. 하나를 고르세요.',options:opts.map(o=>{
+    const e=o.id==='beast'?['beast','？？？',''] :CY_ENDINGS.find(x=>x[0]===o.id);
+    return {label:o.ok?`${o.g} · ${o.id==='beast'?'？？？':e[1]}`:`${o.g} · 잠김`,sub:o.ok?'':o.cond,disabled:!o.ok,fn:()=>{o.id==='beast'?beastChain():showCyoaEnd(o.id,o.g,e[1],CY_END_TEXT[o.id]);}};
+  })};
+  drain();
+}
+function beastChain(){
+  S.pending={eyebrow:'??? End',tone:'beast',title:'정말로?',body:'정말 그 결말을 원해? 돌아가고 싶다면 지금이 마지막 기회야. 네 모든 선택의 책임은 네가 지게 될 테니까.',options:[
+    {label:'그 결말을 원한다',sub:'새로운 인류악의 탄생',fn:()=>{
+      log('사실 처음 근원에 닿은 순간부터 알고 있었다. 자신의 기원이 인류를 멸망시키는 악, 비스트의 조각이라는 것을.','grail',true);
+      S.pending={eyebrow:'인류악 현현 · 형태',tone:'beast',title:'어떤 모습으로 현현할까요',body:'',options:BEAST_FORM.map(f=>({label:f[1],sub:f[2],fn:()=>{S.beastForm=f[1];S.beastPow=[];beastPow();}}))};
+    }},
+    {label:'돌아간다',sub:'다른 결말을 고를래요',fn:()=>{S.finished=false;S.alive=false;cyoaFinish();}}
+  ]};
+}
+function beastPow(){
+  const left=BEAST_POW.filter(p=>!S.beastPow.includes(p[1]));
+  const opts=left.map(p=>({label:p[1],sub:p[2],fn:()=>{S.beastPow.push(p[1]);if(S.beastPow.length<2)beastPow();else beastFinal();}}));
+  if(S.beastPow.length)opts.push({label:'이걸로 충분하다',sub:'',fn:beastFinal});
+  S.pending={eyebrow:`짐승의 권능 · ${S.beastPow.length+1}번째`,tone:'beast',title:'권능을 고르세요',body:'단독현현(진)과 자기개조 EX는 이미 몸에 새겨졌어요. 두 개까지 더 고를 수 있어요.',options:opts};
+}
+function beastFinal(){
+  log(`「선택의 짐승」이 ${S.beastForm}(으)로 현현했다. 권능: 단독현현(진), 자기개조 EX${S.beastPow.length?', '+S.beastPow.join(', '):''}.`,'grail',true);
+  S.pending={eyebrow:'최후의 결말',tone:'beast',title:'세상의 끝, 혹은 당신의 끝',body:'결말은 하나만 고를 수 있어요.',options:['cy_beast1','cy_beast2','cy_beast3'].map(id=>{const e=CY_ENDINGS.find(x=>x[0]===id);return {label:e[1],sub:e[2],fn:()=>showCyoaEnd(id,'Beast End',e[1],CY_END_TEXT[id])};})};
+}
+function showCyoaEnd(key,group,title,text){
+  S.alive=false;S.finished=true;running=false;
+  const b=S.b,c=S.calc;
+  const jr=S.sched.map(j=>`${CY_JRMAP[j.id].n} (${({plan:'겪지 못함',ok:'완료',fail:'실패',dead:'사망'})[j.st]})`);
+  const got=[...S.gotAbil.map(n=>'능력 '+n),...S.gotDet.map(id=>'세부 '+CY_DET[id].n),...S.gotItems.map(id=>'예장 '+byId(CY_ITEMS,id).n)];
+  $('endBox').innerHTML=`<div class="ending${key.startsWith('cy_beast')?' beastend':''}" role="region" aria-label="결말">
+    <div class="eyebrow">${esc(group)} · ${S.deathAge}세</div>
+    <h3>${esc(title)}</h3>
+    <p class="etext">${esc(text)}</p>
+    <ul>
+      <li>${esc(byId(CY_ORIGIN,b.origin).n)} · ${esc(byId(CY_RACE,b.race).n)} · ${esc(byId(CY_BIRTH,b.birth).n)}</li>
+      <li>계위 ${esc(S.noRank?'자택연구원':RANK_FULL[Math.max(S.curRank,0)])}${S.color?' · '+esc(S.color):''} · 억지력 ${fmtP(S.ap)} · 남은 자본 ${fmtP(S.cpLeft)}</li>
+      ${jr.length?`<li>행적: ${esc(jr.join(', '))}</li>`:''}
+      ${got.length?`<li>얻은 것: ${esc(got.join(', '))}</li>`:''}
+    </ul>
+    <div class="row">
+      <button class="btn primary" type="button" id="bReb">같은 설계로 다시</button>
+      <button class="btn" type="button" id="bEdit">설계 고치기</button>
+      <button class="btn" type="button" id="bModes2">다른 방식으로</button>
+    </div>
+  </div>`;
+  $('bReb').onclick=()=>startCyoa(S.b);
+  $('bEdit').onclick=()=>{BLD=JSON.parse(JSON.stringify(S.b));showBuilder(STEPS.length-1);};
+  $('bModes2').onclick=showModes;
+  const st=loadStore();
+  st.total=(st.total||0)+1;st.endings[key]=(st.endings[key]||0)+1;
+  st.lives.unshift({name:S.name,c:S.country.n,y:S.birthYear,a:S.deathAge,k:key,r:0,code:''});st.lives=st.lives.slice(0,10);
+  try{localStorage.setItem(STORE,JSON.stringify(st));}catch(e){}
+  lastStore=st;renderDex();
+  $('bPause').disabled=true;$('bSkip').disabled=true;
+  $('endBox').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function startCyoa(b){
+  const c=cyCalc(b);if(c.errs.length)return;
+  clearTimeout(timer);
+  showGame();
+  logEl.innerHTML='';$('endBox').innerHTML='';
+  majorQueue.length=0;$('modal').hidden=true;
+  logSink=renderEntry;
+  newLifeCyoa(b,newSeed());
+  running=true;paused=false;skipping=false;
+  $('bPause').disabled=false;$('bSkip').disabled=false;$('bPause').textContent='일시정지';
+  $('bSkip').textContent='다음 선택까지';
+  render();drain();
+}
+
+/* ----- 화면 전환 ----- */
+function showModes(){
+  clearTimeout(timer);running=false;$('modal').hidden=true;
+  $('modes').hidden=false;$('builder').hidden=true;$('game').hidden=true;
+  $('bPause').disabled=true;$('bSkip').disabled=true;
+  window.scrollTo({top:0});
+}
+function showBuilder(step){
+  clearTimeout(timer);running=false;$('modal').hidden=true;
+  $('modes').hidden=true;$('builder').hidden=false;$('game').hidden=true;
+  $('bPause').disabled=true;$('bSkip').disabled=true;
+  bStep=step||0;renderBuilder();window.scrollTo({top:$('builder').offsetTop-8});
+}
+function showGame(){$('modes').hidden=true;$('builder').hidden=true;$('game').hidden=false;}
+function showDice(){
+  BLD=randomBuild();
+  showBuilder(STEPS.length-1);
+}
+$('mRandom').onclick=()=>start(newSeed());
+$('mBuild').onclick=()=>showBuilder(0);
+$('mDice').onclick=showDice;
+$('builder').addEventListener('click',ev=>{if(ev.target.closest('.bfoot'))return;onBuilderClick(ev);});
+$('bPrev').onclick=()=>{if(bStep>0){bStep--;renderBuilder();window.scrollTo({top:$('builder').offsetTop-8});}};
+$('bNext').onclick=()=>{if(bStep<STEPS.length-1){bStep++;renderBuilder();window.scrollTo({top:$('builder').offsetTop-8});}};
+$('bRand').onclick=()=>{BLD=randomBuild();bStep=STEPS.length-1;renderBuilder();};
+$('bReset').onclick=()=>{BLD=cyBlank();bStep=0;renderBuilder();};
+$('bGo').onclick=()=>startCyoa(BLD);
+
 renderDex();
 </script>
 </body>
