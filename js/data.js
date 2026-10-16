@@ -103,7 +103,7 @@ const SERVANTS={
   '어벤저':[['몬테크리스토 백작',5],['앙그라 마이뉴',1]]
 };
 const CLASSES=[['세이버',14],['아처',14],['랜서',14],['라이더',14],['캐스터',14],['어새신',14],['버서커',14],['룰러',1],['어벤저',1]];
-const CLS_EN={'세이버':'SABER','아처':'ARCHER','랜서':'LANCER','라이더':'RIDER','캐스터':'CASTER','어새신':'ASSASSIN','버서커':'BERSERKER','룰러':'RULER','어벤저':'AVENGER'};
+const CLS_EN={'얼터에고':'ALTER EGO','포리너':'FOREIGNER','문캔서':'MOON CANCER','프리텐더':'PRETENDER','실더':'SHIELDER','비스트':'BEAST','세이버':'SABER','아처':'ARCHER','랜서':'LANCER','라이더':'RIDER','캐스터':'CASTER','어새신':'ASSASSIN','버서커':'BERSERKER','룰러':'RULER','어벤저':'AVENGER'};
 
 /* 결말 도감 */
 const ENDINGS=[

@@ -188,8 +188,9 @@ function showModal(m){
     const sv=m.sv;sh.className='sheet summon';
     sh.innerHTML=`${imgSrc('summon')?imgHTML('summon'):`<svg class="circle" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56"/><circle cx="60" cy="60" r="44"/><path d="M60 4 L108 88 L12 88 Z"/><path d="M60 116 L12 32 L108 32 Z"/></svg>`}
       <div class="eyebrow">${esc(m.war)} · 서번트 소환</div><div class="cls">${CLS_EN[sv.cls]}</div>
-      <h3 id="mTitle">${esc(sv.name)}</h3><div class="stars" aria-label="${sv.tier}성">${'★'.repeat(sv.tier)}${'☆'.repeat(5-sv.tier)}</div>
+      <h3 id="mTitle">${esc(sv.name)}</h3>${sv.title?`<div class="svtitle">${esc(sv.title)}</div>`:''}<div class="stars" aria-label="${sv.tier}성">${'★'.repeat(sv.tier)}${'☆'.repeat(5-sv.tier)}</div>
       <div class="params">${Object.entries(sv.params).map(([k,v])=>`<div>${k}<b>${v}</b></div>`).join('')}</div>
+      ${sv.np?`<p class="svnp">보구 「${esc(sv.np)}」${sv.npr?' '+esc(sv.npr):''}${sv.npd?`<br><span>${esc(sv.npd)}</span>`:''}</p>`:''}
       <p>"묻겠다. 그대가 나의 마스터인가?"</p><button class="btn primary" type="button" id="mOk">계약한다</button>`;
   } else {
     sh.className='sheet '+(m.kind==='summon2'?'summon':'gold');
@@ -429,6 +430,8 @@ function renderDex(){
   const sp=st.spirits||[];
   $('dex').innerHTML=`<h3 class="dex-h">인생의 결말</h3><div class="dex-grid">${LIFE_ENDINGS.map(item).join('')}</div><h3 class="dex-h">마술사의 결말</h3><div class="dex-grid">${CY_ENDINGS.map(item).join('')}</div>
     <h3 class="dex-h">업적 · ${gotA}/${ACH_ALL.length}</h3>${ACH.map(g=>`<div class="ach-g">${esc(g[1])}</div><div class="dex-grid">${g[2].map(aitem).join('')}</div>`).join('')}
+    <h3 class="dex-h">만난 서번트 · ${Object.keys(st.svMet||{}).length}/${SERVANT_DB.filter(x=>!x.x).length}</h3><p class="dex-sub">${Object.keys(st.svMet||{}).slice(-40).map(esc).join(', ')||'아직 없어요. 성배전쟁에서 소환하면 여기에 모여요.'}</p>
+    <h3 class="dex-h">만난 주요 인물 · ${Object.keys(st.met||{}).length+Object.keys(st.bondMax||{}).filter(k=>CHARS[k]).length}</h3><p class="dex-sub">${[...Object.keys(st.bondMax||{}).filter(k=>CHARS[k]).map(k=>CHARS[k].n),...Object.keys(st.met||{}).map(n=>n.replace(/\(.*\)$/,''))].map(esc).join(', ')||'아직 없어요.'}</p>
     ${sp.length?`<h3 class="dex-h">영령의 좌에 오른 전생</h3><div class="dex-grid">${sp.map(x=>`<div class="dex-item got"><b>${esc(x.name)}</b><span>${esc(x.epithet)} · ${esc(x.cls)} ${'★'.repeat(x.tier)}</span></div>`).join('')}</div><p class="dex-sub">현대의 성배전쟁에서 전생의 당신이 소환될 수 있어요.</p>`:''}`;
   $('recent').innerHTML=st.history.length?`최근 인생<ol>${st.history.map(l=>{const e=all.find(x=>x[0]===l.k);return `<li>${esc(l.name)} · ${esc(l.c)} ${yearLabel(l.y)}년생 · ${l.a}세 · ${esc(e?e[1]:'')}${l.g?' · 평가 '+l.g:''} · FATE +${fmtP(l.f)}</li>`;}).join('')}</ol>`:'';
 }

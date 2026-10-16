@@ -7,7 +7,21 @@ const ERA_YEARS={zero:[1966,1972],sn:[1986,1988],fgo:[1993,1997]};
 function yearLabel(y){return y<=0?'BC'+(1-y):String(y);}
 
 /* ---------------- 신뢰도 ---------------- */
-function charInfo(id){return CHARS[id]||PARTNERS[id]||{n:id,s:''};}
+function charInfo(id){
+  if(CHARS[id]||PARTNERS[id])return CHARS[id]||PARTNERS[id];
+  if(String(id).startsWith('sv:')){const x=SERVANT_DB.find(v=>v.n===id.slice(3));if(x)return {n:x.n,s:`${x.c}의 서번트. ${x.t}. ${x.r} 출신, ${x.al}. 보구 「${x.np}」. ${x.p}`};}
+  if(String(id).startsWith('m:')){const x=MAJOR.find(v=>v.n===id.slice(2));if(x)return {n:x.n.replace(/\(.*\)$/,''),s:x.s};}
+  return {n:String(id).replace(/^(sv|m):/,''),s:''};
+}
+/* 주요 인물과의 만남(도감에 모인다) */
+function meetMajor(name){PROFILE.met=PROFILE.met||{};if(!PROFILE.met[name]){PROFILE.met[name]=1;saveProfile();}}
+function rival(tag){
+  const pool=MAJOR.filter(m=>m.w===tag&&!(S.rivals||[]).includes(m.n));
+  if(!pool.length)return null;
+  const m=pick(pool);S.rivals=(S.rivals||[]).concat(m.n);meetMajor(m.n);
+  return m.n.replace(/\(.*\)$/,'');
+}
+function stageTalker(def,i){return i===1&&S.servant&&!S.servant.past?'sv:'+S.servant.name:def;}
 function bond(id){return S.bonds&&S.bonds[id]||0;}
 function addBond(id,n){
   S.bonds=S.bonds||{};
@@ -142,6 +156,7 @@ const ANC_EVENTS=[
     opt('복수한다','피로 갚아요',()=>{chosen();clsAdd({어벤저:3,버서커:1});if(chance(.3))die('배신','복수의 끝에서 함께 쓰러졌다.');else{addFame(10,'배신자를 벌함');log('배신자를 벌했다. 그 뒤로 웃는 일이 줄었다.','risk',true);}}),
     opt('용서한다','같은 사람이 되지 않아요',()=>{addFame(8,'배신자를 용서함');S.mental+=8;log('배신자를 용서했다. 사람들은 그것을 오래 이야기했다.','moon',true);}),
     opt('달아난다','살아야 다음이 있어요',()=>{S.fame-=8;log('나라를 떠나 몸을 숨겼다.','risk');})]})},
+  {id:'a_edo',w:()=>S.region==='japan'&&S.year>=1650&&S.year<=1652&&S.age>=15&&S.age<=60&&!S.used.a_edo?100:0,make:()=>{worldArc('edo');return S.pending;}},
   {id:'a_immortal',w:()=>S.age>=35&&(S.circuits>=10||S.fame>=35)&&!S.apostle?1.2:0,make:()=>({eyebrow:'불멸',img:'birth_inhuman',title:'시대를 건너는 길',body:'이 몸은 곧 늙어 죽어요. 하지만 시대를 건너는 방법이 둘 있어요. 피를 마시는 자들과 계약하거나, 마법에 닿거나.',options:[
     opt('흡혈종과 계약한다','사도가 되어 현대까지',()=>{chosen();if(chance(.55))ancientTransit('apostle');else die('사도화 실패','몸이 피를 견디지 못했다.');}),
     opt('마법을 탐구한다','기적에 닿을 수 있다면',()=>{chosen();const p=clamp((power()-5)/12,.02,.3);if(S.mage&&chance(p))ancientTransit('magician');else{addAp(1);S.health-=20;log('기적의 문턱에서 튕겨 나왔다.','risk',true);}},!S.mage),
@@ -149,6 +164,8 @@ const ANC_EVENTS=[
 ];
 function ancientOpportunity(){
   const list=ANC_EVENTS.map(e=>({e,w:(S.used[e.id]&&!e.repeat)?0:e.w()})).filter(x=>x.w>0);
+  const forced=list.find(x=>x.w>=100);
+  if(forced){S.used[forced.e.id]=1;S.pending=forced.e.make();if(S.pending&&S.pending.img)scene(S.pending.img);return true;}
   if(S.age<8||!list.length||!chance(.17))return false;
   if(typeof aiReady==='function'&&aiReady()&&S.aiCount<aiMax()&&chance(.4)){S.aiCount++;S.pending={ai:true};return true;}
   const x=wpick(list,y=>y.w);S.used[x.e.id]=(S.used[x.e.id]||0)+1;
@@ -230,12 +247,13 @@ function snPickRoute(){
 function snStage(rt,i){
   const R_=SN_ROUTES[rt];S.snRoute=rt;
   if(i>=3){snEnd(rt);return;}
-  const st=R_.stages[i],partner=R_.talks[i];
+  const st=R_.stages[i],partner=stageTalker(R_.talks[i],i);const rv=rival('sn');
   story(`${R_.n} · ${st[0]}`,'plan');
-  talk(partner,`제5차 성배전쟁 ${R_.n} 루트 ${i+1}단계 「${st[0]}」 직전. ${st[2]}`,()=>{
+  if(rv)log(`이 밤의 상대: ${rv}.`,'grail');
+  talk(partner,`제5차 성배전쟁 ${R_.n} 루트 ${i+1}단계 「${st[0]}」 직전. ${st[2]}${rv?' 상대 마스터는 '+rv+'.':''}`,()=>{
     const hero=rt==='fate'?'saber':rt==='ubw'?'rin':'sakura';
-    const base=(S.snMaster?.6:0)+(S.servant?(S.servant.tier-3)*.5:0)+bond(hero)/50;
-    S.pending={eyebrow:`${R_.n} · ${i+1}/3`,img:'grail_war',title:st[0],body:st[2],options:[
+    const base=(S.snMaster?.6:0)+(S.servant?(S.servant.tier-3)*.5+bond('sv:'+S.servant.name)/80:0)+bond(hero)/50;
+    S.pending={eyebrow:`${R_.n} · ${i+1}/3`,img:'grail_war',title:st[0],body:st[2]+(rv?` 상대는 ${rv}.`:''),options:[
       opt('정면으로 맞선다','힘으로',()=>snResolve(rt,i,base)),
       opt(`${charInfo(hero).n}을(를) 믿고 맡긴다`,`신뢰 ${bond(hero)}`,()=>snResolve(rt,i,base+bond(hero)/40)),
       opt('함정을 파고 기다린다','신중하게',()=>snResolve(rt,i,base+.3))
@@ -285,11 +303,12 @@ const ZERO_ST=[['창고가의 첫 격돌',2.5,'항구의 창고가. 세이버와
 function zeroStage(i){
   if(i>=3){zeroEnd();return;}
   const st=ZERO_ST[i];
-  const partner={master:['waver','iskandar','irisviel'],einz:['irisviel','kiritsugu','irisviel'],rider:['waver','iskandar','waver'],church:['kirei','kirei','kiritsugu']}[S.zeroSide][i];
+  const rv=rival('zero');if(rv)log(`이 밤의 상대: ${rv}.`,'grail');
+  const partner0={master:['waver','iskandar','irisviel'],einz:['irisviel','kiritsugu','irisviel'],rider:['waver','iskandar','waver'],church:['kirei','kirei','kiritsugu']}[S.zeroSide][i];const partner=stageTalker(partner0,i);
   story(`Zero · ${st[0]}`,'plan');
-  talk(partner,`제4차 성배전쟁 ${i+1}단계 「${st[0]}」. ${st[2]}`,()=>{
+  talk(partner,`제4차 성배전쟁 ${i+1}단계 「${st[0]}」. ${st[2]}${rv?' 상대 마스터는 '+rv+'.':''}`,()=>{
     const base=(S.servant?(S.servant.tier-3)*.5:0)+bond(partner)/50;
-    S.pending={eyebrow:`Fate/Zero · ${i+1}/3`,img:'grail_war',title:st[0],body:st[2],options:[
+    S.pending={eyebrow:`Fate/Zero · ${i+1}/3`,img:'grail_war',title:st[0],body:st[2]+(rv?` 상대는 ${rv}.`:''),options:[
       opt('정면으로 맞선다','',()=>zeroResolve(i,base)),
       opt(`${charInfo(partner).n}을(를) 믿는다`,`신뢰 ${bond(partner)}`,()=>zeroResolve(i,base+bond(partner)/40)),
       opt('그림자 속에서 움직인다','마술사 살해자의 방식',()=>zeroResolve(i,base+.3))
@@ -435,16 +454,18 @@ EVENTS.unshift(
 /* ---------------- 다른 세계선의 짧은 이야기 ---------------- */
 function worldArc(k){
   const A=WORLD_ARCS[k];
-  S.pending={eyebrow:byId(WORLDS,k).n,img:k==='extra'?'singularity':'grail_war',title:A.n,body:k==='extra'?'꿈속에서 낯선 학교의 교복을 입고 있었어요. 영자 컴퓨터 위에서 성배를 건 싸움이 시작돼요.':`${A.city}에서 성배전쟁이 시작돼요. 손등이 뜨거워져요.`,options:[
+  const wn=(byId(WORLDS,k)||{n:A.n}).n;
+  S.pending={eyebrow:wn,img:k==='extra'?'singularity':'grail_war',title:A.n,body:k==='extra'?'꿈속에서 낯선 학교의 교복을 입고 있었어요. 영자 컴퓨터 위에서 성배를 건 싸움이 시작돼요.':`${A.city}에서 성배전쟁이 시작돼요. 손등이 뜨거워져요.`,options:[
     opt('참가한다','서번트와 함께',()=>{chosen();S.warCount++;S.seals=3;const sv=rollServant(S.wealth>=60);S.servant=sv;fate(2,'성배전쟁 참전');log(`${A.n}에 참가했다. 소환에 응한 것은 ${sv.cls}, 진명 「${sv.name}」.`,'grail',true);major({kind:'summon',sv,war:A.n,img:'summon'});worldStage(k,0);}),
     opt('거절한다','',()=>{log(`${A.n}에 얽히지 않았다.`);})
   ]};
 }
 function worldStage(k,i){
   const A=WORLD_ARCS[k];
-  if(i>=3){unlock(A.ach);story(A.n,'ok');log(`${A.n}을(를) 끝까지 살아남았다.`,'grail',true);major({kind:'gold',img:'grail_war',eyebrow:byId(WORLDS,k).n,title:A.n,body:'전쟁은 끝났어요. 당신의 인생은 계속돼요.'});return;}
+  if(i>=3){unlock(A.ach);story(A.n,'ok');log(`${A.n}을(를) 끝까지 살아남았다.`,'grail',true);major({kind:'gold',img:'grail_war',eyebrow:(byId(WORLDS,k)||{n:A.n}).n,title:A.n,body:'전쟁은 끝났어요. 당신의 인생은 계속돼요.'});return;}
   const st=A.st[i];story(`${A.n} · ${st[0]}`,'plan');
-  talk(A.p,`${A.n} ${i+1}단계 「${st[0]}」. ${st[2]}`,()=>{
+  const rv=A.tag?rival(A.tag):null;if(rv)log(`이 싸움의 상대: ${rv}.`,'grail');
+  talk(stageTalker(A.p,i),`${A.n} ${i+1}단계 「${st[0]}」. ${st[2]}${rv?' 상대 마스터는 '+rv+'.':''}`,()=>{
     const base=(S.servant?(S.servant.tier-3)*.5:0)+bond(A.p)/50;
     S.pending={eyebrow:`${A.n} · ${i+1}/3`,img:'grail_war',title:st[0],body:st[2],options:[
       opt('정면으로 맞선다','',()=>worldResolve(k,i,base)),

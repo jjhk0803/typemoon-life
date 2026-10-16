@@ -758,11 +758,15 @@ function opportunity(){
 function rollServant(boost){
   const past=(PROFILE.spirits||[]).filter(x=>!(S.name===x.name));
   if(past.length&&chance(boost?.15:.08)){const x=pick(past);const pr=()=>['E','E','D','C','B','A','A+'][clamp(x.tier+ri(-1,1),0,6)];log(`소환진 너머에서 낯익은 기척이 느껴졌다. 「${x.epithet}」 ${x.name}. 당신의 전생이다.`,'grail',true);return {cls:x.cls,name:x.name,tier:x.tier,past:true,params:{근력:pr(),내구:pr(),민첩:pr(),마력:pr(),행운:pr(),보구:x.np?'A':pr()}};}
-  const cls=wpick(CLASSES,c=>c[1])[0];
-  const sv=wpick(SERVANTS[cls],s=>({1:10,2:22,3:30,4:20,5:8})[s[1]]*(boost&&s[1]>=4?3:1));
-  const tier=sv[1];
-  const pr=()=>['E','E','D','C','B','A','A+'][clamp(tier+ri(-1,1),0,6)];
-  return {cls,name:sv[0],tier,params:{근력:pr(),내구:pr(),민첩:pr(),마력:pr(),행운:pr(),보구:tier===5&&chance(.4)?'EX':pr()}};
+  const CW={세이버:14,아처:14,랜서:14,라이더:14,캐스터:14,어새신:14,버서커:14,룰러:2,어벤저:2,얼터에고:1.2,포리너:1.2,문캔서:.6,프리텐더:.6};
+  const cls=wpick(Object.keys(CW),c=>CW[c]);
+  const pool=SERVANT_DB.filter(x=>x.c===cls&&!x.x&&!(S.servantsSeen||[]).includes(x.n));
+  const sv=wpick(pool.length?pool:SERVANT_DB.filter(x=>x.c===cls&&!x.x),x=>({1:10,2:22,3:30,4:20,5:8})[x.k]*(boost&&x.k>=4?3:1));
+  S.servantsSeen=(S.servantsSeen||[]).concat(sv.n);
+  PROFILE.svMet=PROFILE.svMet||{};PROFILE.svMet[sv.n]=1;
+  const params={};String(sv.st||'').split('/').forEach(x=>{const m=x.trim().match(/^(\S+)\s+(\S+)$/);if(m)params[m[1]]=m[2];});
+  if(!Object.keys(params).length){const pr=()=>['E','E','D','C','B','A','A+'][clamp(sv.k+ri(-1,1),0,6)];Object.assign(params,{근력:pr(),내구:pr(),민첩:pr(),마력:pr(),행운:pr(),보구:pr()});}
+  return {cls,name:sv.n,tier:sv.k,title:sv.t,np:sv.np,npr:sv.npr,npd:sv.npd,persona:sv.p,params};
 }
 function runJourney(j){
   const J=CY_JRMAP[j.id];
@@ -773,6 +777,7 @@ function runJourney(j){
     sv=rollServant(S.wealth>=60||['lord','noble'].includes(S.birth));S.servant=sv;S.seals=3;S.warCount++;fate(2,'성배전쟁 참전');
     log(`오른손 등에 영주가 새겨졌다. 소환에 응한 것은 ${sv.cls}, 진명 「${sv.name}」. ${'★'.repeat(sv.tier)}${'☆'.repeat(5-sv.tier)}`,'grail',true);
     major({kind:'summon',sv,war:J.n,img:'summon'});
+    const tag={hgw4:'zero',hgw5:'sn',apoc:'apoc'}[J.id];const rv=tag&&rival(tag);if(rv)log(`맞서야 할 마스터 중에 ${rv}이(가) 있다.`,'grail');
   }
   const pw=power()+(sv?(sv.tier-3)*.7:0)-(J.need==='concept'&&!hasConcept()?2:0);
   const gap=pw-J.rec;
