@@ -17,7 +17,7 @@ let PROFILE=loadProfile();
 function saveProfile(){try{localStorage.setItem(PROFILE_KEY,JSON.stringify(PROFILE));}catch(e){}}
 
 /* ---------------- 다음 생 설계 ---------------- */
-function planBlank(){return {origin:'plain',race:null,birth:null,place:null,talent:null,elMode:null,els:[],depts:[],details:[],abil:[],eye:null,items:[],fb:[],jr:[],rankUp:false};}
+function planBlank(){return {era:null,region:null,world:null,origin:'plain',race:null,birth:null,place:null,talent:null,elMode:null,els:[],depts:[],details:[],abil:[],eye:null,items:[],fb:[],jr:[],rankUp:false};}
 function planEls(P){
   if(!P.elMode)return null;
   if(P.elMode==='void')return['허'];
@@ -80,6 +80,9 @@ function planCalc(P){
   const race=P.race?byId(CY_RACE,P.race):null,birth=P.birth?byId(CY_BIRTH,P.birth):null;
   if(race){cost+=FATE_COST.race[race.id];gains.push(race.ap||0);}
   if(birth){cost+=FATE_COST.birth[birth.id];gains.push(birth.ap||0);}
+  if(P.era)cost+=byId(ERAS,P.era).cost;
+  if(P.region)cost+=2;
+  if(P.world)cost+=byId(WORLDS,P.world).cost;
   if(P.place)cost+=byId(PLACES,P.place).cost;
   if(P.talent)cost+=FATE_COST.talent[P.talent];
   if(P.elMode&&!root)cost+=FATE_COST.elMode[P.elMode];
@@ -104,6 +107,21 @@ function planCalc(P){
   P.abil.forEach(id=>{const a=byId(CY_ABIL,id);if(a.o.notRace&&a.o.notRace===P.race)errs.push(`「${a.n}」은(는) 이 종족으로 고를 수 없어요.`);});
   if(root&&P.items.length)errs.push('근원접속자는 마술예장을 고를 수 없어요.');
   if(P.rankUp&&!P.depts.length)errs.push('계위를 올리려면 마술계통이 하나 이상 있어야 해요.');
+  if(P.era==='ancient'){
+    if(P.jr.length)errs.push('신대·고대에는 현대의 행적을 정할 수 없어요.');
+    if(P.place)errs.push('신대·고대에는 출생지 대신 지역을 골라요.');
+    if(P.items.length)errs.push('신대·고대에는 현대의 마술예장이 없어요.');
+    if(P.world)errs.push('신대·고대에는 아직 세계선이 갈라지지 않았어요.');
+  } else if(P.region)errs.push('지역은 신대·고대에서만 골라요.');
+  if(P.world&&(P.era==='sn'||P.era==='zero')&&!['sn','fake'].includes(P.world))errs.push('이 세대는 Fate/stay night 세계선(또는 strange Fake)이어야 해요.');
+  if(P.world&&P.era==='fgo'&&P.world!=='fgo')errs.push('칼데아 세대는 Grand Order 세계선이어야 해요.');
+  P.jr.forEach(id=>{const w=JR_WORLD[id];const W=P.world||(P.era==='fgo'?'fgo':(P.era==='sn'||P.era==='zero')?'sn':null);if(w&&W&&!w.includes(W))errs.push(`행적 「${CY_JRMAP[id].n}」은(는) ${byId(WORLDS,W).n}에서 일어나지 않아요.`);});
+  if(P.era&&ERA_YEARS[P.era]){
+    const [lo,hi]=ERA_YEARS[P.era];
+    P.jr.forEach(id=>{const j=CY_JRMAP[id];if(j.year&&(j.year<hi+14||j.year>lo+70))errs.push(`행적 「${j.n}」(${j.year}년)은 이 시대에 태어나면 겪을 수 없어요.`);});
+    if(P.era==='sn'&&P.jr.includes('hgw5'))errs.push('Fate/stay night 세대에서는 제5차 성배전쟁이 이야기로 진행돼요. 행적에서 빼 주세요.');
+    if(P.era==='zero'&&P.jr.includes('hgw4'))errs.push('Fate/Zero 세대에서는 제4차 성배전쟁이 이야기로 진행돼요. 행적에서 빼 주세요.');
+  }
   const total=Math.max(0,cost-refund);
   return {cost:total,raw:cost,refund,ap,rank,errs,noRank:P.fb.includes('home')};
 }
@@ -203,6 +221,7 @@ function power(){
   p+={human:0,vamp:1,homun:.3,half:.6,dragon:2,true:2.5}[S.race]||0;
   if(S.apostle&&S.race==='human')p+=1;
   p+=Math.min(S.depts.length,5)*.15+S.jexp+(S.luck-50)/120+Math.min(S.circuits,100)/60;
+  if(S.world==='extra'&&S.year>=1970&&S.mage)p-=1.2;
   if(S.fb.includes('careless'))p-=.3;
   if(S.fb.includes('legs'))p-=.3;
   if(S.fb.includes('wrongorigin'))p-=.5;
@@ -227,6 +246,7 @@ function pickCountryFor(P){
   return null;
 }
 function lifeBirthYear(P){
+  if(P.era&&ERA_YEARS[P.era])return ri(ERA_YEARS[P.era][0],ERA_YEARS[P.era][1]);
   const ys=P.jr.map(id=>CY_JRMAP[id]).filter(j=>j.year||j.minYear).map(j=>j.year||j.minYear);
   if(!ys.length)return ri(1950,2004);
   const mn=Math.min(...ys),mx=Math.max(...ys);
@@ -363,10 +383,13 @@ function newLife(P,seed){
   if(S.sched.length)log(`정해 둔 행적: ${S.sched.map(j=>CY_JRMAP[j.id].n+'('+j.year+')').join(', ')}. 태어나는 순간 잊어버렸다.`,'moon');
   scene({plain:'birth_plain',magus:'birth_magus',noble:'birth_noble',lord:'birth_noble',church:'birth_church',user:'birth_magus'}[birth]);
   if(['vamp','true','dragon','homun'].includes(S.race))scene('birth_inhuman');
+  eraSetup(P);
+  if(S.era==='sn'&&S.route==='sn')log('후유키 시. 언젠가 이 도시에서 일곱 명의 마스터가 싸우게 된다.','moon');
 }
 
 /* ---------------- 한 해 ---------------- */
 function step(){
+  if(S.era==='ancient'){ancientStep();return;}
   S.age++;S.year++;
   if(!S.long&&!S.apostle){
     if(S.age>45)S.health-=R()*(S.age>75?2.6:S.age>60?1.6:.9);
@@ -418,6 +441,12 @@ function worldNews(){
   if(y===1969&&a>=6&&chance(.6))log('텔레비전에서 인류가 달에 내리는 장면을 보았다. 그날 밤 달이 유난히 가까워 보였다.');
   if(y===1989&&S.country.eu&&a>=8&&chance(.5))log('베를린 장벽이 무너졌다는 소식을 들었다.');
   if(y===2000&&a>=6&&chance(.5))log('새천년을 맞았다. 세상은 끝나지 않았다.');
+  if(S.world==='extra'&&y===1970&&a>=4)log('그해, 전 세계에서 마나가 사라졌다는 소문이 마술사들 사이에 돌았다. 마술은 급격히 쇠퇴했다.',S.mage?'risk':'life',!!S.mage);
+  if(S.world==='fgo'&&y===2016&&a>=1&&!S.fgoActive){log('2016년, 어느 날 세상이 불타 사라졌다. 그리고 아무도 모르는 사이, 아무 일도 없었다는 듯 돌아왔다.','moon',true);}
+  if(S.world==='fgo'&&y===2017&&a>=1&&!S.fgoActive&&!S.fgoFrozen)log('2017년 겨울, 하늘에서 하얀 폭풍이 내렸다. 그 뒤의 일은 아무도 기억하지 못한다.','moon');
+  if(S.world==='kara'&&y===1998&&a>=10&&S.country.n==='일본')log('관동 지방에서 엽기 연쇄 살인 사건 뉴스가 이어졌다.','risk');
+  if(S.world==='tsuki'&&y===1999&&a>=10&&S.country.n==='일본')log('미사키 시에서 피가 모두 빠진 시신이 연달아 발견됐다는 뉴스를 보았다.','risk');
+  if(S.world==='apoc'&&y===2008&&S.aware)log('루마니아의 위그드밀레니아 가문이 시계탑에 독립을 선언했다는 소식이 돌았다.','moon');
   if(y===2020&&a>=1){
     log('세계적인 감염병이 돌았다. 한동안 집 밖에 거의 나가지 못했다.','risk');
     if(!S.long&&!S.apostle&&a>70&&S.year>S.lastJY&&chance(.02))die('감염병','감염병을 이겨 내지 못했다.');
@@ -629,8 +658,8 @@ const EVENTS=[
     opt('봉인지정을 받아들인다','여기서 인생이 끝나요',()=>{S.sealed=true;S.alive=false;S.deathAge=S.age;S.cause='봉인지정';log('저항하지 않았다. 시계탑은 당신을 표본으로 영원히 보존했다.','death',true);})
   ]};}},
   {id:'grail',w:()=>{
-    if(S.warCount||S.apostle)return 0;
-    const war=S.year===1994?'hgw4':S.year===2004?'hgw5':null;
+    if(S.warCount||S.apostle||S.route==='sn'||S.route==='zero')return 0;
+    const war=S.year===1994&&['sn','fake'].includes(S.world)?'hgw4':S.year===2004&&['sn','fake','fgo'].includes(S.world)?'hgw5':null;
     if(war&&S.city==='후유키 시'&&S.age>=14&&S.age<=70&&S.circuits>=3&&!S.sched.some(j=>j.id===war))return chance(S.mage?.55:.12)?100:0;
     return 0;},make:()=>{
     const war=S.year===1994?'hgw4':'hgw5';
@@ -638,9 +667,9 @@ const EVENTS=[
       opt('서번트를 소환한다','성배전쟁에 참전해요',()=>{chosen();becomeAware();const j={id:war,year:S.year,st:'plan'};S.sched.push(j);runJourney(j);}),
       opt('교회에 영주를 맡긴다','싸우지 않아요',()=>{becomeAware();log('감독관이 있는 교회에 가서 영주를 맡겼다. 신부는 아쉽다는 듯 웃었다.','grail');})
     ]};}},
-  {id:'fire',w:()=>S.year===1994&&S.city==='후유키 시'&&!S.warCount&&!S.apostle?100:0,make:()=>({eyebrow:'1994년 후유키',img:'grail_fire',title:'불타는 신도',body:'하늘에 뚫린 구멍에서 검은 진흙이 쏟아지고, 신도가 불타고 있어요.',options:[
+  {id:'fire',w:()=>S.year===1994&&S.city==='후유키 시'&&!S.warCount&&!S.apostle&&!S.noFire&&!S.zeroGo&&['sn','fake'].includes(S.world)?100:0,make:()=>({eyebrow:'1994년 후유키',img:'grail_fire',title:'불타는 신도',body:'하늘에 뚫린 구멍에서 검은 진흙이 쏟아지고, 신도가 불타고 있어요.',options:[
     opt(S.age<=15?'부모님을 찾는다':'사람들을 구하러 간다','불길 속으로',()=>{chosen();
-      if(chance(.12)){die('후유키 대화재','불길 속에서 빠져나오지 못했다. 후유키 대화재의 사망자 명단에 이름이 올랐다.');return;}
+      if(chance(S.route==='sn'?.03:.12)){die('후유키 대화재','불길 속에서 빠져나오지 못했다. 후유키 대화재의 사망자 명단에 이름이 올랐다.');return;}
       if(S.age<=15){S.parents=0;log('모든 것을 잃었다. 쓰러진 아이를 낯선 남자가 안아 올리며 울었다. "살아 있어 줘서 고마워."','moon',true);
         if(chance(.5)){becomeMage('마법사라 자칭한 남자');log('남자는 "나는 마법사야"라고 말했다. 그에게서 마술을 배우기 시작했다.','moon');gainAbility('proj',true);}}
       else{log('두 사람을 끌어냈다. 팔에 남은 화상은 평생 갔다.','moon',true);S.health-=10;S.mental+=5;fate(2,'사람을 구함');}}),
@@ -691,6 +720,7 @@ function inviteList(){
   return CY_JR.filter(J=>{
     if(S.sched.some(j=>j.id===J.id&&!J.multi)||S.done.includes('skip:'+J.id))return false;
     if(J.last||J.req==='root')return false;
+    if(JR_WORLD[J.id]&&!JR_WORLD[J.id].includes(S.world))return false;
     if(J.year&&S.year!==J.year)return false;
     if(J.minYear&&S.year<J.minYear)return false;
     if(J.age&&(S.age<J.age[0]||S.age>J.age[1]))return false;
@@ -726,6 +756,8 @@ function opportunity(){
 
 /* ---------------- 행적 ---------------- */
 function rollServant(boost){
+  const past=(PROFILE.spirits||[]).filter(x=>!(S.name===x.name));
+  if(past.length&&chance(boost?.15:.08)){const x=pick(past);const pr=()=>['E','E','D','C','B','A','A+'][clamp(x.tier+ri(-1,1),0,6)];log(`소환진 너머에서 낯익은 기척이 느껴졌다. 「${x.epithet}」 ${x.name}. 당신의 전생이다.`,'grail',true);return {cls:x.cls,name:x.name,tier:x.tier,past:true,params:{근력:pr(),내구:pr(),민첩:pr(),마력:pr(),행운:pr(),보구:x.np?'A':pr()}};}
   const cls=wpick(CLASSES,c=>c[1])[0];
   const sv=wpick(SERVANTS[cls],s=>({1:10,2:22,3:30,4:20,5:8})[s[1]]*(boost&&s[1]>=4?3:1));
   const tier=sv[1];
@@ -798,6 +830,8 @@ function applyEffects(e,ctx){
   if(!e||typeof e!=='object')return;
   const n=(v,lo,hi)=>clamp(Math.round(+v||0),lo,hi);
   if(e.health)S.health+=n(e.health,-40,30);
+  if(e.fame&&S.fame!=null)S.fame+=n(e.fame,-20,30);
+  if(e.bond&&e.char&&charInfo(e.char).n)addBond(e.char,n(e.bond,-10,15));
   if(e.mental)S.mental+=n(e.mental,-40,30);
   if(e.wealth)S.wealth+=n(e.wealth,-40,40);
   if(e.ap)addAp(n(e.ap,-2,3));
@@ -815,14 +849,17 @@ function applyEffects(e,ctx){
 }
 
 /* ---------------- 결말 ---------------- */
-const LIFE_ENDINGS=ENDINGS.filter(e=>['normal','short','century','wiped','aware','eyes','executor','burial','master','grail','apostle','ancestor','sealed','root'].includes(e[0]));
-const ENDING_FATE={normal:0,short:0,century:2,wiped:1,aware:2,eyes:2,executor:3,burial:5,master:3,grail:6,apostle:5,ancestor:8,sealed:3,root:12,cy_true1:4,cy_true2:8,cy_true3:6,cy_norm1:4,cy_norm2:4,cy_norm3:6,cy_beast1:10,cy_beast2:10,cy_beast3:10,cy_dead:1};
+const LIFE_ENDINGS=ENDINGS.filter(e=>['normal','short','century','wiped','aware','eyes','executor','burial','master','grail','apostle','ancestor','sealed','root'].includes(e[0])).concat(EXTRA_ENDINGS);
+const ENDING_FATE={normal:0,short:0,century:2,wiped:1,aware:2,eyes:2,executor:3,burial:5,master:3,grail:6,apostle:5,ancestor:8,sealed:3,root:12,cy_true1:4,cy_true2:8,cy_true3:6,cy_norm1:4,cy_norm2:4,cy_norm3:6,cy_beast1:10,cy_beast2:10,cy_beast3:10,cy_dead:1,spirit:10,ancient_death:1,magician:15,incineration:3,crypter:8,restorer:10};
 function lifeEndingKey(){
   if(S.deadEnd)return 'cy_dead';
+  if(S.era==='ancient'&&!S.endKey)S.endKey=ancientJudge();
+  if(S.endKey)return S.endKey;
   if(S.root)return 'root';
   if(S.apostle)return S.ancestor?'ancestor':'apostle';
   if(S.sealed)return 'sealed';
   if(S.mage)return null; // 최후의 선택으로
+  if(S.fgoDone)return 'restorer';
   if(S.church)return S.burial?'burial':'executor';
   if(S.grailWin)return 'grail';
   if(S.warCount)return 'master';

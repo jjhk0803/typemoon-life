@@ -102,12 +102,14 @@ function lifeSummary(){
   if(S.church)st.push('성당교회 대행자');if(S.apostle)st.push('사도(흡혈귀)');if(S.fugitive)st.push('봉인지정 도망자');
   if(!S.aware)st.push(S.wiped?'신비를 보았지만 기억을 잃은 일반인':'달빛 세계를 모르는 일반인');else if(!S.mage&&!S.church)st.push('신비를 알게 된 일반인');
   return [
-    `이름 ${S.name}, ${S.gender==='m'?'남':'여'}, ${S.age}세, 지금 ${S.year}년, ${S.country.n} ${S.city}에 산다.`,
+    `이름 ${S.name}, ${S.gender==='m'?'남':'여'}, ${S.age}세, 지금 ${yearLabel(S.year)}년, ${S.country.n} ${S.city}에 산다.`,
+    S.era==='ancient'?`신대·고대의 ${S.reg.n}. 명성 ${S.fame}. 업적: ${S.deeds.join(', ')||'없음'}${S.np?'. 보물 '+S.np:''}${S.king?'. 왕':''}.`:`이야기: ${{sn:'Fate/stay night (2004년 제5차 성배전쟁)',zero:'Fate/Zero (1994년 제4차 성배전쟁)',fgo:'Fate/Grand Order (칼데아'+(S.fgoRole?', 직책 '+S.fgoRole:'')+')'}[S.route]||'없음'}.`,
+    `신뢰하는 사람: ${Object.entries(S.bonds||{}).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>charInfo(k).n+' '+v).join(', ')||'없음'}.`,
     `출생: ${S.famType}. 종족: ${byId(CY_RACE,S.race).n}. 마술회로 ${S.circuits}개(질 ${S.qual}). 속성 ${S.els.map(e=>EL_NAME[e]).join('·')}.`,
     `처지: ${st.join(', ')}. 직업: ${S.job||'없음'}. 결혼 ${S.married?'함':'안 함'}, 자녀 ${S.kids}명.`,
     `익힌 계통: ${S.depts.map(id=>byId(CY_DEPTS,id).n).join(', ')||'없음'}. 능력: ${S.abil.map(id=>byId(CY_ABIL,id).n).join(', ')||'없음'}. 마안: ${S.eye&&S.eyesKnown?S.eye.n:'없음'}.`,
     `건강 ${Math.round(S.health)}, 정신 ${Math.round(S.mental)}, 재산 ${Math.round(S.wealth)}, 행운 ${S.luck} (0~100). 억지력 ${fmtP(S.ap)}.`,
-    `최근 기록: ${S.events.slice(-8).map(e=>`${e.y}년 ${e.text}`).join(' / ')}`
+    `최근 기록: ${S.events.slice(-8).map(e=>`${yearLabel(e.y)}년 ${e.text}`).join(' / ')}`
   ].join('\n');
 }
 function aiEventPrompt(){
@@ -119,7 +121,8 @@ ${lifeSummary()}
 
 [규칙]
 - 인물의 처지와 나이, 시대, 장소에 맞는 사건. 일반인이면 신비를 처음 엿보는 일, 마술사면 연구·협회·의뢰·결투·유산, 대행자면 임무, 사도면 사냥과 도주 같은 식.
-- 원작 주요 인물은 이름 대신 묘사로 스쳐 지나가게만 한다(예: 「찌푸린 얼굴의 장발 강사」).
+- 원작 인물이 나와도 된다. 인물의 성격과 말투는 원작에 맞춘다.
+- 신대·고대라면 신화와 전설의 사건(괴물, 신, 전쟁, 왕위)으로 만들고 effects에 fame(명성 -20~30 정수)을 쓸 수 있다.
 - 선택지는 2~3개. 각각 결과가 확실하지 않으면 chance를 0.2~0.9로 둔다. 위험한 선택일수록 보상이 크다.
 - title은 12자 이내, body는 2~3문장 '-요' 체로 상황을 보여 준다. label은 12자 이내, sub는 20자 이내.
 - 결과 text는 1~2문장, 과거형 평서문(-다)으로 쓴다. 인물을 '당신'이라 부르지 않고 주어 없이 쓴다.
@@ -150,17 +153,45 @@ function aiToPending(ev){
     }}))};
 }
 async function aiMakeEvent(){return aiToPending(await aiCall(aiEventPrompt(),1500));}
-async function aiEpilogue(endTitle){
-  const big=S.events.filter(e=>e.big||e.cat!=='life').slice(-50).map(e=>`${e.y}년(${e.a}세) ${e.text}`).join('\n');
-  const r=await aiCall(`너는 TYPE-MOON 세계관의 이야기꾼이다. 아래는 한 사람의 일생 기록이다. 이 인생을 회고하는 짧은 후일담을 쓴다.
-- 4~6문장, 과거형 평서문, 담담하고 문학적으로. 기록에 없는 큰 사건을 지어내지 않는다.
-- 마지막 문장은 달이나 밤과 관련된 여운으로 끝낸다.
+/* 신뢰도 대화: 특이점에서 AI가 상대 인물의 대사와 선택지를 만든다 */
+async function aiTalk(id,ctx){
+  const c=charInfo(id);
+  const r=await aiCall(`너는 TYPE-MOON 세계관의 미연시(연애·관계 시뮬레이션) 장면을 쓰는 작가다. 아래 인물과 주인공의 짧은 대화 장면 하나를 만든다.
 
-이름 ${S.name}, ${S.birthYear}년 ${S.country.n}에서 태어나 ${S.deathAge}세에 ${S.cause||'생을 마쳤다'}. 결말: ${endTitle}.
+[상대 인물] ${c.n}: ${c.s}
+[현재 신뢰도] ${bond(id)}/100 (높을수록 친밀하다. 말투와 거리감에 반영한다)
+[상황] ${ctx}
+[주인공]
+${lifeSummary()}
+
+[규칙]
+- situation: 장면 묘사 1~2문장, '-요' 체.
+- line: 상대 인물의 대사 한두 문장. 원작 성격과 말투를 살린다. 큰따옴표로 감싼다.
+- choices 3개: 주인공의 대답이나 행동(text, 20자 이내). 각각 상대의 반응(reply, 1~2문장, 대사면 큰따옴표)과 신뢰 변화(bond, -10~15 정수)를 붙인다.
+- 좋은 선택이 늘 뻔하지 않게 한다. 인물의 성격에 진짜로 맞는 대답이 가장 크게 오른다.
+
+출력 형식: {"situation":"","line":"","choices":[{"text":"","reply":"","bond":0}]}`,1200);
+  const T=(x,n)=>String(x||'').replace(/[<>]/g,'').slice(0,n);
+  if(!r||!Array.isArray(r.choices)||!r.choices.length)throw {code:'invalid_json',message:'대화를 만들지 못했어요.'};
+  return {situation:T(r.situation,300),line:T(r.line,300),choices:r.choices.slice(0,3).map(x=>({text:T(x.text,40)||'……',reply:T(x.reply,300),bond:clamp(Math.round(+x.bond||0),-10,15)}))};
+}
+/* 인생 평가: 등급, 한 줄 평, 후일담 */
+async function aiJudge(endTitle){
+  const big=S.events.filter(e=>e.big||e.cat!=='life').slice(-60).map(e=>`${yearLabel(e.y)}년(${e.a}세) ${e.text}`).join('\n');
+  const ach=(S.achNow||[]).map(id=>(ACH_ALL.find(a=>a[0]===id)||[])[1]).filter(Boolean).join(', ')||'없음';
+  const r=await aiCall(`너는 TYPE-MOON 세계관의 인생 심사관이자 이야기꾼이다. 아래 한 사람의 일생을 보고 평가한다.
+- grade: S, A, B, C, D, F 중 하나. 운명을 얼마나 개척했는지, 선택이 일관되고 아름다웠는지, 남긴 것이 무엇인지로 판단한다. 평범하지만 따뜻한 인생도 B 이상을 줄 수 있다.
+- title: 이 인생을 부르는 짧은 이름(15자 이내).
+- comment: 평가 이유 2~3문장, '-요' 체.
+- epilogue: 이 인생을 회고하는 후일담 3~5문장, 과거형 평서문, 기록에 없는 큰 사건은 지어내지 않는다. 마지막은 달이나 밤의 여운으로.
+
+이름 ${S.name}, ${yearLabel(S.birthYear)}년 ${S.country.n}에서 태어나 ${S.deathAge}세에 ${S.cause||'생을 마쳤다'}. 결말: ${endTitle}. 이번 생의 업적: ${ach}.
+${lifeSummary()}
 ${big}
 
-출력 형식: {"text":""}`,1200);
-  return String(r.text||'').slice(0,1200);
+출력 형식: {"grade":"","title":"","comment":"","epilogue":""}`,1600);
+  const g=String(r.grade||'').trim().toUpperCase().charAt(0);
+  return {grade:'SABCDF'.includes(g)&&g?g:'B',title:String(r.title||'').slice(0,40),comment:String(r.comment||'').slice(0,600),epilogue:String(r.epilogue||'').slice(0,1200)};
 }
 
 /* ---------------- NovelAI ---------------- */

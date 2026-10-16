@@ -16,6 +16,7 @@ function loadPlan(){try{const d=JSON.parse(localStorage.getItem(PLAN_KEY)||'null
 let PL=loadPlan(),pStep=0;
 function savePlan(){try{localStorage.setItem(PLAN_KEY,JSON.stringify(PL));}catch(e){}}
 const PSTEPS=[
+  {k:'era',n:'시대·세계선',h:'언제, 어느 세계선에 태어날지 정해요. 고르지 않으면 1950~2004년 사이 어딘가, 세계선도 운명이 정해요.'},
   {k:'birth',n:'출생',h:'어떤 몸으로, 어떤 집에, 어디서 태어날지 정해요. 고르지 않은 칸은 실제 확률대로 운명이 정해요.'},
   {k:'talent',n:'재능',h:'마술회로와 마술속성, 마안. 고르지 않으면 대부분 회로가 거의 없는 평범한 사람으로 태어나요.'},
   {k:'dept',n:'마술계통',h:'태어날 때부터 배우고 시작할 계통과 세부 항목. 인생 도중 스승을 만나 배울 수도 있어요. 계통 속성이 마술속성과 맞으면 반값이에요.'},
@@ -52,7 +53,11 @@ function renderPrep(){
   const root=PL.origin==='root';
   let h='';
   const rnd=(k,on,d)=>optCard({k,id:'',n:'운명에 맡긴다',d:d||'실제 확률대로 정해져요.',on,rand:true,chips:chip('free','무료')});
-  if(st.k==='birth'){
+  if(st.k==='era'){
+    h+=slot('시대','',rnd('era',!PL.era,'1950~2004년 사이 어딘가. 지금까지의 인생.')+ERAS.map(e=>optCard({k:'era',id:e.id,n:e.n,d:e.d,on:PL.era===e.id,chips:costChip(e.cost)})).join(''));
+    if(PL.era==='ancient')h+=slot('지역','어느 나라의 영웅이 될까',rnd('region',!PL.region,'신화와 전설의 땅 중 한 곳.')+REGIONS.map(r=>optCard({k:'region',id:r.id,n:r.n,d:`${r.title}. ${r.war}, ${r.monster[0]}.`,on:PL.region===r.id,chips:costChip(2)})).join(''));
+    else h+=slot('세계선','인리를 긍정하는 세계들',rnd('world',!PL.world,'세계선마다 일어나는 사건이 달라요.')+WORLDS.map(w=>optCard({k:'world',id:w.id,n:w.n,d:w.d,on:PL.world===w.id,chips:costChip(w.cost)})).join(''));
+  } else if(st.k==='birth'){
     h+=slot('기원','',CY_ORIGIN.map(o=>optCard({k:'origin',id:o.id,n:o.n,d:o.id==='root'?'근원과 이어진 채 태어나요. 마술속성·계통·세부 항목이 무료가 돼요. 대신 마술예장을 고를 수 없고, 억지력이 5에서 시작하며 이후 얻는 억지력이 두 배가 돼요.':'평범하게 다시 태어나요.',on:PL.origin===o.id,chips:costChip(FATE_COST.origin[o.id])+(o.id==='root'?chip('ap','억지력 5에서 시작'):'')})).join(''));
     h+=slot('종족','고르지 않으면 거의 확실히 인간',rnd('race',!PL.race,'거의 확실히 인간. 일본이라면 아주 드물게 혼혈.')+CY_RACE.map(r=>optCard({k:'race',id:r.id,n:r.n,d:r.d,on:PL.race===r.id,chips:costChip(FATE_COST.race[r.id])+apChip(r.ap)})).join(''));
     h+=slot('출생','고르지 않으면 대부분 평범한 가정',rnd('birth',!PL.birth,'나라별 실제 확률. 마술사 가문은 수만~수십만분의 1.')+CY_BIRTH.map(r=>optCard({k:'birth',id:r.id,n:r.n,d:r.d,on:PL.birth===r.id,chips:costChip(FATE_COST.birth[r.id])+apChip(r.ap)})).join(''));
@@ -88,6 +93,7 @@ function renderPrep(){
     const R_=x=>x?x:'<span class="unk">운명에 맡김</span>';
     h+=`<div class="ogrid">${optCard({k:'rankup',id:'up',n:'계위 한 단계 올리기',d:'태어날 때 정해지는 계위 목표를 한 단계 올려요.',on:PL.rankUp,chips:costChip(FATE_COST.rankUp),why:!PL.depts.length?'마술계통이 하나 이상 있어야 해요.':''})}</div>
     <div class="sheetbox"><dl>
+      <dt>시대 · 세계선</dt><dd>${R_(PL.era&&byId(ERAS,PL.era).n)} · ${PL.era==='ancient'?R_(PL.region&&byId(REGIONS,PL.region).n):R_(PL.world&&byId(WORLDS,PL.world).n)}</dd>
       <dt>기원 · 종족</dt><dd>${byId(CY_ORIGIN,PL.origin).n} · ${R_(PL.race&&byId(CY_RACE,PL.race).n)}</dd>
       <dt>출생 · 출생지</dt><dd>${R_(PL.birth&&byId(CY_BIRTH,PL.birth).n)} · ${R_(PL.place&&byId(PLACES,PL.place).n)}</dd>
       <dt>마술회로</dt><dd>${R_(PL.talent&&byId(TALENTS,PL.talent).n)}</dd>
@@ -116,6 +122,9 @@ function onPrepClick(ev){
   const o=ev.target.closest('.opt');if(!o||o.disabled)return;
   const k=o.dataset.k,id=o.dataset.id||null;
   if(k==='origin')PL.origin=id;
+  else if(k==='era'){PL.era=id;if(id!=='ancient')PL.region=null;else PL.world=null;}
+  else if(k==='region')PL.region=id;
+  else if(k==='world')PL.world=id;
   else if(k==='race')PL.race=id;
   else if(k==='birth')PL.birth=id;
   else if(k==='place')PL.place=id;
@@ -136,8 +145,8 @@ function onPrepClick(ev){
 function renderEntry(e){
   const li=document.createElement('li');
   li.className=e.cat+(e.big?' big':'');
-  li.innerHTML=`<span class="y">${e.y}</span><span class="a">${e.a}세</span><span class="t">${e.ai?'<span class="ai-tag">AI</span>':''}${esc(e.text)}</span>`;
-  logEl.appendChild(li);
+  li.innerHTML=`<span class="y">${yearLabel(e.y)}</span><span class="a">${e.a}세</span><span class="t">${e.ai?'<span class="ai-tag">AI</span>':''}${esc(e.text)}</span>`;
+  (renderEntry.target||logEl).appendChild(li);
 }
 function scrollLog(){if(getComputedStyle(logEl).maxHeight!=='none')logEl.scrollTop=logEl.scrollHeight;}
 function setGauge(id,nid,v){$(id).style.width=clamp(v,0,100)+'%';$(nid).textContent=Math.round(clamp(v,0,100));}
@@ -145,11 +154,14 @@ function unk(t){return `<span class="unk">${t}</span>`;}
 function render(){
   if(!S)return;
   $('vAge').innerHTML=`${S.age}<small>세</small>`;
-  $('vYear').innerHTML=`${S.year}년<br>${S.alive?'살아 있음':'세상을 떠남'}`;
+  $('vYear').innerHTML=`${yearLabel(S.year)}년<br>${S.alive?'살아 있음':'세상을 떠남'}`;
   $('vName').textContent=S.name;
-  $('vSub').textContent=`${S.gender==='m'?'남':'여'} · ${S.birthYear}년생 · ${S.country.n} · ${S.city}`;
+  $('vSub').textContent=`${S.gender==='m'?'남':'여'} · ${yearLabel(S.birthYear)}년생 · ${S.country.n} · ${S.city}`;
+  $('vWorld').innerHTML=S.era==='ancient'?`<span class="od">${esc(S.reg.n)}</span> · 명성 ${Math.round(S.fame)}`:S.world?esc(byId(WORLDS,S.world).n):unk('-');
+  const bl=Object.entries(S.bonds||{}).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  $('vBonds').innerHTML=bl.length?bl.map(([k,v])=>`<li><span>${esc(charInfo(k).n)}</span><span class="bondbar"><i style="width:${v}%"></i></span><b>${v}</b></li>`).join(''):'<li><span class="unk">아직 없음</span></li>';
   $('vFam').innerHTML=S.crestGen>0?`${esc(S.famType)} <span class="od">${S.crestGen}대째</span>${S.heir?' · 후계자':''}`:esc(S.famType);
-  $('vRace').innerHTML=S.race==='human'?unk('인간'):`<span class="od">${esc(byId(CY_RACE,S.race).n)}</span>`;
+  $('vRace').innerHTML=S.race==='human'?unk('인간'):`<span class="od">${esc(S.era==='ancient'&&S.race==='half'?'반신':byId(CY_RACE,S.race).n)}</span>`;
   const knows=S.mage||S.church||S.sensed||S.aware&&S.circuits>=3;
   $('vCirc').innerHTML=S.circuits<3?(S.mage?`${S.circuits}개`:unk('거의 없음')):(knows?`<span class="od">${S.circuits}개</span> · 질 ${S.qual}`:unk('잠들어 있음'));
   $('vElem').innerHTML=(S.mage||S.church)?`<span class="od">${esc(S.els.map(e=>EL_NAME[e]).join('·'))}</span>`:unk('-');
@@ -166,7 +178,8 @@ function render(){
   $('vSeals').hidden=!S.warCount;
   if(S.warCount){$('vSealN').textContent=S.seals;['s1','s2','s3'].forEach((id,i)=>$(id).classList.toggle('used',i>=S.seals));$('vServ').textContent=S.servant?`${S.servant.cls} · ${S.servant.name}`:(S.grailWin?'성배전쟁 승리':'서번트 없음');}
   const lab={plan:'예정',ok:'완료',fail:'실패',dead:'사망'};
-  $('vJr').innerHTML=S.sched.length?S.sched.map(j=>`<li class="${j.st}"><span>${esc(CY_JRMAP[j.id].n)}</span><span>${j.year} · ${lab[j.st]}</span></li>`).join(''):'<li><span class="unk">아직 없음</span><span></span></li>';
+  const rows=[...S.sched.map(j=>`<li class="${j.st}"><span>${esc(CY_JRMAP[j.id].n)}</span><span>${j.year} · ${lab[j.st]}</span></li>`),...(S.story||[]).slice(-10).map(x=>`<li class="${x.st}"><span>${esc(x.n)}</span><span>${lab[x.st]}</span></li>`)];
+  $('vJr').innerHTML=rows.length?rows.join(''):'<li><span class="unk">아직 없음</span><span></span></li>';
   if(S.img!==lastScene){lastScene=S.img;$('scene').innerHTML=imgHTML(S.img);}
 }
 function showModal(m){
@@ -201,6 +214,24 @@ function showChoice(p){
     render();scrollLog();drain();
   });
 }
+function showTalk(p){
+  const c=charInfo(p.char),sc=p.scene,sh=$('sheet');
+  sh.className='sheet choice talk';
+  sh.innerHTML=`${p.img?imgHTML(p.img,'scene portrait'):''}<div class="eyebrow">${p.fromAi?'<span class="ai-tag">AI</span>':''}대화 · 신뢰 ${bond(p.char)}</div><h3 id="mTitle">${esc(c.n)}</h3>
+    <p class="situ">${esc(sc.situation)}</p><p class="line">${esc(sc.line)}</p>
+    <div class="opts">${sc.choices.map((o,i)=>`<button type="button" class="optbtn" data-i="${i}"><b>${esc(o.text)}</b></button>`).join('')}</div>`;
+  $('modal').hidden=false;
+  const f=sh.querySelector('.optbtn');if(f)f.focus();
+  sh.querySelectorAll('.optbtn').forEach(b=>b.onclick=()=>{
+    const ch=sc.choices[+b.dataset.i];
+    if(S.pending===p)S.pending=null;
+    const n=talkChoose(p,ch);render();scrollLog();
+    sh.innerHTML=`${p.img?imgHTML(p.img,'scene portrait'):''}<div class="eyebrow">대화</div><h3>${esc(c.n)}</h3><p class="line">${esc(ch.reply)}</p>
+      <p class="bondchg ${n>0?'up':n<0?'down':''}">신뢰 ${n>0?'+':''}${n} · 지금 ${bond(p.char)}</p><button class="btn primary" type="button" id="mOk">계속</button>`;
+    $('mOk').focus();
+    $('mOk').onclick=()=>{$('modal').hidden=true;if(p.next)p.next();render();scrollLog();drain();};
+  });
+}
 function showLoading(t){
   const sh=$('sheet');sh.className='sheet choice';
   sh.innerHTML=`<div class="loading"><span class="spin" aria-hidden="true"></span><span>${esc(t)}</span></div>`;
@@ -219,6 +250,15 @@ function drain(){
     aiMakeEvent().then(p=>{aiBusy=false;S.pending=p;scene(p.img);render();drain();})
       .catch(e=>{aiBusy=false;$('modal').hidden=true;S.pending=null;toast('AI 사건을 만들지 못해 기본 사건으로 대신했어요'+(e&&e.message?': '+e.message:''));builtinOpportunity();render();drain();});
     return;
+  }
+  if(S.pending&&S.pending.talk){
+    const p=S.pending;
+    if(p.ai&&!p.aiDone){
+      if(aiBusy)return;aiBusy=true;showLoading(`${charInfo(p.char).n}과(와)의 장면을 쓰고 있어요…`);
+      aiTalk(p.char,p.ctx).then(sc=>{aiBusy=false;p.scene=sc;p.fromAi=true;p.aiDone=true;showTalk(p);}).catch(e=>{aiBusy=false;p.aiDone=true;toast('AI 대화를 만들지 못해 기본 대화로 대신했어요');showTalk(p);});
+      return;
+    }
+    showTalk(p);return;
   }
   if(S.pending){showChoice(S.pending);return;}
   if(!S.alive&&!S.finished&&!S.endingChoice){finish();return;}
@@ -246,8 +286,9 @@ function startLife(P){
   clearTimeout(timer);showScreen('game');
   logEl.innerHTML='';$('endBox').innerHTML='';lastScene='';
   majorQueue.length=0;$('modal').hidden=true;
-  logSink=renderEntry;
+  logSink=null;
   newLife(P,newSeed());
+  S.events.forEach(renderEntry);logSink=renderEntry;
   if(c.cost)log(`FATE ${fmtP(c.cost)}을(를) 써서 운명을 바꾸고 태어났다.`,'moon');
   running=true;paused=false;skipping=false;
   $('bPause').disabled=false;$('bSkip').disabled=false;$('bPause').textContent='일시정지';
@@ -257,10 +298,10 @@ function skipToChoice(){
   if(!running||!S||!S.alive)return;
   skipping=true;clearTimeout(timer);$('modal').hidden=true;majorQueue.length=0;
   const frag=document.createDocumentFragment();
-  logSink=e=>{const li=document.createElement('li');li.className=e.cat+(e.big?' big':'');li.innerHTML=`<span class="y">${e.y}</span><span class="a">${e.a}세</span><span class="t">${esc(e.text)}</span>`;frag.appendChild(li);};
+  renderEntry.target=frag;
   let g=0;
   while(S.alive&&!S.pending&&g++<1500){step();majorQueue.length=0;}
-  logEl.appendChild(frag);logSink=renderEntry;skipping=false;
+  renderEntry.target=null;logEl.appendChild(frag);skipping=false;
   render();scrollLog();drain();
 }
 
@@ -332,7 +373,8 @@ function showEnd(key){
     <div class="eyebrow">${esc(group)} · ${S.deathAge}세${first?' · 처음 본 결말':''}</div>
     <h3>${esc(title)}</h3>
     <p class="etext">${esc(text)}</p>
-    <div id="epi"></div>
+    ${(S.achNow||[]).length?`<div class="eyebrow" style="color:var(--gold)">이번 생의 업적</div><ul class="achlist">${S.achNow.map(id=>ACH_ALL.find(a=>a[0]===id)).filter(Boolean).map(a=>`<li>${esc(a[1])}</li>`).join('')}</ul>`:''}
+    <div id="judge"></div>
     ${oneIn>1.5?`<div class="rar-sub">태어난 조건만 보면 ${fmtBig(oneIn)}분의 1의 인생이었어요.</div>`:''}
     <div class="eyebrow" style="color:var(--fate)">이번 생에 얻은 FATE</div>
     <ul class="fatelist">${rows.map(([w,n])=>`<li><span>${esc(w)}</span><b>+${fmtP(n)}</b></li>`).join('')}<li class="sum"><span>합계 · 보유 FATE ${fmtP(PROFILE.fate)}</span><b>+${fmtP(total)}</b></li></ul>
@@ -345,11 +387,35 @@ function showEnd(key){
   $('bSame').onclick=()=>startLife(PL);
   $('bPause').disabled=true;$('bSkip').disabled=true;
   renderFate();renderDex();render();
-  if(SET.epilogue&&aiValid()){
-    $('epi').innerHTML='<p class="epi wait">AI가 이 인생의 후일담을 쓰고 있어요…</p>';
-    aiEpilogue(title).then(t=>{$('epi').innerHTML=t?`<p class="epi"><span class="ai-tag">AI</span>${esc(t)}</p>`:'';}).catch(()=>{$('epi').innerHTML='';});
-  }
+  S.endTitle=title;renderJudge(SET.epilogue&&aiValid());
   $('endBox').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ---------------- AI 평가 ---------------- */
+const GRADE_FATE={S:5,A:3,B:2,C:1,D:0,F:0};
+function renderJudge(auto){
+  const box=$('judge');if(!box||!S)return;
+  if(S.judge){const j=S.judge;box.innerHTML=`<div class="judge"><div class="grade g${j.grade}">${j.grade}</div><div><div class="eyebrow"><span class="ai-tag">AI</span>인생 평가${GRADE_FATE[j.grade]?` · FATE +${GRADE_FATE[j.grade]}`:''}</div><h4>${esc(j.title)}</h4><p>${esc(j.comment)}</p></div></div>${j.epilogue?`<p class="epi">${esc(j.epilogue)}</p>`:''}`;return;}
+  if(S.judging){box.innerHTML='<p class="epi wait">AI가 이 인생을 평가하고 있어요…</p>';return;}
+  if(aiValid()){
+    if(auto){runJudge();return;}
+    box.innerHTML=`<div class="askjudge"><span>AI에게 이 인생의 평가를 받아 볼까요?</span><button class="btn primary sm" type="button" id="bJudge">평가받기</button></div>`;$('bJudge').onclick=runJudge;return;
+  }
+  if(S.judgeNo){box.innerHTML='';return;}
+  box.innerHTML=`<div class="askjudge"><span>AI를 통해 엔딩을 평가받으시겠습니까?</span><button class="btn primary sm" type="button" id="bJudgeSet">AI 연결하기</button><button class="btn sm" type="button" id="bJudgeNo">괜찮아요</button></div>`;
+  $('bJudgeSet').onclick=()=>{S.judgeWait=true;openSettings('ai');};
+  $('bJudgeNo').onclick=()=>{S.judgeNo=true;renderJudge();};
+}
+function runJudge(){
+  if(S.judging||S.judge)return;S.judging=true;renderJudge();
+  const me=S;
+  aiJudge(S.endTitle||'').then(j=>{
+    me.judging=false;me.judge=j;
+    const b=GRADE_FATE[j.grade]||0;
+    if(b){PROFILE.fate=Math.round((PROFILE.fate+b)*10)/10;PROFILE.totalFate=(PROFILE.totalFate||0)+b;}
+    if(PROFILE.history[0])PROFILE.history[0].g=j.grade;
+    saveProfile();renderFate();renderDex();if(S===me)renderJudge();
+  }).catch(e=>{me.judging=false;if(S===me){$('judge').innerHTML=`<div class="askjudge"><span>평가를 받지 못했어요. ${esc(e&&e.message||'')}</span><button class="btn sm" type="button" id="bJudge">다시 시도</button></div>`;$('bJudge').onclick=runJudge;}});
 }
 
 /* ---------------- 도감 ---------------- */
@@ -358,8 +424,13 @@ function renderDex(){
   const got=all.filter(e=>st.endings[e[0]]).length;
   $('dexSub').textContent=`${st.lives}번 태어났고, 결말 ${all.length}개 중 ${got}개를 봤어요. 지금까지 모은 FATE ${fmtP(st.totalFate||0)}.`;
   const item=e=>{const n=st.endings[e[0]];return n?`<div class="dex-item got"><b>${esc(e[1])}</b><span>${esc(e[2])}</span> <span class="n">×${n}</span></div>`:`<div class="dex-item locked"><b>？？？</b><span>${esc(e[2])}</span></div>`;};
-  $('dex').innerHTML=`<h3 class="dex-h">인생의 결말</h3><div class="dex-grid">${LIFE_ENDINGS.map(item).join('')}</div><h3 class="dex-h">마술사의 결말</h3><div class="dex-grid">${CY_ENDINGS.map(item).join('')}</div>`;
-  $('recent').innerHTML=st.history.length?`최근 인생<ol>${st.history.map(l=>{const e=all.find(x=>x[0]===l.k);return `<li>${esc(l.name)} · ${esc(l.c)} ${l.y}년생 · ${l.a}세 · ${esc(e?e[1]:'')} · FATE +${fmtP(l.f)}</li>`;}).join('')}</ol>`:'';
+  const A=st.ach||{},gotA=ACH_ALL.filter(a=>A[a[0]]).length;
+  const aitem=a=>A[a[0]]?`<div class="dex-item got"><b>${esc(a[1])}</b><span>${esc(a[2])}</span></div>`:`<div class="dex-item locked"><b>？？？</b><span>${esc(a[2])}</span></div>`;
+  const sp=st.spirits||[];
+  $('dex').innerHTML=`<h3 class="dex-h">인생의 결말</h3><div class="dex-grid">${LIFE_ENDINGS.map(item).join('')}</div><h3 class="dex-h">마술사의 결말</h3><div class="dex-grid">${CY_ENDINGS.map(item).join('')}</div>
+    <h3 class="dex-h">업적 · ${gotA}/${ACH_ALL.length}</h3>${ACH.map(g=>`<div class="ach-g">${esc(g[1])}</div><div class="dex-grid">${g[2].map(aitem).join('')}</div>`).join('')}
+    ${sp.length?`<h3 class="dex-h">영령의 좌에 오른 전생</h3><div class="dex-grid">${sp.map(x=>`<div class="dex-item got"><b>${esc(x.name)}</b><span>${esc(x.epithet)} · ${esc(x.cls)} ${'★'.repeat(x.tier)}</span></div>`).join('')}</div><p class="dex-sub">현대의 성배전쟁에서 전생의 당신이 소환될 수 있어요.</p>`:''}`;
+  $('recent').innerHTML=st.history.length?`최근 인생<ol>${st.history.map(l=>{const e=all.find(x=>x[0]===l.k);return `<li>${esc(l.name)} · ${esc(l.c)} ${yearLabel(l.y)}년생 · ${l.a}세 · ${esc(e?e[1]:'')}${l.g?' · 평가 '+l.g:''} · FATE +${fmtP(l.f)}</li>`;}).join('')}</ol>`:'';
 }
 
 /* ---------------- 설정 ---------------- */
@@ -381,7 +452,7 @@ function renderSettings(){
       <p class="help">${a.type==='gemini'?'Google AI Studio(aistudio.google.com/apikey)에서 무료로 받을 수 있어요.':a.type==='anthropic'?'Anthropic Console에서 받아요(유료).':'OpenRouter, DeepSeek 같은 OpenAI 방식 API예요. 모델 이름은 그 서비스에 나온 이름 그대로 써요.'}</p>
       <label class="check"><input type="checkbox" id="sAiOn"${SET.aiOn?' checked':''}> 인생 도중 AI 사건 쓰기</label>
       <label>한 생에 AI 사건 최대 횟수<input type="number" id="sAiMax" min="1" max="10" value="${aiMax()}"></label>
-      <label class="check"><input type="checkbox" id="sEpi"${SET.epilogue?' checked':''}> 결말에 AI 후일담 쓰기</label>
+      <label class="check"><input type="checkbox" id="sEpi"${SET.epilogue?' checked':''}> 결말에 AI 평가와 후일담 받기</label>
       <div class="row"><button class="btn primary" type="button" data-act="saveAi">저장</button><button class="btn" type="button" data-act="testAi">연결 시험</button><span id="aiTest" class="help"></span></div>
     </div>`;
   } else if(setTab==='nai'){
@@ -500,7 +571,7 @@ $('bPause').onclick=()=>{if(!running)return;paused=!paused;$('bPause').textConte
 $('bSkip').onclick=skipToChoice;
 document.querySelectorAll('.speed button').forEach(b=>b.onclick=()=>{speed=+b.dataset.s;document.querySelectorAll('.speed button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));if(running&&!paused&&$('modal').hidden&&S&&!S.pending)schedule();});
 $('bSettings').onclick=()=>openSettings();
-$('setClose').onclick=()=>{$('setModal').hidden=true;};
+$('setClose').onclick=()=>{$('setModal').hidden=true;if(S&&S.finished&&!S.judge)renderJudge(!!S.judgeWait);};
 $('setBody').addEventListener('click',onSettingsClick);
 $('setBody').addEventListener('input',onSettingsInput);
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!$('setModal').hidden)$('setModal').hidden=true;});

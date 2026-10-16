@@ -323,6 +323,27 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
 .sitem .btns{display:flex;gap:6px;flex-wrap:wrap}
 .btn.sm{padding:6px 12px;font-size:12px}
 .studio-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bonds{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:13px}
+.bonds li{display:grid;grid-template-columns:minmax(0,1fr) 70px 26px;gap:8px;align-items:center}
+.bonds li span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bondbar{height:5px;background:var(--night-3);border-radius:3px;overflow:hidden}
+.bondbar i{display:block;height:100%;background:var(--seal)}
+.bonds b{font-family:var(--f-mono);font-size:11px;text-align:right;font-weight:500}
+.sheet.talk .portrait{aspect-ratio:4/3;object-position:top}
+.sheet .situ{color:var(--mute);font-size:14px;margin:0 0 10px}
+.sheet .line{color:var(--moon);font-size:16px;line-height:1.7;margin:0 0 16px;font-family:var(--f-display)}
+.bondchg{font-family:var(--f-mono);font-size:13px;color:var(--mute)}
+.bondchg.up{color:var(--seal)}.bondchg.down{color:var(--risk)}
+.achlist{list-style:none;padding:0;margin:4px 0 14px;display:flex;flex-wrap:wrap;gap:6px}
+.achlist li{border:1px solid rgba(214,180,108,.6);border-radius:999px;padding:3px 10px;font-size:13px;color:var(--gold)}
+.ach-g{font-size:12px;color:var(--mute);margin:10px 0 6px;letter-spacing:.06em}
+.judge{display:flex;gap:16px;align-items:flex-start;margin:4px 0 12px;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--night-3)}
+.judge h4{margin:2px 0 4px;font-family:var(--f-display);font-weight:400;font-size:20px}
+.judge p{margin:0;color:var(--mute);font-size:14px}
+.grade{font-family:var(--f-display);font-size:56px;line-height:1;min-width:56px;text-align:center;color:var(--gold)}
+.grade.gS{color:var(--seal)}.grade.gD,.grade.gF{color:var(--mute)}
+.askjudge{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px dashed var(--line);border-radius:12px;padding:12px 14px;margin:4px 0 14px;font-size:14px}
+.askjudge span{flex:1;min-width:200px}
 .closex{position:absolute;right:max(14px,env(safe-area-inset-right,0px));top:max(14px,env(safe-area-inset-top,0px))}
 </style>
 </head>
@@ -384,6 +405,7 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
         <p class="pname" id="vName"></p>
         <div class="psub" id="vSub"></div>
         <dl class="facts">
+          <dt>세계선</dt><dd id="vWorld"></dd>
           <dt>가정</dt><dd id="vFam"></dd>
           <dt>종족</dt><dd id="vRace"></dd>
           <dt>마술회로</dt><dd id="vCirc"></dd>
@@ -411,7 +433,9 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
           <div class="cy-row"><span>계위</span><b id="vRank">-</b></div>
           <div class="cy-row"><span>억지력</span><b id="vAP">-</b></div>
           <div class="cy-row"><span>이번 생 FATE</span><b id="vFate" style="color:var(--fate)">+0</b></div>
-          <div class="cy-h">행적</div>
+          <div class="cy-h">신뢰</div>
+          <ol class="bonds" id="vBonds"></ol>
+          <div class="cy-h">행적 · 이야기</div>
           <ol class="jr" id="vJr"></ol>
         </div>
       </aside>
@@ -454,7 +478,9 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script src="js/data.js"></script>
+<script src="js/routes-data.js"></script>
 <script src="js/engine.js"></script>
+<script src="js/routes.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/ui.js"></script>
 </body>
