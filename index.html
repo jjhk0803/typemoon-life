@@ -1,0 +1,1174 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>타입문 인생게임</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Song+Myung&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 레이아웃: 달밤 하늘 아래, 왼쪽은 지금 사는 사람의 신상 카드(고정), 오른쪽은 해마다 쌓이는 연대기. 좁으면 위아래로. */
+:root{
+  --night:#0c0e1b;      /* 바탕: 남색 밤 */
+  --night-2:#141729;    /* 패널 */
+  --night-3:#1c2038;    /* 패널 안쪽, 입력칸 */
+  --line:#2a2f4d;       /* 구분선 */
+  --moon:#ebe5d2;       /* 본문: 달빛 */
+  --mute:#9096b2;       /* 보조 글씨, 푸른 기 회색 */
+  --seal:#d33a52;       /* 영주(令呪)의 붉은색: 포인트 */
+  --gold:#d6b46c;       /* 희귀도, 경사 */
+  --od:#6cc0b2;         /* 마력, 신비 */
+  --risk:#e39155;       /* 위기 */
+  --f-display:"Song Myung","Nanum Myeongjo","Batang",serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--night);color:var(--moon)}
+body{
+  margin:0;font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 48px;
+  background:
+    radial-gradient(1200px 600px at 85% -10%,rgba(235,229,210,.07),transparent 60%),
+    var(--night);
+  min-height:100%;
+}
+.wrap{max-width:1120px;margin:0 auto}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* 머리 */
+header.hero{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-block:40px 28px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.lunar{position:absolute;right:4%;top:22px;width:92px;height:92px;border-radius:50%;
+  background:radial-gradient(circle at 38% 36%,#f6f1e0 0,#e2dbc4 45%,#bdb59c 100%);
+  box-shadow:0 0 60px 10px rgba(235,229,210,.12);pointer-events:none;opacity:.9}
+.lunar::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 70% 60%,rgba(12,14,27,.25) 0 10%,transparent 11%),radial-gradient(circle at 30% 70%,rgba(12,14,27,.18) 0 7%,transparent 8%)}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;color:var(--mute);text-transform:uppercase}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(40px,8vw,72px);line-height:1.05;margin:6px 0 10px;text-wrap:balance;position:relative}
+h1 .one{color:var(--seal)}
+.lede{max-width:56ch;color:var(--mute);margin:0}
+.hero-l{position:relative;z-index:1;min-width:0}
+
+/* 조작 줄 */
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-block:16px;border-bottom:1px solid var(--line)}
+.btn{border:1px solid var(--line);background:var(--night-2);padding:9px 16px;border-radius:999px;cursor:pointer;transition:border-color .15s,background .15s}
+.btn:hover{border-color:var(--mute)}
+.btn.primary{background:var(--seal);border-color:var(--seal);color:#fff;font-weight:700}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn[disabled]{opacity:.4;cursor:default}
+.speed{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.speed button{border:0;background:transparent;padding:9px 12px;cursor:pointer;font-family:var(--f-mono);font-size:13px;color:var(--mute)}
+.speed button[aria-pressed="true"]{background:var(--night-3);color:var(--moon)}
+.spacer{flex:1}
+.toggle{display:inline-flex;align-items:center;gap:6px;color:var(--mute);font-size:13px;cursor:pointer}
+.code-in{display:inline-flex;gap:6px;align-items:center}
+.code-in input{width:110px;background:var(--night-3);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:var(--f-mono);font-size:13px;text-transform:uppercase}
+
+/* 본문 그리드 */
+main{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:28px;padding-top:24px}
+@media (max-width:820px){main{grid-template-columns:minmax(0,1fr)}}
+
+/* 신상 카드 */
+.card{background:var(--night-2);border:1px solid var(--line);border-radius:14px;padding:20px;position:sticky;top:max(16px,env(safe-area-inset-top,0px));align-self:start}
+@media (max-width:820px){.card{position:static}}
+.agebox{display:flex;align-items:baseline;gap:10px;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:14px}
+.age{font-family:var(--f-display);font-size:64px;line-height:1}
+.age small{font-size:20px;color:var(--mute);margin-left:4px}
+.year{font-family:var(--f-mono);color:var(--mute);font-size:13px;text-align:right}
+.pname{font-family:var(--f-display);font-size:26px;line-height:1.2;margin:0 0 2px}
+.psub{color:var(--mute);font-size:13px;margin-bottom:14px}
+dl.facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;margin:0 0 16px;font-size:14px}
+dl.facts dt{color:var(--mute);font-size:12px;letter-spacing:.04em;padding-top:2px}
+dl.facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.unk{color:var(--mute);font-family:var(--f-mono)}
+.od{color:var(--od)}
+.gauges{display:grid;gap:8px}
+.g{display:grid;grid-template-columns:44px minmax(0,1fr) 30px;gap:8px;align-items:center;font-size:12px;color:var(--mute)}
+.g .bar{height:6px;background:var(--night-3);border-radius:3px;overflow:hidden}
+.g .bar i{display:block;height:100%;background:var(--moon);width:50%;transition:width .3s}
+.g.h .bar i{background:var(--od)}
+.g.w .bar i{background:var(--gold)}
+.g span:last-child{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.seals{display:flex;align-items:center;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.seals svg{width:64px;height:44px}
+.seals path{fill:none;stroke:var(--seal);stroke-width:3.2;stroke-linecap:round;transition:stroke .3s,opacity .3s}
+.seals path.used{stroke:var(--line);opacity:.6}
+.seals .txt{font-size:13px;color:var(--mute)}
+.seals .txt b{color:var(--moon);font-weight:500}
+
+/* 연대기 */
+.chron{min-width:0}
+.chron-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
+.chron-head h2{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--mute)}
+.legend span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--c)}
+#log{list-style:none;margin:0;padding:0 4px 0 0;max-height:70vh;overflow-y:auto;border-top:1px solid var(--line)}
+@media (max-width:820px){#log{max-height:none}}
+#log li{display:grid;grid-template-columns:52px 40px minmax(0,1fr);gap:10px;padding:9px 0;border-bottom:1px solid rgba(42,47,77,.55);font-size:14px;animation:in .35s ease-out}
+@keyframes in{from{opacity:.2;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#log li{animation:none}.lunar{box-shadow:none}}
+#log .y{font-family:var(--f-mono);color:var(--mute);font-size:12px;padding-top:2px;font-variant-numeric:tabular-nums}
+#log .a{font-family:var(--f-mono);font-size:12px;padding-top:2px;text-align:right;font-variant-numeric:tabular-nums;color:var(--mute)}
+#log .t{min-width:0;border-left:2px solid var(--c,var(--line));padding-left:10px}
+#log li.life{--c:var(--line)}
+#log li.joy{--c:var(--gold)}
+#log li.moon{--c:var(--od)}
+#log li.moon .t{color:#cfe9e4}
+#log li.grail{--c:var(--seal)}
+#log li.grail .t{color:#f3d6db}
+#log li.risk{--c:var(--risk)}
+#log li.death{--c:var(--moon)}
+#log li.death .t{font-family:var(--f-display);font-size:16px}
+#log li.big .t{font-weight:500}
+.intro{padding:20px 0;color:var(--mute);max-width:62ch}
+.intro p{margin:0 0 10px}
+.intro b{color:var(--moon);font-weight:500}
+
+/* 결말 */
+.ending{margin-top:20px;border:1px solid var(--gold);border-radius:14px;padding:22px;background:linear-gradient(180deg,rgba(214,180,108,.08),transparent 70%),var(--night-2)}
+.ending .eyebrow{color:var(--gold)}
+.ending h3{font-family:var(--f-display);font-weight:400;font-size:32px;margin:4px 0 6px;text-wrap:balance}
+.ending .rar{font-family:var(--f-display);font-size:22px;color:var(--gold)}
+.ending .rar-sub{color:var(--mute);font-size:13px;margin-bottom:14px}
+.ending ul{margin:0 0 16px;padding-left:18px;font-size:14px}
+.ending ul li{margin-bottom:3px}
+.ending .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ending code{font-family:var(--f-mono);background:var(--night-3);padding:3px 8px;border-radius:6px;letter-spacing:.08em}
+#copyOut{width:100%;margin-top:10px;background:var(--night-3);border:1px solid var(--line);border-radius:8px;padding:8px;font-size:13px;color:var(--moon)}
+
+/* 도감 */
+section.dex{margin-top:40px;border-top:1px solid var(--line);padding-top:20px}
+section.dex h2{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0 0 4px}
+.dex-sub{color:var(--mute);font-size:13px;margin:0 0 14px}
+.dex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.dex-item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;min-width:0}
+.dex-item b{display:block;font-weight:500;font-size:14px}
+.dex-item span{color:var(--mute);font-size:12px}
+.dex-item.locked b{color:var(--mute);font-family:var(--f-mono);letter-spacing:.1em}
+.dex-item.got{border-color:rgba(214,180,108,.6)}
+.dex-item.got span.n{color:var(--gold);font-family:var(--f-mono)}
+.recent{margin-top:16px;font-size:13px;color:var(--mute)}
+.recent ol{margin:6px 0 0;padding-left:20px}
+.recent li{margin-bottom:2px;overflow-wrap:anywhere}
+footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+
+/* 소환 · 큰 사건 창 */
+.modal{position:fixed;inset:0;background:rgba(6,7,14,.78);display:flex;align-items:center;justify-content:center;z-index:50;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet{width:min(440px,100%);max-height:100%;overflow-y:auto;background:var(--night-2);border:1px solid var(--line);border-radius:16px;padding:24px;text-align:center;animation:pop .45s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.sheet.summon{border-color:var(--seal);box-shadow:0 0 0 1px rgba(211,58,82,.3),0 0 80px rgba(211,58,82,.18)}
+.sheet.gold{border-color:var(--gold);box-shadow:0 0 80px rgba(214,180,108,.16)}
+.sheet .eyebrow{margin-bottom:6px}
+.sheet h3{font-family:var(--f-display);font-weight:400;font-size:30px;margin:0 0 4px;text-wrap:balance}
+.sheet .cls{font-family:var(--f-mono);letter-spacing:.24em;color:var(--seal);font-size:13px}
+.stars{color:var(--gold);letter-spacing:.2em;font-size:18px;margin:6px 0 12px}
+.params{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0 16px;text-align:left}
+.params div{background:var(--night-3);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--mute);display:flex;justify-content:space-between}
+.params b{font-family:var(--f-mono);color:var(--moon);font-weight:500}
+.sheet p{color:var(--mute);margin:0 0 16px;font-size:14px}
+.circle{width:120px;height:120px;margin:0 auto 10px;display:block}
+.circle circle,.circle path{fill:none;stroke:var(--seal);stroke-width:1.2;opacity:.85}
+@media (prefers-reduced-motion:no-preference){.circle{animation:spin 18s linear infinite}}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="lunar" aria-hidden="true"></div>
+    <div class="hero-l">
+      <div class="eyebrow">80억분의 1 · 비공식 팬메이드</div>
+      <h1>타입문 <span class="one">인생</span>게임</h1>
+      <p class="lede">80억 명 중 하나로 무작위로 태어나요. 대부분은 달빛 세계를 모른 채 평범하게 살다 가요. 아주 드물게 마술회로를 타고나거나, 사도를 마주치거나, 후유키에서 영주가 새겨지기도 해요.</p>
+    </div>
+  </header>
+
+  <div class="controls" role="toolbar" aria-label="게임 조작">
+    <button class="btn primary" id="bBorn" type="button">태어나기</button>
+    <button class="btn" id="bPause" type="button" disabled>일시정지</button>
+    <div class="speed" role="group" aria-label="속도">
+      <button type="button" data-s="1" aria-pressed="true">1×</button>
+      <button type="button" data-s="2" aria-pressed="false">2×</button>
+      <button type="button" data-s="4" aria-pressed="false">4×</button>
+      <button type="button" data-s="10" aria-pressed="false">10×</button>
+    </div>
+    <button class="btn" id="bSkip" type="button" disabled>끝까지</button>
+    <label class="toggle"><input type="checkbox" id="autoPause" checked> 큰 사건에서 멈추기</label>
+    <label class="toggle" title="달빛 세계 사건이 100배 자주 일어나요. 결말의 '몇분의 1'은 실제 확률로 계산해요."><input type="checkbox" id="fateMode" checked> 운명 가속 ×100</label>
+    <span class="spacer"></span>
+    <form class="code-in" id="codeForm">
+      <label for="codeIn" class="toggle">인생 코드</label>
+      <input id="codeIn" maxlength="10" placeholder="예: F-3F9K2A" autocomplete="off" spellcheck="false">
+      <button class="btn" type="submit">다시 살기</button>
+    </form>
+  </div>
+
+  <main>
+    <aside class="card" aria-live="polite">
+      <div class="agebox">
+        <div class="age" id="vAge">-<small>세</small></div>
+        <div class="year" id="vYear">아직 태어나지 않았어요</div>
+      </div>
+      <p class="pname" id="vName">???</p>
+      <div class="psub" id="vSub">태어날 나라와 가문은 고를 수 없어요</div>
+      <dl class="facts">
+        <dt>가정</dt><dd id="vFam"><span class="unk">-</span></dd>
+        <dt>마술회로</dt><dd id="vCirc"><span class="unk">-</span></dd>
+        <dt>속성</dt><dd id="vElem"><span class="unk">-</span></dd>
+        <dt>기원</dt><dd id="vOrig"><span class="unk">-</span></dd>
+        <dt>마안</dt><dd id="vEyes"><span class="unk">-</span></dd>
+        <dt>소속</dt><dd id="vAff"><span class="unk">-</span></dd>
+        <dt>직업</dt><dd id="vJob"><span class="unk">-</span></dd>
+      </dl>
+      <div class="gauges">
+        <div class="g h"><span>건강</span><div class="bar"><i id="gH"></i></div><span id="nH">-</span></div>
+        <div class="g"><span>정신</span><div class="bar"><i id="gM"></i></div><span id="nM">-</span></div>
+        <div class="g w"><span>재산</span><div class="bar"><i id="gW"></i></div><span id="nW">-</span></div>
+        <div class="g"><span>행운</span><div class="bar"><i id="gL"></i></div><span id="nL">-</span></div>
+      </div>
+      <div class="seals" id="vSeals" hidden>
+        <svg viewBox="0 0 64 44" aria-hidden="true">
+          <path id="s1" d="M32 4 C 18 10, 13 24, 21 39"/>
+          <path id="s2" d="M32 4 C 46 10, 51 24, 43 39"/>
+          <path id="s3" d="M12 22 C 24 16, 40 16, 52 22"/>
+        </svg>
+        <div class="txt">영주 <b id="vSealN">3</b>획<br><span id="vServ"></span></div>
+      </div>
+    </aside>
+
+    <section class="chron" aria-label="연대기">
+      <div class="chron-head">
+        <h2>연대기</h2>
+        <div class="legend" aria-hidden="true">
+          <span style="--c:var(--gold)">경사</span>
+          <span style="--c:var(--od)">신비</span>
+          <span style="--c:var(--seal)">성배</span>
+          <span style="--c:var(--risk)">위기</span>
+        </div>
+      </div>
+      <div class="intro" id="intro">
+        <p><b>태어나기</b>를 누르면 한 해씩 인생이 흘러가요. 나라는 실제 인구 비율대로, 수명은 나라별 기대수명을 바탕으로 정해져요.</p>
+        <p>마술사 가문에 태어날 확률은 수만에서 수십만분의 1이에요. 1994년과 2004년 후유키에 있었다면 성배전쟁에 휘말릴 수도 있어요. 영주가 새겨지면 서번트를 소환해요.</p>
+        <p><b>운명 가속</b>을 켜 두면 달빛 세계 사건이 100배 자주 일어나요. 끄면 현실 확률 그대로라서, 수백 번을 태어나도 평범하게 살다 갈 수 있어요.</p>
+        <p>인생이 끝나면 그 삶이 몇분의 1이었는지, 어떤 결말이었는지 알려 줘요. 인생 코드를 넣으면 같은 인생을 다시 볼 수 있어요.</p>
+      </div>
+      <ol id="log"></ol>
+      <div id="endBox"></div>
+    </section>
+  </main>
+
+  <section class="dex" aria-label="결말 도감">
+    <h2>결말 도감</h2>
+    <p class="dex-sub" id="dexSub">이 기기에서 본 결말이 모여요.</p>
+    <div class="dex-grid" id="dex"></div>
+    <div class="recent" id="recent"></div>
+  </section>
+
+  <footer>TYPE-MOON 세계관(Fate · 월희 · 공의 경계)을 바탕으로 한 비공식 팬 게임이에요. 공식과 관계없고, 수치는 놀이용 근사치예요.</footer>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="mTitle"></div>
+</div>
+
+<script>
+'use strict';
+/* ================= 난수 ================= */
+let rng=Math.random;
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const R=()=>rng();
+const ri=(a,b)=>a+Math.floor(R()*(b-a+1));
+const pick=a=>a[Math.floor(R()*a.length)];
+const chance=p=>R()<p;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function wpick(list,wf){let t=0;for(const x of list)t+=Math.max(0,wf(x));let r=R()*t;for(const x of list){r-=Math.max(0,wf(x));if(r<=0)return x;}return list[list.length-1];}
+function gauss(){const u=R()||1e-9,v=R();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+
+/* ================= 세계 자료 ================= */
+// w: 세계 인구 비율(%), le: 기대수명
+const COUNTRIES=[
+  {n:'인도',w:17.8,le:71,nm:'in',cities:['뭄바이','델리','콜카타','벵갈루루','첸나이']},
+  {n:'중국',w:17.5,le:78,nm:'cn',cities:['상하이','베이징','충칭','광저우','청두']},
+  {n:'미국',w:4.2,le:77,nm:'en',cities:['뉴욕','로스앤젤레스','시카고','휴스턴','보스턴']},
+  {n:'인도네시아',w:3.4,le:68,nm:'sea',cities:['자카르타','수라바야','반둥','메단']},
+  {n:'파키스탄',w:3.0,le:66,nm:'ar',cities:['카라치','라호르','이슬라마바드']},
+  {n:'나이지리아',w:2.8,le:54,nm:'af',cities:['라고스','카노','아부자','이바단']},
+  {n:'브라질',w:2.7,le:73,nm:'pt',cath:1,cities:['상파울루','리우데자네이루','살바도르','브라질리아']},
+  {n:'방글라데시',w:2.2,le:72,nm:'in',cities:['다카','치타공','쿨나']},
+  {n:'러시아',w:1.8,le:70,nm:'ru',eu:1,cities:['모스크바','상트페테르부르크','노보시비르스크']},
+  {n:'에티오피아',w:1.6,le:65,nm:'af',cities:['아디스아바바','디레다와','곤다르']},
+  {n:'멕시코',w:1.6,le:71,nm:'es',cath:1,cities:['멕시코시티','과달라하라','몬테레이']},
+  {n:'일본',w:1.5,le:84,nm:'jp',cities:['도쿄','오사카','나고야','삿포로','후쿠오카','요코하마','교토','센다이']},
+  {n:'필리핀',w:1.4,le:69,nm:'sea',cath:1,cities:['마닐라','세부','다바오']},
+  {n:'이집트',w:1.4,le:70,nm:'ar',cities:['카이로','알렉산드리아','기자']},
+  {n:'콩고민주공화국',w:1.3,le:60,nm:'af',cities:['킨샤사','루붐바시','음부지마이']},
+  {n:'베트남',w:1.2,le:74,nm:'sea',cities:['호찌민','하노이','다낭']},
+  {n:'이란',w:1.1,le:74,nm:'ar',cities:['테헤란','이스파한','마슈하드']},
+  {n:'튀르키예',w:1.1,le:76,nm:'ar',cities:['이스탄불','앙카라','이즈미르']},
+  {n:'독일',w:1.05,le:81,nm:'de',eu:1,cities:['베를린','뮌헨','함부르크','쾰른']},
+  {n:'태국',w:0.9,le:79,nm:'sea',cities:['방콕','치앙마이','푸켓']},
+  {n:'영국',w:0.85,le:81,nm:'en',eu:1,uk:1,cities:['런던','맨체스터','에든버러','버밍엄','리버풀']},
+  {n:'프랑스',w:0.82,le:82,nm:'fr',eu:1,cath:1,cities:['파리','리옹','마르세유','보르도']},
+  {n:'탄자니아',w:0.8,le:66,nm:'af',cities:['다르에스살람','도도마','아루샤']},
+  {n:'남아프리카공화국',w:0.75,le:65,nm:'af',cities:['요하네스버그','케이프타운','더반']},
+  {n:'이탈리아',w:0.74,le:83,nm:'it',eu:1,cath:1,cities:['로마','밀라노','나폴리','피렌체','토리노']},
+  {n:'케냐',w:0.7,le:62,nm:'af',cities:['나이로비','몸바사','키수무']},
+  {n:'미얀마',w:0.68,le:67,nm:'sea',cities:['양곤','만달레이']},
+  {n:'콜롬비아',w:0.65,le:77,nm:'es',cath:1,cities:['보고타','메데인','칼리']},
+  {n:'한국',w:0.64,le:83,nm:'kr',cities:['서울','부산','인천','대구','대전','광주']},
+  {n:'스페인',w:0.6,le:83,nm:'es',eu:1,cath:1,cities:['마드리드','바르셀로나','세비야','발렌시아']},
+  {n:'우간다',w:0.6,le:63,nm:'af',cities:['캄팔라','굴루']},
+  {n:'수단',w:0.6,le:65,nm:'ar',cities:['하르툼','포트수단']},
+  {n:'아르헨티나',w:0.57,le:76,nm:'es',cath:1,cities:['부에노스아이레스','코르도바','로사리오']},
+  {n:'알제리',w:0.57,le:76,nm:'ar',cities:['알제','오랑']},
+  {n:'이라크',w:0.55,le:71,nm:'ar',cities:['바그다드','바스라','모술']},
+  {n:'아프가니스탄',w:0.5,le:63,nm:'ar',cities:['카불','칸다하르','헤라트']},
+  {n:'캐나다',w:0.5,le:82,nm:'en',cities:['토론토','밴쿠버','몬트리올']},
+  {n:'폴란드',w:0.47,le:78,nm:'ru',eu:1,cath:1,cities:['바르샤바','크라쿠프','그단스크']},
+  {n:'모로코',w:0.47,le:75,nm:'ar',cities:['카사블랑카','라바트','마라케시']},
+  {n:'우크라이나',w:0.45,le:72,nm:'ru',eu:1,cities:['키이우','하르키우','오데사']},
+  {n:'사우디아라비아',w:0.45,le:77,nm:'ar',cities:['리야드','제다','메카']},
+  {n:'말레이시아',w:0.43,le:76,nm:'sea',cities:['쿠알라룸푸르','조지타운']},
+  {n:'페루',w:0.43,le:76,nm:'es',cath:1,cities:['리마','쿠스코','아레키파']},
+  {n:'가나',w:0.42,le:64,nm:'af',cities:['아크라','쿠마시']},
+  {n:'호주',w:0.33,le:83,nm:'en',cities:['시드니','멜버른','브리즈번']},
+  {n:'루마니아',w:0.24,le:76,nm:'ru',eu:1,cities:['부쿠레슈티','클루지나포카','브라쇼브']},
+  {n:'핀란드',w:0.07,le:82,nm:'de',eu:1,cities:['헬싱키','탐페레','투르쿠']}
+];
+const W_TOTAL=COUNTRIES.reduce((s,c)=>s+c.w,0);
+const NAMES={
+  jp:{fam:['사토','스즈키','다카하시','다나카','와타나베','이토','야마모토','나카무라','고바야시','가토','요시다','야마다','마쓰모토','이노우에'],m:['하루토','소타','렌','다이키','유토','겐지','히로시','다쿠야','이치로','쇼타'],f:['유이','하나','아오이','미오','사쿠라','나나미','유키','레이코','미사키','가오리'],fg:1},
+  kr:{fam:['김','이','박','최','정','강','조','윤','장','임','한','오'],m:['민준','서준','도윤','지호','현우','성민','재원','동현','태양','준혁'],f:['서연','지우','하은','수아','민지','예린','지현','은비','다인','소윤'],fg:1,tight:1},
+  cn:{fam:['왕','리','장','류','천','양','자오','황','저우','우'],m:['웨이','하오','쥔','레이','밍','타오','펑','즈하오'],f:['팡','징','리나','메이','옌','팅','샤오위','후이'],fg:1},
+  en:{fam:['스미스','존슨','윌리엄스','브라운','존스','밀러','데이비스','윌슨','테일러','클라크','에번스','라이트'],m:['제임스','올리버','잭','윌리엄','헨리','토머스','대니얼','마이클','아서','에드워드'],f:['에밀리','올리비아','샬럿','소피아','그레이스','엘리','한나','루시','앨리스','마거릿']},
+  de:{fam:['뮐러','슈미트','슈나이더','피셔','베버','마이어','바그너','베커','호프만','코흐'],m:['루카스','막시밀리안','요나스','펠릭스','파울','레온','프리드리히'],f:['한나','레나','클라라','에마','미아','소피','이레네']},
+  fr:{fam:['마르탱','베르나르','뒤부아','토마','로베르','리샤르','프티','르루아'],m:['루이','가브리엘','쥘','아르튀르','레오','앙투안'],f:['잔','루이즈','카미유','클로에','마농','엘로디']},
+  it:{fam:['로시','루소','페라리','에스포지토','비앙키','로마노','콜롬보','리치'],m:['마르코','루카','로렌초','안드레아','조반니','피에트로'],f:['줄리아','소피아','키아라','프란체스카','엘레나','루치아']},
+  es:{fam:['가르시아','로드리게스','마르티네스','로페스','곤살레스','에르난데스','페레스','산체스'],m:['카를로스','미겔','호세','후안','디에고','알레한드로'],f:['마리아','루시아','카르멘','소피아','발렌티나','이사벨']},
+  pt:{fam:['실바','산투스','올리베이라','소자','페헤이라','코스타','알메이다'],m:['주앙','페드루','루카스','가브리에우','마테우스'],f:['아나','줄리아','베아트리스','라리사','가브리엘라']},
+  ru:{fam:['이바노프','스미르노프','쿠즈네초프','포포프','소콜로프','노바크','코발스키'],m:['알렉산드르','드미트리','세르게이','이반','니콜라이','안드레이'],f:['아나스타샤','마리야','옐레나','올가','타티야나','이리나']},
+  in:{fam:['샤르마','파텔','싱','쿠마르','굽타','레디','다스','라만'],m:['아라브','비한','아디트야','라훌','아르준','산자이','카림'],f:['프리야','아난야','디비야','카비야','푸자','락슈미','나스린']},
+  ar:{fam:['하산','알리','모하메드','이브라힘','마흐무드','칸','후세인','유수프'],m:['오마르','유수프','아마드','카림','타리크','메흐메트'],f:['파티마','아이샤','마리암','누르','라일라','제이네프']},
+  af:{fam:['오콘쿠오','아데예미','음발라','오코로','케베데','은둠부','멘사','키마니'],m:['치네두','에메카','코피','아베베','투만','바라카'],f:['아마라','은고지','아다','셀람','자네타','와리스']},
+  sea:{fam:['응우옌','산토스','위자야','레예스','쩐','쁘라셋','탄','아웅'],m:['안','리코','부디','호세','민','솜차이','하리'],f:['린','마리아','데위','아인','쁘리야','띠다']}
+};
+const ELEMENTS=[['불',22],['물',22],['땅',22],['바람',22],['공(에테르)',7],['이중속성',4],['허수',0.35],['무',0.35],['아베레이지 원',0.04]];
+const ORIGINS=['정지','소비','반복','귀환','허무','확산','결속','망각','증식','순환','단절','갈망','수호','선별','봉인','침식','변환','고립','개화','계승','탐구','해방','모방','정화'];
+const EYES=[ // 이름, 등급, 가중치
+  ['매료의 마안','노랑',30],['속박의 마안','노랑',25],['투시의 마안','노랑',18],['약한 미래시의 마안','노랑',10],
+  ['과거시의 마안','황금',6],['왜곡의 마안','보석',2.5],['석화의 마안','보석',1.2],['진정한 미래시의 마안','보석',0.6],['직사의 마안','무지개',0.02]
+];
+const QUAL=['E','D','C','B','A'];
+const QMULT={E:.6,D:.8,C:1,B:1.25,A:1.6};
+const RANKS=['말자','장자','개위','제위','전위','색위','관위'];
+const DEPTS={'불':'창조과','물':'강령과','땅':'광석과','바람':'천체과','공(에테르)':'전체기초과','이중속성':'광석과','허수':'강령과','무':'개체기초과','아베레이지 원':'천체과'};
+const ALL_DEPTS=['전체기초과','개체기초과','강령과','광석과','동물과','전승과','식물과','천체과','창조과','고고학과','현대마술과','법정과'];
+
+/* 서번트: 신화·역사 속 영웅 */
+const SERVANTS={
+  '세이버':[['아서 왕',5],['지크프리트',4],['가웨인',4],['롤랑',3],['미야모토 무사시',4],['베디비어',2],['엘 시드',3],['니벨룽의 기사',2]],
+  '아처':[['길가메시',5],['아르주나',5],['아탈란테',3],['로빈 후드',2],['나스노 요이치',2],['윌리엄 텔',3],['아라쉬',2],['양유기',1]],
+  '랜서':[['쿠 훌린',3],['카르나',5],['디어뮈드 오 디나',3],['헥토르',3],['레오니다스',2],['브리튼의 창기사',1],['이 서문',2],['보다',1]],
+  '라이더':[['이스칸다르',5],['메두사',3],['프랜시스 드레이크',4],['부디카',3],['아킬레우스',5],['성 게오르기우스',2],['우시와카마루',3],['마르코 폴로',1]],
+  '캐스터':[['메데이아',3],['멀린',5],['키르케',3],['파라켈수스',3],['셰익스피어',1],['안데르센',1],['현장삼장',4],['질 드 레',2]],
+  '어새신':[['하산 이 사바흐',2],['사사키 코지로',2],['잭 더 리퍼',4],['풍마 코타로',2],['형가',2],['세미라미스',5],['카르밀라',3],['샤를 앙리 상송',1]],
+  '버서커':[['헤라클레스',5],['여포 봉선',4],['스파르타쿠스',2],['블라드 3세',4],['프랑켄슈타인의 괴물',2],['베오울프',3],['다리우스 3세',3],['랜슬롯',4]],
+  '룰러':[['잔 다르크',5],['아마쿠사 시로',4]],
+  '어벤저':[['몬테크리스토 백작',5],['앙그라 마이뉴',1]]
+};
+const CLASSES=[['세이버',14],['아처',14],['랜서',14],['라이더',14],['캐스터',14],['어새신',14],['버서커',14],['룰러',1],['어벤저',1]];
+const CLS_EN={'세이버':'SABER','아처':'ARCHER','랜서':'LANCER','라이더':'RIDER','캐스터':'CASTER','어새신':'ASSASSIN','버서커':'BERSERKER','룰러':'RULER','어벤저':'AVENGER'};
+
+/* 결말 도감 */
+const ENDINGS=[
+  ['normal','평범한 사람','달을 올려다보며 평범하게 살았다'],
+  ['short','짧은 생','다섯 살이 되기 전에'],
+  ['century','백 년을 산 사람','백 살을 넘겼다'],
+  ['wiped','잊어버린 목격자','보았지만 기억하지 못한다'],
+  ['aware','달빛 세계를 엿본 자','신비를 알고도 살아남았다'],
+  ['eyes','마안을 지닌 자','태어날 때부터 보이는 것이 달랐다'],
+  ['mage','마술사','근원을 향해 걸었다'],
+  ['highmage','시계탑의 고위 마술사','전위 이상에 올랐다'],
+  ['grand','관위의 마술사','시계탑 최고의 계위'],
+  ['executor','성당교회의 대행자','이단을 사냥했다'],
+  ['burial','매장기관의 대행자','교회의 비밀 병기'],
+  ['fugitive','도망자 마술사','봉인지정을 피해 달아났다'],
+  ['sealed','봉인지정 표본','유리병 속의 영원'],
+  ['master','성배전쟁의 마스터','영주를 받았지만 성배에는 닿지 못했다'],
+  ['grail','성배를 손에 넣은 자','만능의 소원기를 손에 쥐었다'],
+  ['apostle','죽지 않는 사도','피를 마시며 시간을 건넜다'],
+  ['ancestor','27조의 사도','사도들의 정점'],
+  ['root','근원 도달자','소용돌이 너머로 사라졌다']
+];
+
+/* ================= 상태 ================= */
+let S=null;
+function makeName(nm,g){
+  const p=NAMES[nm]||NAMES.en;
+  const giv=pick(g==='m'?p.m:p.f), fam=pick(p.fam);
+  if(p.tight) return fam+giv;
+  return p.fg?fam+' '+giv:giv+' '+fam;
+}
+function addRar(label,p){S.rar.push({label,p});}
+function seedToCode(n,boost){return (boost?'F-':'R-')+(n>>>0).toString(36).toUpperCase().padStart(6,'0');}
+function codeToSeed(s){
+  s=String(s).trim().toUpperCase();let boost=null;
+  const m=s.match(/^([FR])-?([0-9A-Z]+)$/);
+  if(m&&m[2].length>=6){boost=m[1]==='F';s=m[2];}
+  if(!/^[0-9A-Z]{1,7}$/.test(s))return null;
+  const n=parseInt(s.toLowerCase(),36);
+  return isFinite(n)&&n<=4294967295?{seed:n>>>0,boost}:null;
+}
+/* 운명 가속: 달빛 세계 확률에만 곱한다. 희귀도는 원래 확률(p)로 기록한다. */
+const B=p=>Math.min(.5,p*(S.boost?100:1));
+
+function newLife(seed,boost){
+  rng=mulberry32(seed);
+  const c=wpick(COUNTRIES,x=>x.w);
+  const g=chance(.5)?'m':'f';
+  S={seed,boost:!!boost,code:seedToCode(seed,boost),country:c,gender:g,name:makeName(c.nm,g),
+    birthYear:ri(1945,2010),age:0,alive:true,rar:[],events:[],
+    health:clamp(Math.round(72+gauss()*11),25,100),mental:clamp(Math.round(62+gauss()*14),15,100),
+    luck:ri(1,100),wealth:0,edu:'none',job:null,married:false,kids:0,parents:2,retired:false,
+    mage:false,heir:false,crestGen:0,famType:'일반 가정',circuits:0,qual:'E',element:null,origin:pick(ORIGINS),originKnown:false,
+    eyes:null,eyesKnown:false,aware:false,wiped:false,church:false,burial:false,academy:null,dept:null,rank:-1,
+    unique:false,sealed:false,fugitive:false,apostle:false,apostleAge:0,ancestor:false,root:false,
+    seals:0,servant:null,warCount:0,grailWin:false,servantSurvived:false,halfblood:false,
+    cause:null,mil:false,leBonus:0,orphan:false};
+  S.year=S.birthYear;
+  addRar(c.n+'에서 태어남',c.w/W_TOTAL);
+  // 도시
+  if(c.n==='일본'){
+    const r=R();
+    const k=S.boost?20:1;
+    if(r<k/800){S.city='후유키 시';}
+    else if(r<k/800+k/1000){S.city='미사키 마을';}
+    else if(r<k/800+k/1000+k/900){S.city='미후네 시';}
+    else S.city=pick(c.cities);
+  } else S.city=chance(clamp((80-c.le)/40,0.1,0.6))?'시골 마을':pick(c.cities);
+  if(S.city==='후유키 시') addRar('후유키에서 태어남',1/800);
+  if(S.city==='미사키 마을') addRar('미사키 마을에서 태어남',1/1000);
+  if(S.city==='미후네 시') addRar('미후네 시에서 태어남',1/900);
+  // 재산
+  S.wealth=clamp(Math.round((c.le-50)*1.3+gauss()*16+(S.city==='시골 마을'?-10:0)),2,98);
+  // 마술사 가문
+  let mr=c.uk?1/6000:c.eu?1/20000:c.n==='일본'?1/50000:c.n==='이집트'?1/60000:c.n==='미국'?1/80000:1/400000;
+  if(S.city==='후유키 시') mr*=40;
+  if(chance(B(mr))){
+    S.mage=true;S.aware=true;
+    const r=R();
+    if(r<.25){S.crestGen=ri(8,20);S.famType='명문 마술사 가문';}
+    else if(r<.75){S.crestGen=ri(3,7);S.famType='마술사 가문';}
+    else{S.crestGen=ri(1,2);S.famType='신흥 마술사 가문';}
+    S.heir=chance(.6);
+    S.wealth=clamp(S.wealth+ri(5,30),2,99);
+    if(S.city==='후유키 시'&&S.crestGen>=5) S.fuyukiLand=true;
+    addRar(S.famType+'('+S.crestGen+'대째)에 태어남',mr);
+  }
+  // 회로
+  if(S.mage){
+    S.circuits=clamp(Math.round(30+gauss()*12),8,58);
+    if(chance(1/40)){S.circuits=ri(60,100);addRar('천재적인 마술회로',1/40);}
+    S.qual=wpick(QUAL,q=>({E:5,D:15,C:40,B:30,A:10})[q]);
+  } else {
+    const r=R();
+    if(r<.9){S.circuits=ri(0,2);}
+    else if(r<.995){S.circuits=ri(3,15);}
+    else {S.circuits=ri(16,45);addRar('일반인치고 많은 마술회로',.005);}
+    S.qual=wpick(QUAL,q=>({E:40,D:30,C:20,B:8,A:2})[q]);
+  }
+  const el=wpick(ELEMENTS,e=>e[1]);S.element=el[0];
+  if(S.circuits>=3&&el[1]<1){S.unique=true;addRar(el[0]+' 속성',el[1]/100);}
+  // 마안
+  const er=S.mage?1/150:1/80000;
+  if(chance(B(er))){
+    const e=wpick(EYES,x=>x[2]);S.eyes={n:e[0],g:e[1]};
+    addRar(e[0],er*e[2]/EYES.reduce((s,x)=>s+x[2],0));
+    if(S.mage) S.eyesKnown=true;
+    if(e[1]==='보석'||e[1]==='무지개') S.unique=true;
+  }
+  if(c.n==='일본'&&chance(B(1/150000))){S.halfblood=true;addRar('인외의 피를 이은 혼혈',1/150000);}
+  // 1:1 가중 기본 수치
+  S.talent=calcTalent();
+  if(S.mage&&S.talent>70) S.unique=true;
+  // 탄생 기록
+  const place=S.city==='시골 마을'?c.n+'의 시골 마을':c.n+' '+S.city;
+  log(`${place}에서 ${g==='m'?'남자':'여자'}아이로 태어났다. 이름은 ${S.name}.`,'life',true);
+  if(S.mage){
+    log(`${S.crestGen}대째 이어진 ${S.famType}의 아이. 집 지하에는 공방이 있다.`,'moon',true);
+  } else if(S.halfblood){
+    log('오래된 가문의 아이. 핏속에 사람이 아닌 무언가가 섞여 있다는 사실은 아직 아무도 말해 주지 않았다.','moon');
+  } else {
+    log(pick(['평범한 가정이다. 부모는 아이에게 마술이라는 말을 들려줄 일이 없을 것이다.','작고 시끄러운 집이다. 달빛 세계와는 아무 관계가 없다.','평범한 부모, 평범한 첫울음. 이 세상 대부분의 아이가 그렇듯이.']),'life');
+  }
+  if(S.eyes&&!S.mage) log('이 아이의 눈에는 남들과 다른 것이 비친다. 하지만 그게 이상한 일이라는 걸 아직 모른다.','moon');
+}
+function calcTalent(){return S.circuits*QMULT[S.qual]*0.6+S.crestGen*1.8+(S.eyes?8:0)+(S.unique?6:0)+(S.originKnown?8:0);}
+
+/* ================= 기록 ================= */
+let logSink=null;
+function log(text,cat,big){
+  const e={y:S.year,a:S.age,text,cat:cat||'life',big:!!big};
+  S.events.push(e);
+  if(logSink) logSink(e);
+}
+const majorQueue=[];
+function major(m){majorQueue.push(m);}
+
+/* ================= 한 해 ================= */
+function step(){
+  S.age++;S.year++;
+  if(!S.apostle){
+    if(S.age>45) S.health-=R()*(S.age>75?2.6:S.age>60?1.6:0.9);
+    if(S.age>18&&S.age<45) S.health+=R()*0.6;
+  }
+  S.health=clamp(S.health,1,100);S.mental=clamp(S.mental,1,100);S.wealth=clamp(S.wealth,0,100);
+  worldNews();
+  lifeStage();
+  if(!S.alive)return;
+  moonWorld();
+  if(!S.alive)return;
+  if(!S.sealed&&!S.apostle&&chance(.55)) mundane();
+  if(!S.alive)return;
+  naturalDeath();
+}
+
+function die(cause,text,cat){
+  if(!S.alive)return;
+  S.alive=false;S.cause=cause;S.deathAge=S.age;
+  log(text||`${cause}(으)로 세상을 떠났다.`,cat||'death',true);
+}
+
+/* ----- 자연사 ----- */
+function naturalDeath(){
+  if(S.apostle||!S.alive)return;
+  const L=S.country.le+S.leBonus+(S.wealth-50)*0.08;
+  const b=0.085,A=Math.LN2*b/(Math.exp(b*(L+4))-1);
+  let h=A*Math.exp(b*S.age);
+  const imr=clamp((82-S.country.le)*0.004,0.002,0.12);
+  if(S.age===1)h+=imr;else if(S.age<=5)h+=imr*0.15;
+  h*=1+Math.max(0,55-S.health)/30;
+  if(chance(Math.min(.9,h))){
+    let cause;
+    if(S.age<=5) cause=pick(S.country.le<70?['감염병','영양실조','폐렴','설사병']:['선천적인 병','갑작스러운 열병','사고']);
+    else if(S.age<40) cause=pick(['교통사고','감염병','사고','갑작스러운 병','물놀이 사고']);
+    else if(S.age<70) cause=pick(['심장질환','암','뇌졸중','교통사고','간질환','폐질환']);
+    else cause=pick(['노환','폐렴','심부전','암','뇌졸중','노환']);
+    const deathText={ '노환':'가족이 지켜보는 가운데 조용히 눈을 감았다. 노환이었다.','폐렴':'겨울을 넘기지 못했다. 폐렴이었다.' }[cause];
+    die(cause,deathText||`${cause}(으)로 세상을 떠났다.`);
+  }
+}
+
+/* ----- 세계 소식 ----- */
+function worldNews(){
+  const y=S.year,a=S.age;
+  if(y===1969&&a>=6&&chance(.6)) log('텔레비전에서 인류가 달에 내리는 장면을 보았다. 그날 밤 달이 유난히 가까워 보였다.','life');
+  if(y===1989&&S.country.eu&&a>=8&&chance(.5)) log('베를린 장벽이 무너졌다는 소식을 들었다.','life');
+  if(y===2000&&a>=6&&chance(.5)) log('새천년을 맞았다. 세상은 끝나지 않았다.','life');
+  if(y===2020&&a>=1){
+    log('세계적인 감염병이 돌았다. 한동안 집 밖에 거의 나가지 못했다.','risk');
+    if(!S.apostle&&a>70&&chance(.02)) die('감염병','감염병을 이겨 내지 못했다.');
+  }
+  if(y===2026&&a>=10&&chance(.25)) log('「80억분의 1」이라는 인생 시뮬레이션이 유행했다. 해 보고는 내 인생과 비교해 보았다.','life');
+}
+
+/* ----- 인생 단계 ----- */
+function eduP(){return clamp((S.country.le-45)/35,0.15,0.98);}
+const JOBS={
+  none:['농부','어부','공사장 노동자','시장 상인','운전사','공장 노동자','가사 도우미','목수','목동'],
+  primary:['농부','공장 노동자','시장 상인','운전사','재봉사','목수','어부','건설 노동자'],
+  secondary:['사무원','판매원','요리사','정비공','경찰관','간호조무사','미용사','군인','택배 기사','은행 창구 직원'],
+  univ:['교사','엔지니어','회사원','의사','변호사','연구원','공무원','기자','건축가','디자이너','약사','대학 교수']
+};
+function lifeStage(){
+  const a=S.age;
+  if(S.sealed||S.apostle&&a-S.apostleAge>0)return;
+  if(a===7){
+    if(chance(eduP())){S.edu='primary';log(pick(['초등학교에 입학했다.','학교에 다니기 시작했다. 가방이 몸보다 컸다.']),'life');}
+    else log('학교 대신 집안일과 바깥일을 도왔다.','life');
+  }
+  if(a===13&&S.edu==='primary'){
+    if(chance(eduP()*0.9+(S.wealth-50)/200)){S.edu='secondary';log('중학교에 진학했다.','life');}
+    else log('학교를 그만두고 일을 시작했다.','life');
+  }
+  if(a===19&&S.edu==='secondary'&&!S.mage){
+    if(chance(Math.pow(eduP(),2)*0.75+(S.wealth-50)/150)){S.edu='univ';log(pick(['대학에 합격했다.','고향을 떠나 대학에 들어갔다.']),'joy');S.wealth-=4;}
+  }
+  if(S.country.n==='한국'&&S.gender==='m'&&a===20&&!S.mil){S.mil=true;log('병역 의무로 입대했다. 달이 밝은 초소 근무가 기억에 남았다.','life');}
+  if(!S.job&&!S.mage&&!S.church&&a>=(S.edu==='univ'?23:S.edu==='secondary'?19:15)&&a<=30&&chance(.6)){
+    let pool=JOBS[S.edu];
+    S.job=pick(pool);
+    const pay={none:-6,primary:-3,secondary:3,univ:10}[S.edu];
+    S.wealth+=pay+ri(-3,6);
+    log(`${S.job}(으)로 일하기 시작했다.`,'life');
+  }
+  if(!S.married&&a>=20&&a<=50&&chance(a<35?.11:.04)){
+    S.married=true;log(pick(['결혼했다.','오래 사귄 사람과 결혼했다.','중매로 만난 사람과 결혼했다.','늦은 밤 고백을 받고, 이듬해 결혼했다.']),'joy');
+  }
+  if(S.married&&a<=43&&S.kids<5&&chance(S.kids===0?.22:.12*(S.country.le<70?2:1))){
+    S.kids++;log(S.kids===1?'첫아이가 태어났다.':`${S.kids}째 아이가 태어났다.`,'joy');
+  }
+  if(S.parents>0&&a>=30&&chance(.035+(a>50?.04:0))){
+    S.parents--;log(S.parents===1?pick(['아버지가 세상을 떠났다.','어머니가 세상을 떠났다.']):'남은 부모님마저 세상을 떠났다.','life');S.mental-=6;
+  }
+  if(S.job&&!S.retired&&a>=60&&chance(.2)){S.retired=true;log('일을 그만두고 은퇴했다.','life');}
+}
+
+/* ----- 일상 사건 ----- */
+const MUNDANE=[
+  {w:s=>s.age<7?3:0,run:()=>log(pick(['첫걸음을 뗐다.','처음 한 말은 "엄마"였다.','높은 열이 났다가 겨우 나았다.','동네 개를 무척 좋아했다.','밤하늘의 달을 오래 올려다보곤 했다.','처음으로 그림책을 끝까지 읽었다.']))},
+  {w:s=>s.age>=7&&s.age<13?3:0,run:()=>log(pick(['단짝 친구가 생겼다.','글짓기 대회에서 상을 받았다.','나무에서 떨어져 팔이 부러졌다.','여름방학 내내 곤충을 모았다.','혼자 먼 동네까지 걸어가 보았다.','이사를 가서 전학했다.']))},
+  {w:s=>s.age>=13&&s.age<20?3:0,run:()=>log(pick(['첫사랑을 했다.','시험을 망쳐 크게 혼났다.','밴드를 만들었다가 석 달 만에 해체했다.','친구와 밤새 미래 이야기를 했다.','부모와 자주 다퉜다.','운동부에서 주전이 되었다.','처음으로 아르바이트를 했다.']))},
+  {w:s=>s.age>=20&&s.age<60?4:0,run:()=>{
+    const e=pick([
+      ['승진했다.','joy',5],['직장을 옮겼다.','life',2],['일자리를 잃었다.','risk',-10],['새로운 도시로 이사했다.','life',0],
+      ['오래 꿈꾸던 긴 여행을 떠났다.','joy',-3],['오랜 친구와 연락이 끊겼다.','life',0],['고양이를 키우기 시작했다.','joy',0],
+      ['작은 가게를 열었다.','life',-5],['큰 빚을 졌다.','risk',-15],['투자로 꽤 큰돈을 벌었다.','joy',14],['이혼했다.','risk',-8],
+      ['취미로 시작한 요리에 빠졌다.','life',0],['동네에서 작은 봉사 모임을 꾸렸다.','life',0],['복권 4등에 당첨됐다.','joy',3]
+    ]);
+    if(e[0]==='이혼했다.'){if(!S.married)return;S.married=false;}
+    S.wealth+=e[2];log(e[0],e[1]);}},
+  {w:s=>s.age>=30?2:0,run:()=>{S.health-=ri(8,20);log(pick(['큰 병에 걸렸지만 치료를 받고 회복했다.','수술을 받았다.','오랫동안 앓아누웠다.','사고로 크게 다쳤다.']),'risk');}},
+  {w:s=>s.age>=55?3:0,run:()=>{
+    if(S.kids&&chance(.5)){log('손주가 태어났다.','joy');return;}
+    log(pick(['정원을 가꾸는 재미에 빠졌다.','오랜 친구의 장례식에 다녀왔다.','고향을 다시 찾아갔다.','젊은 시절 사진을 오래 들여다보았다.','건강검진에서 이상이 발견되었다.']));}},
+  {w:s=>chance(.00002)?1000:0,run:()=>{S.wealth=clamp(S.wealth+60,0,100);addRar('복권 1등 당첨',.000011);log('복권 1등에 당첨됐다.','joy',true);}}
+];
+function mundane(){const e=wpick(MUNDANE,x=>x.w(S));if(e.w(S)>0)e.run();}
+
+/* ================= 달빛 세계 ================= */
+function moonWorld(){
+  const y=S.year,a=S.age;
+  if(y===1994) grailWarCheck(4);
+  if(!S.alive)return;
+  if(y===2004) grailWarCheck(5);
+  if(!S.alive)return;
+  if(y>=2015&&!S.sealed&&(S.mage||S.church)&&a>=16&&a<=72&&chance(B(.003))){addRar('아종 성배전쟁에 참가',.003);grailWar('아종');}
+  if(!S.alive)return;
+  if(S.sealed){sealedYear();return;}
+  if(S.apostle){apostleYear();return;}
+  apostleAttack();
+  if(!S.alive)return;
+  if(S.mage) mageYear();
+  else if(S.church) churchYear();
+  else ordinaryMoon();
+}
+
+/* ----- 사도의 습격 (누구에게나) ----- */
+function apostleAttack(){
+  let p=1/250000;
+  if(S.city==='미사키 마을'&&S.year>=1996&&S.year<=2000)p=1/400;
+  if(!chance(B(p)))return;
+  addRar('흡혈귀(사도)의 습격',p);
+  S.aware=true;
+  log('밤길에서 창백한 얼굴의 남자와 눈이 마주쳤다. 목덜미에 차가운 것이 닿았다.','risk',true);
+  const r=R();
+  if(r<.8){die('사도의 습격','다음 날 아침, 뉴스는 이것을 "연쇄 엽기 살인"이라고 불렀다.');return;}
+  if(r<.97||S.circuits<5&&!S.halfblood){
+    log('정신을 차려 보니 병원이었다. 흰 옷의 수녀가 "운이 좋았네요"라고 말하고 사라졌다.','moon');
+    S.mental-=20;return;
+  }
+  becomeApostle('물린 뒤 죽지 않고 깨어났다. 햇빛이 아프다. 목이 마르다. 피가 마시고 싶다.');
+}
+function becomeApostle(text){
+  S.apostle=true;S.apostleAge=S.age;S.aware=true;
+  addRar('사도가 됨',0.03);
+  log(text,'moon',true);
+  major({kind:'gold',eyebrow:'죽음을 잊다',title:'사도가 되었다',body:'늙지도 죽지도 않는 몸. 대신 성당교회의 매장기관이 당신의 이름을 명부에 적었다.'});
+}
+function apostleYear(){
+  const yrs=S.age-S.apostleAge;
+  S.health=100;
+  if(chance(.5)) log(pick([
+    '이름과 얼굴을 바꾸고 다른 나라로 옮겼다.','오래된 성의 지하에서 한 해를 잠들었다.','피를 마셨다. 오늘 밤의 뉴스에 실종자가 한 명 늘었다.',
+    '흡혈충동을 억누르려 애썼다. 실패했다.','옛 친구의 무덤을 찾았다. 이름이 지워져 있었다.','교회 대행자의 추적을 따돌렸다.','다른 사도의 영역을 피해 돌아갔다.',
+    '권속을 하나 만들었다.','도시 하나의 밤을 손에 넣었다.'
+  ]),'moon');
+  if(yrs>=200&&!S.ancestor&&chance(.004)){S.ancestor=true;addRar('27조의 반열에 오름',.1);log('사도들 사이에서 당신의 이름이 「27조」의 하나로 불리기 시작했다.','moon',true);}
+  const hunt=S.ancestor?.008:.04;
+  if(chance(hunt)){
+    die('매장기관',pick(['검은 법의를 입은 대행자가 찾아왔다. 흑건이 몸을 꿰뚫었고, 몸은 재가 되어 흩어졌다.','성당교회 매장기관이 당신을 찾아냈다. 마지막으로 본 것은 십자가 모양의 그림자였다.','아침 해가 뜰 때까지 도망치지 못했다. 몸이 햇빛 속에서 재가 되었다.']));
+  }
+  if(S.alive&&S.age>=1200) die('세월','천 년을 넘게 살았다. 어느 겨울밤, 스스로 햇빛 속으로 걸어 나갔다.');
+}
+
+/* ----- 평범한 사람의 달빛 ----- */
+function ordinaryMoon(){
+  const a=S.age,y=S.year;
+  if(S.eyes&&!S.eyesKnown&&a>=5&&a<=25&&chance(.12)){
+    S.eyesKnown=true;
+    log(`자기 눈이 남들과 다르다는 걸 깨달았다. 훗날 그것이 「${S.eyes.n}」이라고 불린다는 걸 알게 된다.`,'moon',true);
+    S.aware=true;
+  }
+  if(S.halfblood&&a>=14&&a<=20&&chance(.15)&&!S.halfAwake){
+    S.halfAwake=true;S.aware=true;
+    log('어느 밤, 핏속의 무언가가 깨어났다. 머리카락이 붉게 물들고, 손끝이 쇠처럼 단단해졌다.','moon',true);
+    if(chance(.3)){die('반전 충동','인외의 피에 삼켜졌다. 가문의 어른이 조용히 일을 처리했다.');return;}
+  }
+  // 목격
+  let wp=1/40000;
+  if(S.city==='후유키 시')wp=1/3000;
+  if(S.city==='미후네 시'&&y>=1995&&y<=1999)wp=1/600;
+  if(S.city==='미사키 마을'&&y>=1996&&y<=2000)wp=1/800;
+  if(a>=8&&chance(B(wp))){
+    addRar('달빛 세계를 목격함',wp);
+    log(pick(['자정 무렵 골목에서 사람이 아닌 무언가가 움직이는 걸 보았다.','폐건물 옥상에서 빛나는 마법진을 보았다.','하늘을 나는 검은 새의 눈이 사람처럼 이쪽을 보았다.','공원에서 두 사람이 보이지 않는 무기로 싸우는 걸 보았다.']),'moon',true);
+    const r=R();
+    if(r<.68){S.wiped=true;log('다음 날 아무것도 기억나지 않았다. 누군가 기억을 지운 것이다. 당신은 끝까지 모른다.','moon');}
+    else if(r<.85){die('신비의 은닉','목격자는 남기지 않는다. 그것이 마술사의 규칙이었다.','death');return;}
+    else{S.aware=true;log('기억은 지워지지 않았다. 그날부터 밤이 다르게 보였다.','moon');}
+  }
+  // 잠재 회로 각성 → 입문
+  if(S.circuits>=3&&a>=10&&a<=35&&!S.mage&&!S.church){
+    if(!S.sensed&&chance(B(1/300))){S.sensed=true;log('가끔 등줄기를 타고 뜨거운 것이 흐르는 느낌이 들었다. 몸 안에 쓰지 않은 회로가 있다는 걸 몸이 먼저 알았다.','moon');}
+    const p=(S.aware?0.05:0)+(S.sensed?0.01:0);
+    if(p&&chance(p)){
+      if(S.country.cath&&chance(.55)){
+        S.church=true;S.aware=true;addRar('성당교회의 대행자로 발탁',p*.55);
+        log('신부의 추천으로 성당교회에 들어갔다. 표면의 교회가 아니라 이단을 사냥하는 쪽이었다.','moon',true);
+      } else {
+        S.mage=true;S.aware=true;S.crestGen=0;S.famType='1대째 마술사';addRar('마술사의 제자가 됨',p*.45);
+        log('떠돌이 마술사의 눈에 띄어 제자가 되었다. 1대째 마술사의 길이다.','moon',true);
+        S.talent=calcTalent();
+      }
+    }
+  }
+  if(S.aware&&!S.mage&&!S.church&&chance(.004)){die('신비의 은닉','신비를 너무 많이 알았다. 어느 날 조용히 사라졌다.');return;}
+  if(!S.originKnown&&chance(B(1/200000))){
+    S.originKnown=true;addRar('기원 각성',1/200000);
+    log(`어느 날 자신의 기원이 「${S.origin}」이라는 걸 깨달았다. 그날부터 성격이 조금씩 그 말에 끌려갔다.`,'moon',true);
+  }
+}
+
+/* ----- 마술사의 해 ----- */
+function mageYear(){
+  const a=S.age;
+  S.talent=calcTalent();
+  if(S.fugitive){fugitiveYear();return;}
+  if(a===4&&S.crestGen>0) log('마술 수련이 시작됐다. 처음 배운 건 몸 안의 회로를 여는 감각이었다.','moon');
+  if(S.heir&&a===ri(8,11)&&!S.crested){
+    S.crested=true;S.health-=8;
+    log(`${S.crestGen}대가 쌓아 온 마술각인을 이식받았다. 몇 주 동안 열이 내리지 않았다.`,'moon',true);
+  }
+  if(!S.heir&&S.crestGen>0&&a===12&&!S.crestNote){
+    S.crestNote=true;
+    if(chance(.25)){log('각인은 형제에게 돌아갔다. 다른 마술사 가문의 양자로 보내졌다.','moon');S.mental-=10;}
+    else log('각인은 형제에게 돌아갔다. 그래도 마술을 계속 배우기로 했다.','moon');
+  }
+  if(S.eyes&&!S.eyesKnown&&a>=5){S.eyesKnown=true;log(`가문 사람들이 이 눈을 「${S.eyes.n}」이라고 불렀다. ${S.eyes.g} 등급이다.`,'moon',true);}
+  // 교육 기관
+  if(!S.academy&&a>=16&&a<=20&&!S.academyTried&&chance(.5)){
+    S.academyTried=true;
+    if(S.country.n==='이집트'&&chance(.6)){
+      S.academy='아틀라스원';S.rank=0;log('사막 아래의 연금술사 집단, 아틀라스원에 들어갔다. 고속 사고와 분할 사고를 배웠다.','moon',true);
+    } else if(chance(.2+(S.country.eu?.35:0)+S.wealth/250+S.talent/200)){
+      S.academy='시계탑';S.dept=chance(.7)?DEPTS[S.element]:pick(ALL_DEPTS);S.rank=S.crestGen>=8?1:0;
+      log(`런던의 시계탑에 입학했다. ${S.dept} 소속, 계위는 「${RANKS[S.rank]}」.`,'moon',true);
+      if(chance(.5)) log(`${pick(['귀족주의','민주주의','중립주의'])}파의 강사 밑에서 공부하게 되었다.`,'moon');
+    } else {
+      S.academy='독학';log('시계탑에는 가지 않고 집의 공방에서 혼자 연구를 이어 갔다.','moon');
+    }
+  }
+  // 승진
+  if(S.academy==='시계탑'&&S.rank<6&&a>=18){
+    const th=[0,10,22,36,52,72][S.rank];
+    const p=clamp((S.talent-th)/220,0.002,0.12)*(S.rank>=4?.4:1);
+    if(chance(p)){
+      S.rank++;
+      if(S.rank>=4) addRar(`시계탑 「${RANKS[S.rank]}」 계위`,[0,0,0,0,1/30,1/400,1/20000][S.rank]);
+      log(`계위가 「${RANKS[S.rank]}」(으)로 올랐다.`,S.rank>=4?'joy':'moon',S.rank>=4);
+      if(S.rank===6) major({kind:'gold',eyebrow:'시계탑',title:'관위(冠位)',body:'시계탑에서 가장 높은 계위. 같은 시대에 몇 명 없는 자리에 올랐다.'});
+    }
+  }
+  // 연구·사건
+  if(a>=14&&chance(.35)){
+    log(pick([
+      '새로운 술식을 완성했다. 논문은 동료들에게 무시당했다.','공방의 결계를 다시 짰다.','보석에 마력을 담는 연습을 했다.','사역마로 고양이를 하나 부리기 시작했다.',
+      '연구비가 바닥나 가문의 유물을 팔았다.','라이벌 마술사와 결투했다. 무승부였다.','오래된 마도서를 해독했다.','실패한 실험이 공방 절반을 날려 버렸다.',
+      '제자를 하나 받았다.','근원에 관한 가설을 하나 세웠다. 아직 아무도 믿지 않는다.','이국의 영지(靈地)를 조사하러 떠났다.'
+    ]),'moon');
+  }
+  if(a>=14&&chance(.004)){
+    if(chance(.45)){die('마술 실험 사고','통제를 잃은 술식이 공방째로 삼켰다.');return;}
+    S.health-=25;log('실험 사고로 마술회로 일부가 타 버렸다.','risk');S.circuits=Math.max(1,S.circuits-ri(2,8));
+  }
+  if(!S.originKnown&&a>=15&&chance(1/1500)){
+    S.originKnown=true;S.unique=true;addRar('기원 각성',1/1500);
+    log(`명상 중에 자신의 기원이 「${S.origin}」이라는 걸 보았다.`,'moon',true);
+  }
+  // 각인 계승
+  if(S.heir&&S.kids>0&&a>=45&&a<=62&&!S.passed&&chance(.15)){
+    S.passed=true;log(`아이에게 마술각인을 넘겼다. ${S.crestGen+1}대째가 시작된다.`,'moon',true);
+  }
+  if(S.heir&&!S.married&&a>=28&&a<=40&&chance(.1)){S.married=true;log('가문을 잇기 위해 다른 마술사 가문과 혼인했다.','moon');}
+  // 봉인지정
+  if(S.unique&&a>=20&&!S.sealCheck&&chance(.025)){
+    S.sealCheck=true;addRar('봉인지정',.3);
+    log('협회에서 편지가 왔다. 「봉인지정」. 당신의 몸은 이제 보존해야 할 표본이라는 뜻이다.','risk',true);
+    const r=R();
+    if(r<.6){S.fugitive=true;log('공방을 불태우고 이름을 버린 채 달아났다.','risk');}
+    else if(r<.85){S.sealed=true;S.sealAge=a;log('저항할 틈도 없이 붙잡혔다. 뇌와 회로는 유리병 속에 보존되었다.','risk',true);
+      major({kind:'gold',eyebrow:'봉인지정',title:'표본이 되었다',body:'당신의 재능은 영원히 보존된다. 당신의 의식이 아직 거기 남아 있는지는 아무도 확인하지 않았다.'});}
+    else {die('봉인지정 집행자','봉인지정 집행자와 싸웠다. 이기지 못했다.');return;}
+  }
+  // 근원
+  if(S.talent>=55&&a>=40&&!S.root&&chance(0.000015*S.talent)){
+    S.root=true;addRar('근원 도달',0.000015*S.talent);
+    log('그날, 공방의 마법진이 빛을 삼켰다. 소용돌이 너머를 보았다.','moon',true);
+    major({kind:'gold',eyebrow:'Akasha',title:'근원에 닿았다',body:'모든 마술사가 꿈꾸던 곳. 그 너머에서 돌아온 사람은 없다.'});
+    S.alive=false;S.cause='근원 도달';S.deathAge=a;log('그 뒤로 당신을 본 사람은 없다.','death',true);return;
+  }
+  // 사도화
+  if(a>=55&&S.talent>=30&&chance(.0015)){
+    becomeApostle('죽음이 가까워지자 금기에 손을 댔다. 사도화 의식은 성공했다.');return;
+  }
+}
+function fugitiveYear(){
+  if(chance(.6)) log(pick(['이름을 바꾸고 다른 나라로 숨었다.','집행자의 추적을 따돌렸다.','변두리 도시에 새 공방을 숨겨 지었다.','옛 동료가 당신을 팔아넘겼다. 겨우 도망쳤다.']),'risk');
+  if(chance(.06)) die('봉인지정 집행자','결국 집행자에게 붙잡혔다. 마지막은 비에 젖은 항구였다.');
+}
+function sealedYear(){
+  if(chance(.3)) log(pick(['유리병 속에서 또 한 해가 지났다.','연구자들이 당신의 회로를 들여다보았다.','누군가 병 앞에서 당신의 이름을 불렀다.']),'moon');
+  if(S.age-S.sealAge>ri(20,60)){S.alive=false;S.cause='표본 보존 종료';S.deathAge=S.age;log('보존 처리가 끝났다. 표본은 지하 깊은 곳에 옮겨졌다.','death',true);}
+}
+
+/* ----- 성당교회 ----- */
+function churchYear(){
+  const a=S.age;
+  if(a<18)return;
+  if(chance(.35)) log(pick(['이단 마술사를 처단하는 임무에 나섰다.','흑건 던지기를 익혔다.','사도의 권속을 정화했다.','교회의 성유물을 회수했다.','마술협회와 신경전을 벌였다.','밤새 기도했다.']),'moon');
+  if(!S.burial&&a<=45&&chance(clamp(S.circuits/3000,0.002,0.02))){
+    S.burial=true;addRar('매장기관 입성',.01);log('성당교회 매장기관에 들어갔다. 교회가 가진 가장 날카로운 칼 중 하나가 되었다.','moon',true);
+    major({kind:'gold',eyebrow:'성당교회',title:'매장기관',body:'사도와 이단을 지우는 교회의 비밀 부대. 그 안에서도 손에 꼽는 실력자가 되었다.'});
+  }
+  if(a<=55&&chance(S.burial?.025:.015)){die('임무 중 전사',pick(['사도와 싸우다 쓰러졌다.','이단 마술사의 함정에 빠졌다.','임무에서 돌아오지 못했다. 동료들이 흑건 한 자루를 묻었다.']));}
+}
+
+/* ================= 성배전쟁 ================= */
+function grailWarCheck(n){
+  const inF=S.city==='후유키 시',a=S.age;
+  let p=0;
+  if(S.sealed||S.apostle) p=0;
+  else if(S.mage&&a>=14&&a<=75) p=inF?(S.fuyukiLand?.6:.2):(S.academy==='시계탑'?.004:.0008);
+  else if(S.church&&a>=20&&a<=60) p=.003;
+  else if(inF&&a>=10&&a<=70) p=S.circuits>=3?.01:.0001;
+  if(p&&chance(S.mage?p:B(p))){addRar(`제${n}차 성배전쟁 마스터`,p);grailWar(n);if(!S.alive)return;}
+  if(inF&&!S.warCount) fuyukiCivilian(n);
+}
+function fuyukiCivilian(n){
+  if(S.apostle||S.sealed)return;
+  if(chance(.004)){die('가스 폭발 사고',n===4?'신도의 빌딩 붕괴 사고에 휘말렸다. 공식 발표는 가스 폭발이었다.':'밤의 교외에서 일어난 "가스 폭발 사고"에 휘말렸다.');return;}
+  if(n===4){
+    log('후유키 신도에 큰불이 났다. 하늘에서 검은 진흙이 쏟아지는 것 같았다.','risk',true);
+    if(chance(.03)){die('후유키 대화재','불길 속에서 빠져나오지 못했다. 후유키 대화재의 사망자 명단에 이름이 올랐다.');return;}
+    if(S.age<=15&&chance(.06)){
+      S.orphan=true;S.parents=0;log('불길 속에서 가족을 잃었다. 홀로 살아남은 아이를 낯선 남자가 안아 올렸다.','moon',true);
+      if(chance(.25)){S.aware=true;S.mage=true;S.crestGen=0;S.famType='마술사의 양자';S.circuits=Math.max(S.circuits,ri(15,30));addRar('마술사에게 입양됨',.25);
+        log('남자는 "나는 마법사야"라고 말했다. 그에게서 마술을 배우기 시작했다.','moon');S.talent=calcTalent();}
+    }
+  } else {
+    if(chance(.3)) log('밤마다 이상한 사건이 이어졌다. 학교 학생들이 집단으로 쓰러졌다는 뉴스가 나왔다.','risk');
+  }
+}
+function rollServant(boost){
+  const cls=wpick(CLASSES,c=>c[1])[0];
+  const list=SERVANTS[cls];
+  const sv=wpick(list,s=>({1:10,2:22,3:30,4:20,5:8})[s[1]]*(boost&&s[1]>=4?3:1));
+  const tier=sv[1];
+  const pr=()=>{const base=tier+ri(-1,1);return ['E','E','D','C','B','A','A+'][clamp(base,0,6)];};
+  const params={근력:pr(),내구:pr(),민첩:pr(),마력:pr(),행운:pr(),보구:tier===5&&chance(.4)?'EX':pr()};
+  return {cls,name:sv[0],tier,params};
+}
+function grailWar(n){
+  S.warCount++;S.aware=true;S.seals=3;
+  const title=n==='아종'?'아종 성배전쟁':`제${n}차 성배전쟁`;
+  log(`오른손 등에 붉은 문양이 떠올랐다. ${title}의 영주(令呪)가 새겨졌다.`,'grail',true);
+  const catalyst=S.mage&&(S.wealth>=60||S.crestGen>=8);
+  if(catalyst) log('가문의 연줄을 써서 전설의 성유물을 촉매로 손에 넣었다.','grail');
+  else if(!S.mage) log('무엇을 하는지도 모른 채 창고 바닥에 그려진 진 위에서 피를 흘렸다.','grail');
+  const sv=rollServant(catalyst);S.servant=sv;
+  const stars='★'.repeat(sv.tier)+'☆'.repeat(5-sv.tier);
+  if(sv.tier>=4) addRar(`${sv.tier}성 서번트 소환`,sv.tier===5?.08:.2);
+  log(`소환에 응한 것은 ${sv.cls}, 진명 「${sv.name}」. ${stars}`,'grail',true);
+  major({kind:'summon',sv,war:title});
+  let power=sv.tier*18+Math.min(S.circuits,90)*0.35*QMULT[S.qual]+S.luck*0.12+(S.mage?6:0);
+  const fights=ri(3,6);let won=0;
+  const enemiesUsed=new Set([sv.name]);
+  for(let i=0;i<fights;i++){
+    let en;do{en=rollServant(false);}while(enemiesUsed.has(en.name));enemiesUsed.add(en.name);
+    if(chance(.25)) log(pick(['다른 마스터와 잠시 동맹을 맺었다.','교회의 감독관이 조용히 지켜보고 있었다.','밤새 서번트와 이야기를 나눴다. 그가 생전에 무엇을 원했는지 들었다.','도시 곳곳에서 사람들이 쓰러지기 시작했다. 누군가의 진지(陣地)다.']),'grail');
+    const ep=en.tier*18+26+gauss()*10;
+    let p=1/(1+Math.exp(-(power-ep)/11));
+    if(p<.5&&S.seals>0){S.seals--;p=Math.min(.95,p+.25);log(`영주 1획을 사용했다. "${pick(['이겨라','전력을 다해','보구를 해방해','물러서지 마'])}!"`,'grail');}
+    if(chance(p)){won++;power+=3;log(`${en.cls} 「${en.name}」의 진영을 쓰러뜨렸다.`,'grail');}
+    else{
+      log(`${en.cls} 「${en.name}」에게 패했다. 서번트가 빛이 되어 흩어졌다.`,'grail',true);
+      if(chance(S.mage?.55:.7)){die(title,pick(['서번트를 잃은 마스터는 다음 표적이었다.','도망치던 중 등 뒤에서 마력탄이 날아왔다.','교회에 몸을 의탁하러 가는 길에서 쓰러졌다.']));return;}
+      log('교회로 피신해 살아남았다. 손등의 영주 자국은 오래 남았다.','grail');
+      S.servant=null;S.mental-=15;return;
+    }
+  }
+  // 승리
+  S.grailWin=true;S.servantSurvived=true;addRar('성배전쟁 승리',.14);
+  log('마지막 진영이 무너졌다. 눈앞에 성배가 모습을 드러냈다.','grail',true);
+  if(n===4){
+    log('성배는 「이 세상의 모든 악」으로 더럽혀져 있었다. 소원은 비틀린 채로 이루어졌고, 그날 밤 후유키 신도에 불이 내렸다.','grail',true);
+    S.mental-=40;
+    major({kind:'summon2',eyebrow:title,title:'성배를 손에 넣었다',body:'하지만 그것은 만능의 소원기가 아니었다. 검은 진흙이 쏟아지고 도시가 불탔다.'});
+  } else if(n===5){
+    if(chance(.5)){log('더럽혀진 성배를 보고, 서번트에게 성배를 부수라고 명했다.','grail',true);
+      major({kind:'summon2',eyebrow:title,title:'성배를 파괴했다',body:'소원은 빌지 않았다. 당신의 선택으로 도시는 무사했다.'});}
+    else{log('성배에 소원을 빌었다. 이루어진 것은 소원과 닮았지만 전혀 다른 무언가였다.','grail',true);S.mental-=30;
+      major({kind:'summon2',eyebrow:title,title:'비틀린 소원',body:'성배는 당신의 소원을 가장 나쁜 방식으로 이루어 주었다.'});}
+  } else {
+    if(S.mage&&chance(.05)){
+      log('성배의 힘으로 근원으로 가는 구멍을 열려고 했다.','grail',true);
+      if(chance(.15)){S.root=true;addRar('성배로 근원 도달',.0075);
+        major({kind:'gold',eyebrow:'Akasha',title:'근원에 닿았다',body:'성배가 연 구멍 너머로 사라졌다.'});
+        S.alive=false;S.cause='근원 도달';S.deathAge=S.age;log('그 뒤로 당신을 본 사람은 없다.','death',true);return;}
+      die('근원의 역류','열린 구멍에서 쏟아진 것을 감당하지 못했다.');return;
+    }
+    const w=S.mage?'연구에 필요한 막대한 마력':pick(['가족의 병이 낫기를','평생 쓸 돈','다시 시작할 기회']);
+    log(`아종 성배는 작았지만 깨끗했다. ${w}을(를) 빌었고, 이루어졌다.`,'grail',true);
+    S.wealth+=30;S.health+=20;S.circuits+=S.mage?10:0;
+    major({kind:'summon2',eyebrow:title,title:'소원이 이루어졌다',body:'작은 성배였지만, 당신의 소원 하나쯤은 들어줄 수 있었다.'});
+  }
+  log(`${sv.name}이(가) 마지막으로 웃으며 사라졌다.`,'grail');S.servant=null;
+}
+
+/* ================= 결말 ================= */
+function endingKey(){
+  if(S.root)return'root';
+  if(S.apostle)return S.ancestor?'ancestor':'apostle';
+  if(S.grailWin)return'grail';
+  if(S.sealed)return'sealed';
+  if(S.rank>=6)return'grand';
+  if(S.burial)return'burial';
+  if(S.fugitive)return'fugitive';
+  if(S.warCount)return'master';
+  if(S.mage&&S.rank>=4)return'highmage';
+  if(S.mage)return'mage';
+  if(S.church)return'executor';
+  if(S.eyes&&S.eyesKnown)return'eyes';
+  if(S.aware)return'aware';
+  if(S.wiped)return'wiped';
+  if(S.deathAge<5)return'short';
+  if(S.deathAge>=100)return'century';
+  return'normal';
+}
+function rarity(){
+  let lg=0;for(const r of S.rar)lg+=Math.log10(r.p);
+  return lg; // log10 확률
+}
+function fmtBig(n){
+  if(!isFinite(n))return'∞';
+  const units=[[1e20,'해'],[1e16,'경'],[1e12,'조'],[1e8,'억'],[1e4,'만']];
+  if(n>=1e24)return n.toExponential(1).replace('e+','×10^');
+  for(const [v,u] of units) if(n>=v){const x=n/v;return (x>=100?Math.round(x):Math.round(x*10)/10).toLocaleString('ko-KR')+u;}
+  return Math.max(1,Math.round(n)).toLocaleString('ko-KR');
+}
+
+/* ================= 화면 ================= */
+const $=id=>document.getElementById(id);
+const logEl=$('log');
+let timer=null,speed=1,running=false,paused=false,skipping=false;
+
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);}
+function renderEntry(e){
+  const li=document.createElement('li');
+  li.className=e.cat+(e.big?' big':'');
+  li.innerHTML=`<span class="y">${e.y}</span><span class="a">${e.a}세</span><span class="t">${esc(e.text)}</span>`;
+  logEl.appendChild(li);
+}
+function scrollLog(){
+  if(getComputedStyle(logEl).maxHeight!=='none') logEl.scrollTop=logEl.scrollHeight;
+}
+function setGauge(id,nid,v){$(id).style.width=clamp(v,0,100)+'%';$(nid).textContent=Math.round(clamp(v,0,100));}
+function unk(t){return `<span class="unk">${t}</span>`;}
+function render(){
+  if(!S)return;
+  $('vAge').innerHTML=`${S.age}<small>세</small>`;
+  $('vYear').innerHTML=`${S.year}년<br>${S.alive?'살아 있음':'세상을 떠남'}`;
+  $('vName').textContent=S.name;
+  const place=S.city==='시골 마을'?S.country.n+' · 시골 마을':S.country.n+' · '+S.city;
+  $('vSub').textContent=`${S.gender==='m'?'남':'여'} · ${S.birthYear}년생 · ${place}`;
+  $('vFam').innerHTML=S.mage&&S.crestGen>0?`${esc(S.famType)} <span class="od">${S.crestGen}대째</span>${S.heir?' · 후계자':''}`:esc(S.mage?S.famType:S.halfblood&&S.halfAwake?'혼혈의 가문':'일반 가정');
+  const knowsBody=S.mage||S.church||S.sensed||S.aware&&S.circuits>=3;
+  $('vCirc').innerHTML=S.circuits<3?(S.mage?`${S.circuits}개`:unk('거의 없음')):(knowsBody?`<span class="od">${S.circuits}개</span> · 질 ${S.qual}`:unk('잠들어 있음'));
+  $('vElem').innerHTML=(S.mage||S.church)&&S.circuits>=3?`<span class="od">${esc(S.element)}</span>`:unk('-');
+  $('vOrig').innerHTML=S.originKnown?`<span class="od">「${esc(S.origin)}」</span>`:unk('???');
+  $('vEyes').innerHTML=S.eyes?(S.eyesKnown?`<span class="od">${esc(S.eyes.n)}</span> · ${esc(S.eyes.g)}`:unk('???')):unk('없음');
+  let aff='없음';
+  if(S.apostle)aff=S.ancestor?'사도 · 27조':'사도';
+  else if(S.sealed)aff='봉인지정 (보존 중)';
+  else if(S.fugitive)aff='봉인지정 도망자';
+  else if(S.burial)aff='성당교회 매장기관';
+  else if(S.church)aff='성당교회 대행자';
+  else if(S.academy==='시계탑')aff=`시계탑 ${S.dept} · ${RANKS[S.rank]}`;
+  else if(S.academy==='아틀라스원')aff='아틀라스원';
+  else if(S.mage)aff='프리랜서 마술사';
+  $('vAff').innerHTML=aff==='없음'?unk('없음'):`<span class="od">${esc(aff)}</span>`;
+  $('vJob').innerHTML=S.job?esc(S.job)+(S.retired?' (은퇴)':''):unk(S.mage?'마술 연구':'-');
+  setGauge('gH','nH',S.health);setGauge('gM','nM',S.mental);setGauge('gW','nW',S.wealth);setGauge('gL','nL',S.luck);
+  const hasSeals=S.warCount>0;
+  $('vSeals').hidden=!hasSeals;
+  if(hasSeals){
+    $('vSealN').textContent=S.seals;
+    ['s1','s2','s3'].forEach((id,i)=>$(id).classList.toggle('used',i>=S.seals));
+    $('vServ').textContent=S.servant?`${S.servant.cls} · ${S.servant.name}`:(S.grailWin?'성배전쟁 승리':'서번트 없음');
+  }
+}
+
+function showModal(m){
+  const sh=$('sheet');
+  if(m.kind==='summon'){
+    const sv=m.sv;
+    sh.className='sheet summon';
+    sh.innerHTML=`<svg class="circle" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56"/><circle cx="60" cy="60" r="44"/><path d="M60 4 L108 88 L12 88 Z"/><path d="M60 116 L12 32 L108 32 Z"/></svg>
+      <div class="eyebrow">${esc(m.war)} · 서번트 소환</div>
+      <div class="cls">${CLS_EN[sv.cls]}</div>
+      <h3 id="mTitle">${esc(sv.name)}</h3>
+      <div class="stars" aria-label="${sv.tier}성">${'★'.repeat(sv.tier)}${'☆'.repeat(5-sv.tier)}</div>
+      <div class="params">${Object.entries(sv.params).map(([k,v])=>`<div>${k}<b>${v}</b></div>`).join('')}</div>
+      <p>"묻겠다. 그대가 나의 마스터인가?"</p>
+      <button class="btn primary" type="button" id="mOk">계약한다</button>`;
+  } else {
+    sh.className='sheet '+(m.kind==='summon2'?'summon':'gold');
+    sh.innerHTML=`<div class="eyebrow">${esc(m.eyebrow||'')}</div><h3 id="mTitle">${esc(m.title)}</h3><p>${esc(m.body||'')}</p><button class="btn primary" type="button" id="mOk">계속</button>`;
+  }
+  $('modal').hidden=false;
+  $('mOk').focus();
+  $('mOk').onclick=()=>{$('modal').hidden=true;if(majorQueue.length&&!skipping){showModal(majorQueue.shift());}else{majorQueue.length=0;if(running&&!paused)schedule();}};
+}
+
+function schedule(){clearTimeout(timer);timer=setTimeout(tick,Math.round(700/speed));}
+function tick(){
+  if(!running||paused)return;
+  step();render();scrollLog();
+  if(!S.alive){finish();return;}
+  if(majorQueue.length){
+    if($('autoPause').checked){showModal(majorQueue.shift());return;}
+    majorQueue.length=0;
+  }
+  schedule();
+}
+function start(seed,boost){
+  if(boost===undefined||boost===null)boost=$('fateMode').checked;
+  clearTimeout(timer);
+  logEl.innerHTML='';$('endBox').innerHTML='';$('intro').hidden=true;
+  majorQueue.length=0;$('modal').hidden=true;
+  logSink=renderEntry;
+  newLife(seed,boost);
+  running=true;paused=false;skipping=false;
+  $('bPause').disabled=false;$('bSkip').disabled=false;$('bPause').textContent='일시정지';
+  $('bBorn').textContent='다시 태어나기';
+  render();
+  if(majorQueue.length&&$('autoPause').checked) showModal(majorQueue.shift()); else {majorQueue.length=0;schedule();}
+}
+function skipAll(){
+  if(!running)return;
+  skipping=true;clearTimeout(timer);$('modal').hidden=true;majorQueue.length=0;
+  const frag=document.createDocumentFragment();
+  logSink=e=>{const li=document.createElement('li');li.className=e.cat+(e.big?' big':'');li.innerHTML=`<span class="y">${e.y}</span><span class="a">${e.a}세</span><span class="t">${esc(e.text)}</span>`;frag.appendChild(li);};
+  let guard=0;
+  while(S.alive&&guard++<1500){step();majorQueue.length=0;}
+  if(S.alive){S.alive=false;S.deathAge=S.age;S.cause='알 수 없음';}
+  logEl.appendChild(frag);logSink=renderEntry;
+  render();scrollLog();finish();
+}
+function finish(){
+  running=false;clearTimeout(timer);
+  $('bPause').disabled=true;$('bSkip').disabled=true;
+  const key=endingKey();const ed=ENDINGS.find(e=>e[0]===key);
+  const lg=rarity();const oneIn=Math.pow(10,-lg);
+  const people=8e9*Math.pow(10,lg);
+  const peopleTxt=people>=1?`지금 살아 있는 80억 명 중 약 ${fmtBig(people)}명이 이런 삶을 살아요.`:`80억 명이 다 같이 태어나도 이런 삶이 나올 확률은 ${(people*100<0.01?'0.01% 미만':(people*100).toFixed(2)+'%')}이에요.`;
+  const notable=S.rar.filter(r=>r.p<0.2).slice(0,8);
+  const end=S.year;
+  const share=`[타입문 인생게임] ${S.name} (${S.country.n}, ${S.birthYear}–${end}) · ${S.deathAge}세 · ${ed[1]} · ${fmtBig(oneIn)}분의 1 · 인생 코드 ${S.code}`;
+  $('endBox').innerHTML=`<div class="ending" role="region" aria-label="결말">
+    <div class="eyebrow">결말 · ${esc(S.cause||'')}</div>
+    <h3>${esc(ed[1])}</h3>
+    <div class="rar">${fmtBig(oneIn)}분의 1</div>
+    <div class="rar-sub">${peopleTxt}</div>
+    ${notable.length?`<ul>${notable.map(r=>`<li>${esc(r.label)} <span class="unk">(${fmtBig(1/r.p)}분의 1)</span></li>`).join('')}</ul>`:''}
+    <div class="row">
+      <span>인생 코드 <code>${S.code}</code></span>
+      <button class="btn" type="button" id="bCopy">결과 복사</button>
+      <button class="btn primary" type="button" id="bAgain">다시 태어나기</button>
+    </div>
+    <input id="copyOut" readonly hidden value="${esc(share)}">
+  </div>`;
+  $('bCopy').onclick=()=>{
+    const out=$('copyOut');
+    const ok=()=>{$('bCopy').textContent='복사했어요';};
+    const fallback=()=>{out.hidden=false;out.select();$('bCopy').textContent='아래 글을 복사하세요';};
+    try{navigator.clipboard.writeText(share).then(ok,fallback);}catch(e){fallback();}
+  };
+  $('bAgain').onclick=()=>start(newSeed());
+  $('codeIn').value=S.code;
+  saveResult(key,oneIn);
+  renderDex();
+  if(getComputedStyle(logEl).maxHeight==='none') $('endBox').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ================= 도감 저장 ================= */
+const STORE='typemoon-life-v1';
+function loadStore(){try{return JSON.parse(localStorage.getItem(STORE)||'null')||{endings:{},lives:[],total:0};}catch(e){return{endings:{},lives:[],total:0};}}
+function saveResult(key,oneIn){
+  const st=loadStore();
+  st.total=(st.total||0)+1;
+  st.endings[key]=(st.endings[key]||0)+1;
+  st.lives.unshift({name:S.name,c:S.country.n,y:S.birthYear,a:S.deathAge,k:key,r:oneIn,code:S.code});
+  st.lives=st.lives.slice(0,10);
+  try{localStorage.setItem(STORE,JSON.stringify(st));}catch(e){}
+  lastStore=st;
+}
+let lastStore=null;
+function renderDex(){
+  const st=lastStore||loadStore();
+  const got=ENDINGS.filter(e=>st.endings[e[0]]).length;
+  $('dexSub').textContent=`이 기기에서 ${st.total||0}번 태어났고, 결말 ${ENDINGS.length}개 중 ${got}개를 봤어요.`;
+  $('dex').innerHTML=ENDINGS.map(e=>{
+    const n=st.endings[e[0]];
+    return n?`<div class="dex-item got"><b>${esc(e[1])}</b><span>${esc(e[2])}</span> <span class="n">×${n}</span></div>`
+            :`<div class="dex-item locked"><b>？？？</b><span>${esc(e[2])}</span></div>`;
+  }).join('');
+  $('recent').innerHTML=st.lives.length?`최근 인생<ol>${st.lives.map(l=>{const ed=ENDINGS.find(e=>e[0]===l.k);return `<li>${esc(l.name)} · ${esc(l.c)} ${l.y}년생 · ${l.a}세 · ${esc(ed?ed[1]:'')} · ${fmtBig(l.r)}분의 1 · <code>${esc(l.code)}</code></li>`;}).join('')}</ol>`:'';
+}
+
+/* ================= 이벤트 연결 ================= */
+function newSeed(){
+  try{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0];}catch(e){return Math.floor(Math.random()*4294967296);}
+}
+$('bBorn').onclick=()=>start(newSeed());
+$('bPause').onclick=()=>{
+  if(!running)return;
+  paused=!paused;$('bPause').textContent=paused?'계속':'일시정지';
+  if(!paused&&$('modal').hidden)schedule();
+};
+$('bSkip').onclick=skipAll;
+document.querySelectorAll('.speed button').forEach(b=>b.onclick=()=>{
+  speed=+b.dataset.s;
+  document.querySelectorAll('.speed button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+  if(running&&!paused&&$('modal').hidden)schedule();
+});
+$('codeForm').addEventListener('submit',ev=>{
+  ev.preventDefault();
+  const c=$('codeIn').value.trim();const s=c?codeToSeed(c):null;
+  if(!s){$('codeIn').value='';$('codeIn').placeholder='예: F-3F9K2A';$('codeIn').focus();return;}
+  if(s.boost!==null)$('fateMode').checked=s.boost;
+  start(s.seed,s.boost);
+});
+renderDex();
+</script>
+</body>
+</html>
