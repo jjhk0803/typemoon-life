@@ -172,8 +172,10 @@ function render(){
   $('vOrig').innerHTML=S.originKnown?`<span class="od">「${esc(S.originWord)}」</span>`:unk('???');
   $('vEyes').innerHTML=S.eye?(S.eyesKnown?`<span class="od">${esc(S.eye.n)}</span>`:unk('???')):unk('없음');
   let aff='없음';
-  if(S.ancestor)aff='사도 27조';else if(S.apostle)aff='사도';else if(S.fugitive)aff='봉인지정 도망자';else if(S.church)aff=S.burial?'매장기관':'성당교회 대행자';else if(S.academy)aff=`시계탑${S.faction?' · '+S.faction+'파':''}`;else if(S.mage)aff='프리랜서 마술사';else if(S.aware)aff='신비를 아는 일반인';
+  if(S.magic)aff='마법사';else if(S.ancestor)aff='사도 27조';else if(S.apostle)aff='사도';else if(S.fugitive)aff='봉인지정 도망자';else if(S.church)aff=S.burial?'매장기관':'성당교회 대행자';else if(S.academy)aff=`시계탑${S.faction?' · '+S.faction+'파':''}`;else if(S.mage)aff='프리랜서 마술사';else if(S.aware)aff='신비를 아는 일반인';
   $('vAff').innerHTML=aff==='없음'?unk('없음'):`<span class="od">${esc(aff)}</span>`;
+  $('rMagic').hidden=$('vMagic').hidden=!S.magic;if(S.magic)$('vMagic').innerHTML=`<span class="od">${esc(MAGICS[S.magic].n)} · ${esc(MAGICS[S.magic].t)}</span>`;
+  const ex=Math.round(S.expose||0);$('rLey').hidden=$('vLey').hidden=!(S.mage&&S.era!=='ancient');$('vLey').innerHTML=(S.ley?`<span class="od">영지 ${S.ley.str}등급</span>${S.ley.home===S.city?'':' · 떠나 있음'}`:unk('영지 없음'))+(ex>=15?` · 은닉 위험 <b style="color:var(--blood)">${ex}</b>`:'');
   $('vSkill').innerHTML=S.depts.length||S.abil.length?esc([...S.depts.map(id=>byId(CY_DEPTS,id).n),...S.details.map(id=>CY_DET[id].n),...S.abil.map(id=>byId(CY_ABIL,id).n)].join(', ')):unk(S.job?S.job+(S.retired?' (은퇴)':''):'-');
   setGauge('gH','nH',S.health);setGauge('gM','nM',S.mental);setGauge('gW','nW',S.wealth);
   const hm=hpMax();$('gHP').style.width=clamp(S.hp,0,100)+'%';$('nHP').textContent=`${Math.round(S.hp)}`;$('nHP').title=`최대 ${hm}`;
@@ -336,6 +338,7 @@ const LIFE_END_TEXT={
   root:'모든 마술사의 비원, 근원의 소용돌이에 닿았다. 만물의 시작과 끝이 기록된 그곳에서 영혼은 처음으로 거슬러 올라갔다. 그 너머에서 돌아온 사람은 없다.',
   mage_end:'근원에 닿지 못한 채 생을 마쳤다. 평생의 연구는 마술각인에 새겨져, 언젠가 누군가가 그 끝을 이어 갈 것이다. 대부분의 마술사는 그렇게 끝난다.',
   grail_mud:'더럽혀진 성배로 근원을 열려 했다. 문 대신 쏟아진 것은 「이 세상 모든 악」이었다.',
+  magician:'다섯 개뿐인 마법 가운데 하나를 손에 쥐었다. 세계는 끝까지 당신을 밀어내려 했지만, 당신은 늙지 않았고 정해진 죽음도 몇 번이나 비켜 갔다. 그 마법은 언젠가 다음 사람에게 넘어갈 것이다.',
   god_back:'신대가 저물던 날, 세계의 표면을 사람들에게 넘기고 뒷면으로 물러났다. 신화 속 이름만이 남았다.'
 };
 function finish(){

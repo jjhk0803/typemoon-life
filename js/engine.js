@@ -214,7 +214,7 @@ function gainAbility(id,free){
   return true;
 }
 function randomAbility(free){
-  const pool=CY_ABIL.filter(a=>a.id!=='solo'&&!S.abil.includes(a.id)&&!(a.o.notRace&&a.o.notRace===S.race));
+  const pool=CY_ABIL.filter(a=>a.id!=='solo'&&!a.o.born&&!S.abil.includes(a.id)&&!(a.o.notRace&&a.o.notRace===S.race));
   if(!pool.length){S.jexp+=.3;log('이미 많은 것을 익혔다. 대신 실력이 한층 깊어졌다.','joy');return;}
   gainAbility(pick(pool).id,free);
 }
@@ -251,6 +251,7 @@ function power(){
   if(S.apostle&&S.race==='human')p+=1;
   p+=Math.min(S.depts.length,5)*.15+S.jexp+(S.luck-50)/120+(S.mental-50)/150+Math.min(S.circuits,100)/60+(S.ill?-S.ill.sev*.3:0);
   if(S.world==='extra'&&S.year>=1970&&S.mage)p-=1.2;
+  p+=magicPower();
   if(S.fb.includes('careless'))p-=.3;
   if(S.fb.includes('legs'))p-=.3;
   if(S.fb.includes('wrongorigin'))p-=.5;
@@ -338,8 +339,9 @@ function fightOpts(cfg,base,fn){
   const out=base.map(([n,d,m],i)=>opt(n,[d,pctTxt(pf(core+m))].filter(Boolean).join(' · '),()=>fn(core+m,i)));
   if(cfg.noTac)return out;
   TACTICS.filter(t=>t.has()).map(t=>({t,m:t.m(cfg.foe)})).filter(x=>x.m>0).sort((a,b)=>b.m-a.m).slice(0,3)
-    .forEach(({t,m})=>out.push(opt(t.n,[t.sub,costTxt(t.c),pctTxt(pf(core+m))].filter(Boolean).join(' · '),()=>{if(t.once)S[t.once]=true;log(t.t,'moon',false,payCost(t.c));fn(core+m,-1);},!canPay(t.c))));
-  if(S.mage&&mpMax()>=30)out.push(opt('마술을 전력으로 쓴다',`마력 30 · ${pctTxt(pf(core+.7))}`,()=>{log('가진 마력을 전부 쏟아부었다.','moon',false,payCost({mp:30}));fn(core+.7,-1);},S.mp<30));
+    .forEach(({t,m})=>out.push(opt(t.n,[t.sub,costTxt(t.c),pctTxt(pf(core+m))].filter(Boolean).join(' · '),()=>{if(t.once)S[t.once]=true;log(t.t,'moon',false,payCost(t.c));exposeAdd(EXPOSE[t.id]||1);fn(core+m,-1);},!canPay(t.c))));
+  if(S.mage&&mpMax()>=30){const m=chantMod(),anc=S.era==='ancient';
+    out.push(opt(anc?'신언으로 세계에 명령한다':'10소절의 대마술을 왼다',`마력 30 · 체력 6 · ${pctTxt(pf(core+m))}`,()=>{log(anc?'신의 언어 한 소절로 세계에 명령했다. 인대의 마술사라면 열 소절을 읊어도 닿지 못할 깊이였다.':'열 소절을 쉬지 않고 읊었다. 영혼이 버틸 수 있는 한계였다.','moon',false,payCost({mp:30,hp:6}));exposeAdd(3);fn(core+m,-1);},S.mp<30||S.hp<12));}
   return out;
 }
 /* 전쟁이 끝나면 영주는 사라진다 */
@@ -353,6 +355,8 @@ function escapeDeath(cause){
   else if(S.abil.includes('revive')&&!S.reviveUsed&&S.mp>=25){S.reviveUsed=true;S.mp-=25;t='숨이 끊어지기 직전, 소생 마술로 스스로를 되살렸다.';}
   else if(S.details.includes('puppeteer')&&!S.puppetUsed){S.puppetUsed=true;S.health=100;t='공방에 둔 예비 인형이 눈을 떴다. 의식은 이미 새 몸으로 옮겨 와 있었다.';}
   else if(S.abil.includes('solo')&&!S.soloUsed){S.soloUsed=true;t='죽음이 닿기 직전, 저도 모르게 전혀 다른 곳에 서 있었다. 단독현현.';}
+  else if(S.heir&&S.crestGen>=10&&S.age>=9&&!S.crestUsed){S.crestUsed=true;t=`${S.crestGen}대의 마술각인이 숙주를 살리려 멋대로 움직였다. 멈춘 심장이 억지로 다시 뛰었다.`;}
+  else if(S.magic&&(S.magicSave||0)<2){S.magicSave=(S.magicSave||0)+1;t='죽음이 정해진 순간, 마법사의 몸은 그 운명을 거부했다.';}
   if(!t)return false;
   S.hp=Math.max(S.hp,30);S.deadEnd=null;S.deadText='';
   log(t,'joy',true);fixStats();return true;
@@ -496,6 +500,7 @@ function newLife(P,seed){
   if(S.mage)S.teacher=magusFam?'가문':root?'근원':'독학';
   S.mp=mpMax();
   S.rootP=root?60:S.heir?Math.min(25,Math.round(S.crestGen*.6)):0;
+  S.expose=0;S.ley=S.heir?{str:{magus:1,noble:2,lord:3,user:1}[birth]||1,home:S.city}:null;
   // 예장은 인생 도중에 손에 들어온다
   S.itemAt=P.items.map(id=>({id,age:ri(14,40)}));
   // 시기: 시대(운명에 맡기면 드물게 고대)와 세계선
@@ -525,6 +530,7 @@ function newLife(P,seed){
   scene({plain:'birth_plain',magus:'birth_magus',noble:'birth_noble',lord:'birth_noble',church:'birth_church',user:'birth_magus'}[birth]);
   if(['vamp','true','dragon','homun'].includes(S.race))scene('birth_inhuman');
   eraSetup(P);
+  if(S.ley)S.ley.home=S.city;
   if(S.route==='sn')log('후유키 시. 언젠가 이 도시에서 일곱 명의 마스터가 싸우게 된다.','moon');
 }
 
@@ -650,8 +656,9 @@ function yearMoney(){
   }
   S.wealth+=inc;
   if(mpMax())S.mp+=mpMax()*(S.items.includes('zelretch')?1:S.abil.includes('battery')?.6:.35);
+  S.expose=Math.max(0,(S.expose||0)-2);
   if(rootOn()&&a>=16&&a<=80){
-    S.rootP=(S.rootP||0)+.4+(S.academy?.4:0)+(S.abil.includes('split')?.3:0)+(S.items.includes('meter')?.3:0)+(S.origin==='root'?.5:0);
+    S.rootP=(S.rootP||0)+(S.ley&&S.ley.home===S.city?.3:0)+.4+(S.academy?.4:0)+(S.abil.includes('split')?.3:0)+(S.items.includes('meter')?.3:0)+(S.origin==='root'?.5:0);
     if(S.rootP>=25&&!S.rootIntro){S.rootIntro=true;major({kind:'gold',img:'end_root',eyebrow:'마술사의 비원',title:'근원의 소용돌이',body:'세계의 바깥, 만물의 시작과 끝이 기록된 곳. 모든 마술은 거기서 흘러나온 가느다란 물줄기예요. 닿으면 무엇이든 할 수 있지만, 닿은 사람은 영혼이 거슬러 올라가 돌아오지 못해요. 세계는 억지력으로 그 길을 막아요. 당신의 연구가 그곳을 향하기 시작했어요. (근원 탐구가 쌓이면 도전할 수 있어요)'});}
   }
   S.mental+=(55-S.mental)*.04+(S.married?.6:0)-(S.ill?1:0);
@@ -677,7 +684,7 @@ function step(){
   if(!opportunity())flavor();
   if(!S.alive)return;
   if(!S.pending&&chance(.45))mundane();
-  if(S.year>S.lastJY&&S.long&&S.year>=S.endYear){S.alive=false;S.deathAge=S.age;S.cause='여정의 끝';log('긴 세월이 흘렀다. 이 세상에서 해야 할 일은 모두 끝났다.','death',true);return;}
+  if(S.year>S.lastJY&&S.long&&S.year>=S.endYear){S.alive=false;S.deathAge=S.age;S.cause=S.longMage?'혼의 부패':'여정의 끝';log(S.longMage?'몸은 몇 번이고 갈아치울 수 있었지만, 썩어 가는 혼만은 어쩔 수 없었다.':'긴 세월이 흘렀다. 이 세상에서 해야 할 일은 모두 끝났다.','death',true);return;}
   yearBody();
   checkVitals();
 }
@@ -938,7 +945,7 @@ const EVENTS=[
     opt('민주주의파','재능 있는 신참의 편',()=>{chosen();S.faction='민주주의';S.jexp+=.3;S.wealth-=5;log('민주주의파에 들어갔다. 돈은 모자랐지만 동료가 생겼다.','moon');}),
     opt('중립주의파','어느 쪽도 아닌',()=>{S.faction='중립주의';log('중립을 지켰다. 아무도 당신을 신경 쓰지 않았다.','moon');})
   ]})},
-  {id:'seal',w:()=>(S.abil.some(id=>!S.freeAbil.includes(id)&&(byId(CY_ABIL,id).o.ap||0)>0)||S.eye&&['jewel','rainbow'].includes(S.eye.id)||S.originKnown&&S.mage)&&S.mage&&!S.sealDone&&S.age>=25&&S.age<=60?.8:0,make:()=>{S.sealDone=true;return {eyebrow:'봉인지정',img:'sealing',title:'집행자가 온다',body:'비의재시국의 지표가 당신을 가리켰어요. 봉인지정은 보호 명령이라는 이름의 영구 보존이에요.',options:[
+  {id:'seal',w:()=>S.mage&&!S.magic&&!S.sealDone&&S.age>=16&&S.year>S.lastJY&&sealReason()?3:0,make:()=>{S.sealDone=true;return {eyebrow:'봉인지정',img:'sealing',title:'집행자가 온다',body:`비의재시국의 지표가 당신을 가리켰어요. 「${sealReason()}」은(는) 마법에 한 걸음 못 미치는 업, 한 대에 한정된 기적이에요. 봉인지정은 보호 명령이라는 이름의 영구 보존이에요.`,options:[
     opt('공방을 버리고 달아난다','계속 쫓기며 살아요',()=>{chosen();S.fugitive=true;log('공방을 불태우고 이름을 버린 채 달아났다.','risk',true);}),
     ...fightOpts({foe:'magus',rec:5},[['집행자와 맞서 싸운다','이기면 자유, 지면 끝이에요',0]],m=>{chosen();if(chance(odds(5,m))){S.fugitive=true;fate(2,'집행자를 물리침');log('집행자들을 물리쳤다. 그래도 협회의 추적은 끝나지 않는다.','risk',true);}else{S.deadEnd='봉인지정 집행자';S.deadText='집행자들을 이기지 못했다. 회로와 각인은 표본 병 속에 보존되었다.';die('봉인지정 집행자',S.deadText);}}),
     ...(S.abil.includes('truelang')?[opt('태초의 언어로 집행자를 물린다','통일언어(진)',()=>{chosen();log('"돌아가라. 여기에는 아무도 없다." 집행자들은 의심 없이 돌아섰다.','moon',true);S.sealDone=true;})]:[]),
@@ -1012,6 +1019,7 @@ function enterClock(t){
 }
 function moveTo(p){
   S.country=COUNTRIES.find(c=>c.n===p.c);S.city=p.city||pick(S.country.cities);
+  if(S.ley&&S.ley.home!==S.city)log('마술기반이 새겨진 영지를 떠났다. 영맥을 경유하는 마술은 눈에 띄게 약해졌다.','moon');
   log(`${p.n}(으)로 삶의 터전을 옮겼다.`,'joy',true);scene(p.id==='fuyuki'?'grail_war':p.id==='london'?'clocktower':p.id==='misaki'?'jr_misaki':p.id==='mifune'?'jr_city':'travel');
 }
 function inviteList(){
@@ -1079,12 +1087,22 @@ function rootResolve(m,legal){
   if(S.rootTry>=2)S.rootTried=true;
 }
 function reachRoot(){
-  unlock('root_reach');S.root=true;
-  if(S.abil.includes('solo')&&S.fortnia&&S.ap>=10&&!S.fb.includes('redshadow')){S.endKey='beast';log('근원에 닿은 순간 알았다. 자신의 기원이 인류를 멸망시키는 악, 비스트의 조각이라는 것을.','grail',true);}
-  else if((S.rootP||0)>=100&&S.luck>=60&&chance(.2)){S.endKey='cy_true2';unlock('root_sixth');log('소용돌이의 가장 안쪽에서, 아직 아무도 앉지 않은 여섯 번째 자리를 보았다.','moon',true);}
+  unlock('root_reach');scene('end_root');
+  log('공방의 마법진이 빛을 삼켰다. 억지력의 벽 너머, 소용돌이의 가장자리에 손끝이 닿았다.','moon',true);
+  const p=clamp(.2+(S.luck-50)/300+((S.rootP||0)>=100?.2:0)+(S.origin==='root'?.1:0),.05,.6);
+  S.pending={eyebrow:'근원',img:'end_root',title:'소용돌이의 가장자리',body:'만물의 시작과 끝이 기록된 곳이 바로 앞에 있어요. 안으로 들어가면 영혼은 처음으로 거슬러 올라가 돌아오지 못해요. 닿은 채 돌아오면, 아직 아무도 밟지 않은 길이었을 때에만 마법을 손에 쥘 수 있어요.',options:[
+    opt('소용돌이 속으로 들어간다','모든 마술사의 비원 · 돌아오지 못해요',()=>enterRoot()),
+    opt('닿은 채 돌아온다',`첫 번째라면 마법을, 아니라면 마법사의 업을 · 제6법 가능성 ${Math.round(p*100)}%`,()=>{
+      if(chance(p)){unlock('root_sixth');gainMagic(6,'다섯 자리가 찬 세상에서, 아무도 앉지 않은 여섯 번째 자리를 붙잡고 돌아왔다.');}
+      else{const g=pick(['marble','truelang','carrier'].filter(id=>!S.abil.includes(id)));if(g)gainAbility(g,true);S.sealGift=true;logx('첫 번째가 아니었다. 손에 남은 것은 마법에 한 걸음 못 미치는 업이었다. 협회가 그것을 그냥 둘 리 없다.',{mental:-10},'moon',true);}})
+  ]};
+}
+function enterRoot(){
+  S.root=true;
+  if(S.abil.includes('solo')&&S.fortnia&&S.ap>=10&&!S.fb.includes('redshadow')){S.endKey='beast';log('근원 속에서 알았다. 자신의 기원이 인류를 멸망시키는 악, 비스트의 조각이라는 것을.','grail',true);}
   else if(S.origin==='root')S.endKey='cy_norm3';
-  log('공방의 마법진이 빛을 삼켰다. 소용돌이에 닿은 순간, 영혼은 처음으로 거슬러 올라가 녹아내렸다. 그 너머에서 돌아온 사람은 없다.','death',true);
-  S.alive=false;S.cause='근원 도달';S.deathAge=S.age;scene('end_root');
+  log('소용돌이 속으로 걸어 들어갔다. 영혼은 처음으로 거슬러 올라가 녹아내렸다. 그 너머에서 돌아온 사람은 없다.','death',true);
+  S.alive=false;S.cause='근원 도달';S.deathAge=S.age;
 }
 /* 이긴 성배전쟁의 성배: dirty(후유키, 도쿄) · clean(칼데아 세계선의 후유키, 루마니아, 달) · small(아종) */
 function grailKind(war){
@@ -1225,6 +1243,7 @@ function lifeEndingKey(){
   if(S.era==='ancient'&&!S.endKey)S.endKey=ancientJudge();
   if(S.endKey)return S.endKey;
   if(S.root)return 'root';
+  if(S.magic)return S.magic===6?'cy_true2':'magician';
   if(S.apostle)return S.ancestor?'ancestor':'apostle';
   if(S.sealed)return 'sealed';
   if(S.fgoDone)return 'restorer';
