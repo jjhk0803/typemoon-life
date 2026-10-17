@@ -218,75 +218,6 @@ function ancientJudge(){
   return 'spirit';
 }
 
-/* ---------------- Fate/stay night ---------------- */
-const SN_ROUTES={
-  fate:{n:'Fate',who:'세이버와 시로',talks:['saber','shirou','saber'],stages:[['버서커의 습격',2.5,'눈 내리는 밤, 거인 버서커가 길을 막았어요.'],['류도사의 캐스터',3,'산문의 아사신과 마녀 캐스터가 기다리는 류도사.'],['황금의 영령',3.5,'10년 전의 전쟁에서 남은 황금의 왕이 모습을 드러냈어요.']]},
-  ubw:{n:'Unlimited Blade Works',who:'린과 아처',talks:['rin','archer','rin'],stages:[['캐스터의 계략',2.5,'캐스터가 마을 사람들의 생기를 빨아들이고 있어요.'],['아처의 배신',3,'붉은 궁병이 린을 떠나 적이 되었어요.'],['무한의 검제',3.5,'아인츠베른 성. 끝없는 검의 언덕 위의 결전.']]},
-  hf:{n:"Heaven's Feel",who:'사쿠라',talks:['sakura','illya','sakura'],stages:[['그림자의 습격',3,'밤마다 사람이 사라져요. 검은 그림자가 도시를 삼키고 있어요.'],['검게 물든 세이버',3.5,'더럽혀진 기사왕이 앞을 막았어요.'],['대성배의 동굴',4.5,'류도사 지하, 대성배 앞에 사쿠라가 서 있어요.']]}
-};
-function snWar(){
-  S.snActive=true;story('제5차 성배전쟁','plan');
-  scene('grail_war');
-  const canSummon=S.mage||S.circuits>=3;
-  S.pending={eyebrow:'2004년 · 후유키',img:'grail_war',title:'그날 밤, 교정에서',body:'늦은 밤의 학교. 운동장에서 붉은 궁병과 푸른 창병이 부딪치고 있어요. 제5차 성배전쟁이 시작됐어요.',options:[
-    opt('자신의 서번트를 소환한다',canSummon?'마스터로 참전해요':'마술회로가 필요해요',()=>{chosen();S.snMaster=true;S.warCount++;S.seals=3;const sv=rollServant(S.wealth>=60);S.servant=sv;fate(2,'성배전쟁 참전');log(`창고 바닥의 마법진이 빛났다. 소환에 응한 것은 ${sv.cls}, 진명 「${sv.name}」.`,'grail',true);major({kind:'summon',sv,war:'제5차 성배전쟁',img:'summon'});snPickRoute();},!canSummon),
-    opt('시로를 따라간다','에미야를 내버려 둘 수 없어요',()=>{chosen();meet('shirou');addBond('shirou',8);meet('saber');log('시로를 따라 달렸다. 그날 밤 창고에서 푸른 기사가 나타나는 것을 보았다.','grail',true);snPickRoute();}),
-    opt('토오사카에게 알린다','이건 그녀의 일이에요',()=>{chosen();meet('rin');addBond('rin',8);log('토오사카 린을 찾아갔다. "……너, 봤구나." 그녀가 한숨을 쉬었다.','grail',true);snPickRoute();}),
-    opt('못 본 척 집에 간다','휘말리고 싶지 않아요',()=>{if(chance(.4)){log('집으로 돌아갔다. 그 겨울, 도시에서 무슨 일이 있었는지 끝내 몰랐다.','life');S.snActive=false;story('제5차 성배전쟁','fail');}else{log('돌아서는 순간, 창병의 눈이 이쪽을 향했다.','risk',true);becomeAware();snPickRoute();}})
-  ]};
-}
-function snPickRoute(){
-  ['saber','rin','sakura'].forEach(meet);
-  const h=bond('sakura');const need=20;
-  S.pending={eyebrow:'갈림길',img:'grail_war',title:'누구의 곁에 설까요',body:'이 전쟁이 어떻게 끝날지는 당신이 누구의 곁에 서느냐에 달렸어요.',options:[
-    opt(`세이버와 시로 (Fate)`,`세이버 신뢰 ${bond('saber')} · 시로 신뢰 ${bond('shirou')}`,()=>{chosen();snStage('fate',0);}),
-    opt(`린과 아처 (Unlimited Blade Works)`,`린 신뢰 ${bond('rin')}`,()=>{chosen();snStage('ubw',0);}),
-    opt(`사쿠라 (Heaven's Feel)`,h>=need?`사쿠라 신뢰 ${h}`:`사쿠라와의 신뢰가 더 필요해요 (${h}/${need})`,()=>{chosen();snStage('hf',0);},h<need)
-  ]};
-}
-function snStage(rt,i){
-  const R_=SN_ROUTES[rt];S.snRoute=rt;
-  if(i>=3){snEnd(rt);return;}
-  const st=R_.stages[i],partner=stageTalker(R_.talks[i],i);const rv=rival('sn');
-  story(`${R_.n} · ${st[0]}`,'plan');
-  if(rv)log(`이 밤의 상대: ${rv}.`,'grail');
-  talk(partner,`제5차 성배전쟁 ${R_.n} 루트 ${i+1}단계 「${st[0]}」 직전. ${st[2]}${rv?' 상대 마스터는 '+rv+'.':''}`,()=>{
-    const hero=rt==='fate'?'saber':rt==='ubw'?'rin':'sakura';
-    const core=(S.snMaster?.6:0)+(S.servant?(S.servant.tier-3)*.5+bond('sv:'+S.servant.name)/80:0)+bond(hero)/50;
-    S.pending={eyebrow:`${R_.n} · ${i+1}/3`,img:'grail_war',title:st[0],body:st[2]+(rv?` 상대는 ${rv}.`:''),options:fightOpts({foe:rv?'magus':'servant',rec:st[1],core},[
-      ['정면으로 맞선다','힘으로',0],[`${charInfo(hero).n}을(를) 믿고 맡긴다`,`신뢰 ${bond(hero)}`,bond(hero)/40],['함정을 파고 기다린다','신중하게',.3]],m=>snResolve(rt,i,m))};
-  });
-}
-function snResolve(rt,i,mod){
-  chosen();
-  const R_=SN_ROUTES[rt],st=R_.stages[i];
-  if(S.servant&&S.seals>0&&odds(st[1],mod)<.5){S.seals--;mod+=.6;log('영주 1획을 사용했다.','grail');}
-  if(chance(odds(st[1],mod))){story(`${R_.n} · ${st[0]}`,'ok');log(`「${st[0]}」을(를) 넘었다.`,'grail',true);fate(2,`${R_.n} ${i+1}단계`);snStage(rt,i+1);return;}
-  story(`${R_.n} · ${st[0]}`,'fail');
-  S.snFail=(S.snFail||0)+1;
-  if(chance(rt==='hf'?.5:.35)){S.deadEnd=`${R_.n} · ${st[0]}`;S.deadText=rt==='hf'?'검은 그림자가 발밑에서 솟아올랐다. 마지막으로 본 것은 사쿠라의 울 것 같은 얼굴이었다.':'그 밤을 넘기지 못했다.';die('제5차 성배전쟁',S.deadText);return;}
-  if(S.snFail>=2){log('전쟁은 당신 없이 끝났다. 어떤 결말이었는지는 소문으로만 들었다.','risk',true);S.snActive=false;endWar();return;}
-  hurt(20);log('크게 다쳤지만 살아남았다. 싸움은 계속된다.','risk',true);snStage(rt,i+1);
-}
-function snEnd(rt){
-  S.snActive=false;story('제5차 성배전쟁','ok');
-  log('후유키의 성배는 「이 세상 모든 악」에 물들어 있었다. 이것으로는 누구도 근원에 닿을 수 없다. 성배는 부서져야 했다.','grail');
-  endWar();
-  if(rt==='fate'){
-    unlock('sn_fate_true');log('세이버는 성배를 부수고, 아침 햇살 속에서 원래의 시대로 돌아갔다. 시로는 그녀를 잊지 않고 살아가기로 했다.','grail',true);
-    if(bond('saber')>=40){unlock('sn_fate_le');log('아득한 시간이 흐른 뒤, 아발론의 낙원에서 두 사람이 다시 만났다고 한다.','grail',true);}
-  } else if(rt==='ubw'){
-    unlock('sn_ubw_true');log('미래의 자신을 넘어선 시로는 린과 함께 런던의 시계탑으로 떠났다.','grail',true);
-    if(bond('saber')>=20&&bond('rin')>=40){unlock('sn_ubw_good');log('그리고 사라진 줄 알았던 세이버가 남아, 세 사람의 시끄러운 일상이 시작되었다.','grail',true);}
-    if(S.mage&&!S.academy&&bond('rin')>=50){S.academy='시계탑';log('린의 권유로 함께 런던의 시계탑에 들어갔다.','moon',true);}
-  } else {
-    if(bond('sakura')>=50&&bond('illya')>=12){unlock('sn_hf_true');log('이리야가 제3마법으로 시로의 혼을 붙잡았다. 인형의 몸으로 돌아온 시로와 사쿠라는 벚꽃 아래서 봄을 맞았다.','grail',true);}
-    else{unlock('sn_hf_normal');log('시로는 사쿠라를 구하고 돌아오지 않았다. 사쿠라는 그 집에서 오래도록 그를 기다렸다.','grail',true);}
-  }
-  scene('homurahara');
-  major({kind:'gold',img:'homurahara',eyebrow:'제5차 성배전쟁',title:`${SN_ROUTES[rt].n} 루트를 지켜보았다`,body:'전쟁은 끝났어요. 당신의 인생은 계속돼요.'});
-}
-
 /* ---------------- Fate/Zero ---------------- */
 function zeroWar(){
   S.zeroActive=true;story('제4차 성배전쟁','plan');
@@ -307,14 +238,14 @@ function zeroStage(i){
   story(`Zero · ${st[0]}`,'plan');
   talk(partner,`제4차 성배전쟁 ${i+1}단계 「${st[0]}」. ${st[2]}${rv?' 상대 마스터는 '+rv+'.':''}`,()=>{
     const core=(S.servant?(S.servant.tier-3)*.5:0)+bond(partner)/50;
-    S.pending={eyebrow:`Fate/Zero · ${i+1}/3`,img:'grail_war',title:st[0],body:st[2]+(rv?` 상대는 ${rv}.`:''),options:fightOpts({foe:rv?'magus':'servant',rec:st[1],core},[
+    S.pending={eyebrow:`Fate/Zero · ${i+1}/3`,img:'grail_war',title:st[0],body:st[2]+(rv?` 상대는 ${rv}.`:''),options:fightOpts({foe:rv?'magus':'servant',rec:st[1],core,war:true},[
       ['정면으로 맞선다','',0],[`${charInfo(partner).n}을(를) 믿는다`,`신뢰 ${bond(partner)}`,bond(partner)/40],['그림자 속에서 움직인다','마술사 살해자의 방식',.3]],m=>zeroResolve(i,m))};
   });
 }
 function zeroResolve(i,mod){
   chosen();const st=ZERO_ST[i];
-  if(S.servant&&S.seals>0&&odds(st[1],mod)<.5){S.seals--;mod+=.6;log('영주 1획을 사용했다.','grail');}
-  if(chance(odds(st[1],mod))){story(`Zero · ${st[0]}`,'ok');log(`「${st[0]}」을(를) 넘었다.`,'grail',true);fate(2,`Zero ${i+1}단계`);zeroStage(i+1);return;}
+  if(S.servant&&S.seals>0&&warOdds(st[1],mod)<.5){S.seals--;mod+=.6;log('영주 1획을 사용했다.','grail');}
+  if(chance(warOdds(st[1],mod))){story(`Zero · ${st[0]}`,'ok');log(`「${st[0]}」을(를) 넘었다.`,'grail',true);fate(2,`Zero ${i+1}단계`);zeroStage(i+1);return;}
   story(`Zero · ${st[0]}`,'fail');
   if(chance(.4)){S.deadEnd=`Zero · ${st[0]}`;S.deadText='마술사들의 전쟁은 자비가 없었다.';die('제4차 성배전쟁',S.deadText);return;}
   hurt(20);log('크게 다쳤지만 살아남았다.','risk',true);zeroStage(i+1);
@@ -428,12 +359,6 @@ function fgoCrypter(){
 
 /* ---------------- 루트 사건(기회 사건 목록에 더한다) ---------------- */
 EVENTS.unshift(
-  {id:'sn_school',w:()=>S.route==='sn'&&S.age>=15&&S.year>=2001&&S.year<=2003?100:0,make:()=>({eyebrow:'호무라바라 학원',img:'homurahara',title:'새 학기',body:'후유키의 호무라바라 학원. 같은 학년에 에미야 시로와 토오사카 린, 한 학년 아래에 마토 사쿠라가 있어요. 어떤 학교생활을 할까요?',options:[
-    opt('궁도부에 들어간다','사쿠라와 함께',()=>{chosen();meet('sakura');meet('shirou');addBond('sakura',10);addBond('shirou',4);log('궁도부에 들어갔다. 사쿠라가 수줍게 인사했다.','joy');}),
-    opt('학생회 잡일을 돕는다','시로와 함께',()=>{chosen();meet('shirou');addBond('shirou',10);log('학생회실의 고장 난 물건을 고치는 시로를 돕기 시작했다.','joy');}),
-    opt('성적으로 승부한다','토오사카를 이겨 봐요',()=>{chosen();meet('rin');addBond('rin',10);log('시험 성적표 앞에서 토오사카 린과 눈이 마주쳤다.','joy');})]})},
-  {id:'sn_talk',repeat:true,w:()=>S.route==='sn'&&S.year>=2002&&S.year<=2003&&(S.snTalks||0)<3?6:0,make:()=>{S.snTalks=(S.snTalks||0)+1;const id=pick(['shirou','rin','sakura','sakura','illya']);talk(id,`${S.year}년, 제5차 성배전쟁이 시작되기 전의 평범한 날들.`,()=>{});return S.pending;}},
-  {id:'sn_war',w:()=>S.route==='sn'&&S.year===2004&&S.age>=14&&!S.apostle?100:0,make:()=>{snWar();return S.pending;}},
   {id:'zero_hook',w:()=>S.route==='zero'&&S.year===1993&&S.age>=18&&!S.apostle?100:0,make:()=>({eyebrow:'1993년',img:'grail_war',title:'극동의 의식',body:S.mage?'시계탑에서 소문을 들었어요. 내년 일본 후유키에서 만능의 소원기를 두고 마술사들이 싸운대요.':'일본 후유키로의 출장 제안이 왔어요. 그 도시에서 이상한 일이 벌어질 거라는 예감이 들어요.',options:[
     opt('후유키로 간다','',()=>{chosen();S.zeroGo=true;if(S.country.n!=='일본'){S.country=COUNTRIES.find(c=>c.n==='일본');}S.city='후유키 시';log('후유키로 건너갔다.','moon',true);}),
     opt('가지 않는다','',()=>{S.route=null;log('가지 않았다. 이듬해 그 도시에 큰불이 났다는 뉴스를 보았다.');})]})},
@@ -460,14 +385,14 @@ function worldStage(k,i){
   const rv=A.tag?rival(A.tag):null;if(rv)log(`이 싸움의 상대: ${rv}.`,'grail');
   talk(stageTalker(A.p,i),`${A.n} ${i+1}단계 「${st[0]}」. ${st[2]}${rv?' 상대 마스터는 '+rv+'.':''}`,()=>{
     const core=(S.servant?(S.servant.tier-3)*.5:0)+bond(A.p)/50;
-    S.pending={eyebrow:`${A.n} · ${i+1}/3`,img:'grail_war',title:st[0],body:st[2],options:fightOpts({foe:rv?'magus':'servant',rec:st[1],core},[
+    S.pending={eyebrow:`${A.n} · ${i+1}/3`,img:'grail_war',title:st[0],body:st[2],options:fightOpts({foe:rv?'magus':'servant',rec:st[1],core,war:true},[
       ['정면으로 맞선다','',0],[`${charInfo(A.p).n}을(를) 믿는다`,`신뢰 ${bond(A.p)}`,bond(A.p)/40],['신중하게 움직인다','',.3]],m=>worldResolve(k,i,m))};
   });
 }
 function worldResolve(k,i,mod){
   chosen();const A=WORLD_ARCS[k],st=A.st[i];
-  if(S.servant&&S.seals>0&&odds(st[1],mod)<.5){S.seals--;mod+=.6;log('영주 1획을 사용했다.','grail');}
-  if(chance(odds(st[1],mod))){story(`${A.n} · ${st[0]}`,'ok');fate(2,`${A.n} ${i+1}단계`);worldStage(k,i+1);return;}
+  if(S.servant&&S.seals>0&&warOdds(st[1],mod)<.5){S.seals--;mod+=.6;log('영주 1획을 사용했다.','grail');}
+  if(chance(warOdds(st[1],mod))){story(`${A.n} · ${st[0]}`,'ok');fate(2,`${A.n} ${i+1}단계`);worldStage(k,i+1);return;}
   story(`${A.n} · ${st[0]}`,'fail');
   if(chance(.45)){S.deadEnd=`${A.n} · ${st[0]}`;S.deadText=k==='extra'?'패배한 마스터의 데이터는 지워진다. 현실의 몸도 함께 멈췄다.':'그 밤을 넘기지 못했다.';die(A.n,S.deadText);return;}
   hurt(20);log('크게 다쳤지만 살아남았다. 전쟁은 당신을 남겨 두고 끝났다.','risk',true);endWar();

@@ -258,7 +258,9 @@ function power(){
   if(!S.mage&&!S.church)p-=1;
   return p;
 }
-function odds(rec,mod){return clamp(1/(1+Math.exp(-(power()+(mod||0)-rec)*1.1)),.05,.97);}
+function odds(rec,mod){return clamp(1/(1+Math.exp(-(power()+(mod||0)-rec)*.75)),.04,.93);}
+/* 성배전쟁: 싸우는 것은 서번트다. 마스터의 힘은 절반 아래로만 보탠다 */
+function warOdds(rec,mod){return clamp(1/(1+Math.exp(-(1.6+power()*.4+(mod||0)-rec)*.8)),.04,.93);}
 function hasConcept(){return (S.eye&&S.eye.id==='rainbow')||S.items.some(id=>byId(CY_ITEMS,id).o.concept);}
 
 /* ---------------- 싸움: 능력·계통·예장·마안·종족이 선택지가 되고, 승률이 보인다 ----------------
@@ -335,12 +337,12 @@ function pctTxt(p){return `승률 ${Math.round(p*100)}%`;}
 /* 싸움 선택지. base: [[이름, 설명, 보정], ...] / 능력·예장·마안·종족으로 쓸 수 있는 수 가운데 강한 셋이 덧붙는다.
    fn(보정, base의 몇 번째인지(능력이면 -1)) */
 function fightOpts(cfg,base,fn){
-  const core=(cfg.core||0)+foeMod(cfg.foe),pf=cfg.pf||(m=>odds(cfg.rec,m));
+  const core=(cfg.core||0)+foeMod(cfg.foe),pf=cfg.pf||(cfg.war?m=>warOdds(cfg.rec,m):m=>odds(cfg.rec,m)),ts=cfg.war?.5:1;
   const out=base.map(([n,d,m],i)=>opt(n,[d,pctTxt(pf(core+m))].filter(Boolean).join(' · '),()=>fn(core+m,i)));
   if(cfg.noTac)return out;
-  TACTICS.filter(t=>t.has()).map(t=>({t,m:t.m(cfg.foe)})).filter(x=>x.m>0).sort((a,b)=>b.m-a.m).slice(0,3)
+  TACTICS.filter(t=>t.has()).map(t=>({t,m:t.m(cfg.foe)*ts})).filter(x=>x.m>0).sort((a,b)=>b.m-a.m).slice(0,3)
     .forEach(({t,m})=>out.push(opt(t.n,[t.sub,costTxt(t.c),pctTxt(pf(core+m))].filter(Boolean).join(' · '),()=>{if(t.once)S[t.once]=true;log(t.t,'moon',false,payCost(t.c));exposeAdd(EXPOSE[t.id]||1);fn(core+m,-1);},!canPay(t.c))));
-  if(S.mage&&mpMax()>=30){const m=chantMod(),anc=S.era==='ancient';
+  if(S.mage&&mpMax()>=30){const m=chantMod()*ts,anc=S.era==='ancient';
     out.push(opt(anc?'신언으로 세계에 명령한다':'10소절의 대마술을 왼다',`마력 30 · 체력 6 · ${pctTxt(pf(core+m))}`,()=>{log(anc?'신의 언어 한 소절로 세계에 명령했다. 인대의 마술사라면 열 소절을 읊어도 닿지 못할 깊이였다.':'열 소절을 쉬지 않고 읊었다. 영혼이 버틸 수 있는 한계였다.','moon',false,payCost({mp:30,hp:6}));exposeAdd(3);fn(core+m,-1);},S.mp<30||S.hp<12));}
   return out;
 }
@@ -668,6 +670,7 @@ function yearMoney(){
 /* ---------------- 한 해 ---------------- */
 function step(){
   if(S.grailQ){const w=S.grailQ;S.grailQ=null;grailChoice(w);return;}
+  if(typeof snExtraScene==='function'&&snExtraScene())return;
   if(S.era==='ancient'){ancientStep();return;}
   S.age++;S.year++;
   yearMoney();
@@ -1025,8 +1028,9 @@ function moveTo(p){
 function inviteList(){
   if(!S.aware)return[];
   return CY_JR.filter(J=>{
-    if(S.sched.some(j=>j.id===J.id&&!J.multi)||S.done.includes('skip:'+J.id))return false;
+    if(S.sched.some(j=>j.id===J.id)||S.done.includes('skip:'+J.id))return false;
     if(J.last||J.req==='root')return false;
+    if(J.id==='lesser'&&!S.done.includes('dismantle'))return false;
     if(JR_WORLD[J.id]&&!JR_WORLD[J.id].includes(S.world))return false;
     if(J.year&&S.year!==J.year)return false;
     if(J.minYear&&S.year<J.minYear)return false;
@@ -1049,7 +1053,7 @@ function opportunity(){
   let x=null;
   if(forced.length)x=forced[0];
   else{
-    const rate=.05+(S.aware?.035:0)+(S.mage||S.church?.03:0);
+    const rate=S.route==='sn'&&S.year>=2001&&S.year<=2003?.25:.05+(S.aware?.035:0)+(S.mage||S.church?.03:0);
     if(!list.length||!chance(rate))return false;
     if(typeof aiReady==='function'&&aiReady()&&S.aiCount<aiMax()&&S.age>=8&&chance(.45)){S.aiCount++;S.pending={ai:true};return true;}
     x=wpick(list,y=>y.w);
@@ -1163,13 +1167,16 @@ function runJourney(j){
   const hint=J.deadly===0?'':gap>=1?'당신에게는 쉬운 일이에요.':gap>=0?'해볼 만해요.':gap>=-1.5?'버거운 상대예요.':'추천 계위에 한참 못 미쳐요. 목숨이 걸렸어요.';
   const foe=J.war?'servant':JR_FOE[J.id]||'magus';
   S.pending={eyebrow:`${J.src} · 추천 ${RANK_FULL[J.rec]}`,img:JR_IMG[J.id]||'research',title:J.n,body:J.intro+(hint?' '+hint:'')+(sv?' 영주가 남아 있으면 위기 때 자동으로 써요.':''),tone:J.war?'summon':'',
-    options:J.deadly===0?J.ch.map((c,i)=>opt(c[0],c[1],()=>resolveJourney(j,J,i,sv,c[3]))):fightOpts({foe,rec:J.rec,core},J.ch.map(c=>[c[0],c[1],c[3]]),(m,i)=>resolveJourney(j,J,i,sv,m))};
+    options:J.deadly===0?J.ch.map((c,i)=>opt(c[0],c[1],()=>resolveJourney(j,J,i,sv,c[3]))):fightOpts({foe,rec:jrRec(J),core,war:!!J.war},J.ch.map(c=>[c[0],c[1],c[3]]),(m,i)=>resolveJourney(j,J,i,sv,m))};
 }
 const JR_FOE={chaos:'apostle',roa:'apostle',walachia:'apostle',hakuyoku:'apostle',baltan:'apostle',adra:'monster',giant:'monster',albion:'monster',train:'magus',ogawa:'magus',garan:'magus',aoko:'magus',fortnia:'monster'};
+/* 성배전쟁 행적의 난이도는 서번트 싸움 기준 */
+function jrRec(J){return J.war?{hgw4:3.8,hgw5:3.8,apoc:4.2,lesser:3}[J.id]||3.5:J.rec;}
 function resolveJourney(j,J,i,sv,mod){
   if(i>=0)log(J.ch[i][2],J.war?'grail':'moon');
-  if(sv&&S.seals>0&&odds(J.rec,mod)<.5){S.seals--;mod+=.6;log(`영주 1획을 사용했다. "${pick(['이겨라','보구를 해방해','물러서지 마'])}!"`,'grail');}
-  const p=J.deadly===0?1:odds(J.rec,mod);
+  const of=J.war?warOdds:odds,rec=jrRec(J);
+  if(sv&&S.seals>0&&of(rec,mod)<.5){S.seals--;mod+=.6;log(`영주 1획을 사용했다. "${pick(['이겨라','보구를 해방해','물러서지 마'])}!"`,'grail');}
+  const p=J.deadly===0?1:of(rec,mod);
   S.done.push(J.id);
   if(chance(p)){
     j.st='ok';S.jexp+=.3;S.mental+=4;fate(3,`행적 「${J.n}」`);
@@ -1177,7 +1184,7 @@ function resolveJourney(j,J,i,sv,mod){
     if(sv){S.grailWin=true;fate(4,'성배전쟁 승리');S.servantSurvived=true;log(`${sv.name}이(가) 마지막으로 웃으며 사라졌다.`,'grail');endWar();S.grailQ=J.id;}
     giveReward(J);
   } else {
-    const dp=clamp(.3+(J.rec-power()-mod)*.12,.08,.85)*(J.deadly===undefined?1:J.deadly);
+    const dp=clamp(.3+(1-p)*.4-.2,.1,.6)*(J.deadly===undefined?1:J.deadly);
     if(sv)endWar();
     if(chance(dp)){j.st='dead';S.deadEnd=J.n;S.deadText=J.die;die(J.n,J.die);if(S.alive)j.st='fail';}
     else{j.st='fail';fate(1,`행적 「${J.n}」 생존`);hurt(18);S.mental-=10;log(J.lose,'risk',true);if(J.r.t==='academy'&&!S.academy)S.academy='시계탑';}
