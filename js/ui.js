@@ -16,7 +16,7 @@ function loadPlan(){try{const d=JSON.parse(localStorage.getItem(PLAN_KEY)||'null
 let PL=loadPlan(),pStep=0;
 function savePlan(){try{localStorage.setItem(PLAN_KEY,JSON.stringify(PL));}catch(e){}}
 const PSTEPS=[
-  {k:'era',n:'시대·세계선',h:'언제, 어느 세계선에 태어날지 정해요. 고르지 않으면 1950~2004년 사이 어딘가, 세계선도 운명이 정해요.'},
+  {k:'era',n:'시대·세계선',h:'근대·고대 중에서 시대를 고르고, 세계선을 골라요. 근대는 고른 세계선의 시대에 태어나고(세계선이 나이를 정해요), 고대는 살아남으면 그 세계선의 현대로 건너가요.'},
   {k:'birth',n:'출생',h:'어떤 몸으로, 어떤 집에, 어디서 태어날지 정해요. 고르지 않은 칸은 실제 확률대로 운명이 정해요.'},
   {k:'talent',n:'재능',h:'마술회로와 마술속성, 마안. 고르지 않으면 대부분 회로가 거의 없는 평범한 사람으로 태어나요.'},
   {k:'dept',n:'마술계통',h:'태어날 때부터 배우고 시작할 계통과 세부 항목. 인생 도중 스승을 만나 배울 수도 있어요. 계통 속성이 마술속성과 맞으면 반값이에요.'},
@@ -54,15 +54,14 @@ function renderPrep(){
   let h='';
   const rnd=(k,on,d)=>optCard({k,id:'',n:'운명에 맡긴다',d:d||'실제 확률대로 정해져요.',on,rand:true,chips:chip('free','무료')});
   if(st.k==='era'){
-    h+=slot('시대','',rnd('era',!PL.era,'1950~2004년 사이 어딘가. 지금까지의 인생.')+ERAS.map(e=>optCard({k:'era',id:e.id,n:e.n,d:e.d,on:PL.era===e.id,chips:costChip(e.cost)})).join(''));
+    h+=slot('시대','',rnd('era',!PL.era,'대부분 근대, 아주 드물게 신대·고대.')+ERAS.map(e=>optCard({k:'era',id:e.id,n:e.n,d:e.d,on:PL.era===e.id,chips:costChip(e.cost)})).join(''));
     if(PL.era==='ancient')h+=slot('지역','어느 나라의 영웅이 될까',rnd('region',!PL.region,'신화와 전설의 땅 중 한 곳.')+REGIONS.map(r=>optCard({k:'region',id:r.id,n:r.n,d:`${r.title}. ${r.war}, ${r.monster[0]}.`,on:PL.region===r.id,chips:costChip(2)})).join(''));
-    else if(ERA_WORLD[PL.era]){const w=byId(WORLDS,ERA_WORLD[PL.era]);h+=slot('세계선','이 시대의 세계선',optCard({k:'',id:w.id,n:w.n,d:w.d,on:true,chips:chip('free','시대에 포함')}));}
-    else h+=slot('세계선','Fate(인리 긍정) · 월희(인리 부정) · 그 밖',rnd('world',!PL.world,'세계선마다 일어나는 사건이 달라요.')+WORLDS.map(w=>optCard({k:'world',id:w.id,n:w.n,tag:{fate:'영령 O · 27조 X',tsuki:'영령 X · 27조 O',both:'영령 O · 27조 O',other:'영령 X · 27조 X'}[w.type],d:w.d,on:PL.world===w.id,chips:costChip(w.cost)})).join(''));
+    h+=slot('세계선',PL.era==='ancient'?'살아남으면 건너갈 세계':'태어날 세계와 시대',rnd('world',!PL.world,'세계선마다 일어나는 사건과 태어나는 해가 달라요.')+WORLDS.map(w=>optCard({k:'world',id:w.id,n:w.n,d:w.d,on:PL.world===w.id,chips:costChip(w.cost)})).join(''));
   } else if(st.k==='birth'){
     h+=slot('기원','',CY_ORIGIN.map(o=>optCard({k:'origin',id:o.id,n:o.n,d:o.id==='root'?'근원과 이어진 채 태어나요. 마술속성·계통·세부 항목이 무료가 돼요. 대신 마술예장을 고를 수 없고, 억지력이 5에서 시작하며 이후 얻는 억지력이 두 배가 돼요.':'평범하게 다시 태어나요.',on:PL.origin===o.id,chips:costChip(FATE_COST.origin[o.id])+(o.id==='root'?chip('ap','억지력 5에서 시작'):'')})).join(''));
-    h+=slot('종족','고르지 않으면 거의 확실히 인간',rnd('race',!PL.race,'거의 확실히 인간. 일본이라면 아주 드물게 혼혈.')+CY_RACE.map(r=>optCard({k:'race',id:r.id,n:r.n,d:r.d,on:PL.race===r.id,chips:costChip(FATE_COST.race[r.id])+apChip(r.ap)})).join(''));
-    h+=slot('출생','고르지 않으면 대부분 평범한 가정',rnd('birth',!PL.birth,'나라별 실제 확률. 마술사 가문은 수만~수십만분의 1.')+CY_BIRTH.map(r=>optCard({k:'birth',id:r.id,n:r.n,d:r.d,on:PL.birth===r.id,chips:costChip(FATE_COST.birth[r.id])+apChip(r.ap)})).join(''));
-    if(PL.era==='ancient'||PL.era==='sn')h+=`<p class="help">${PL.era==='sn'?'Fate/stay night 세대는 후유키 시에서 태어나요.':'신대·고대는 시대 단계에서 고른 지역에서 태어나요.'}</p>`;
+    h+=slot('종족',PL.era==='ancient'?'신대에는 신과 반신이 있어요':'고르지 않으면 거의 확실히 인간',rnd('race',!PL.race,'거의 확실히 인간. 일본이라면 아주 드물게 혼혈.')+CY_RACE.filter(r=>raceOk(PL,r)).map(r=>{const v=raceView(PL,r);return optCard({k:'race',id:r.id,n:v.n,d:v.d,on:PL.race===r.id,chips:costChip(raceCost(PL,r))+apChip(r.ap)+(v.note?chip('',v.note):'')});}).join(''));
+    h+=slot('출생','고르지 않으면 대부분 평범한 가정',rnd('birth',!PL.birth,PL.era==='ancient'?'대부분 평민.':'나라별 실제 확률. 마술사 가문은 수만~수십만분의 1.')+CY_BIRTH.map(r=>{const v=birthView(PL,r);return optCard({k:'birth',id:r.id,n:v.n,d:v.d,on:PL.birth===r.id,chips:costChip(FATE_COST.birth[r.id])+apChip(r.ap)});}).join(''));
+    if(PL.era==='ancient'||PL.world==='sn')h+=`<p class="help">${PL.era==='ancient'?'신대·고대는 시대 단계에서 고른 지역에서 태어나요.':'Fate/stay night 세계선은 후유키 시에서 태어나요.'}</p>`;
     else h+=slot('출생지','고르지 않으면 세계 인구 비율대로',rnd('place',!PL.place,'인도와 중국이 3분의 1이 넘어요.')+PLACES.map(p=>optCard({k:'place',id:p.id,n:p.n,d:p.d,on:PL.place===p.id,chips:costChip(p.cost)})).join(''));
   } else if(st.k==='talent'){
     h+=slot('마술회로','',rnd('talent',!PL.talent,'90%는 회로가 거의 없어요. 마술사 가문이면 평균 30개쯤.')+TALENTS.map(t=>optCard({k:'talent',id:t.id,n:t.n,d:t.d,on:PL.talent===t.id,chips:costChip(FATE_COST.talent[t.id])})).join(''));
@@ -76,13 +75,14 @@ function renderPrep(){
       let card=optCard({k:'dept',id:d.id,n:d.n,tag:els,d:d.d,on,chips:costChip(deptCost(PL,d))+apChip(d.ap)});
       if(on)card+=d.det.map(x=>{const dd=CY_DET[x[0]];return optCard({k:'detail',id:dd.id,n:'└ '+dd.n,d:dd.d,on:PL.details.includes(dd.id),chips:costChip(root?0:FATE_COST.detail)+apChip(dd.o.ap)});}).join('');
       return card;}).join('');
+    if(PL.era==='ancient')h+='<p class="help">신대의 마술은 근원에서 바로 마력을 얻어요. 모든 계통이 반값이에요.</p>';
     h+=slot('시계탑 12학과','',mk(CY_DEPTS.filter(d=>!d.side)))+slot('외전','',mk(CY_DEPTS.filter(d=>d.side)));
   } else if(st.k==='abil'){
     h+=slot('능력','',CY_ABIL.map(a=>{const on=PL.abil.includes(a.id);let why=a.o.notRace&&a.o.notRace===PL.race?'이 종족으로는 고를 수 없어요.':'';if(a.id==='core'&&PL.fb.includes('small'))why='작은 그릇과 함께 고를 수 없어요.';
       return optCard({k:'abil',id:a.id,n:a.n,d:a.d,on,why,chips:costChip(abilCost(PL,a))+apChip(a.o.ap)+(a.o.free&&abilCost(PL,a)?chip('','무료 조건: '+a.o.free.map(x=>byId(CY_DEPTS,x).n).join('+')):'')});}).join(''));
   } else if(st.k==='item'){
     if(PL.era==='ancient')h+='<p class="help">신대·고대에는 현대의 마술예장이 없어요.</p>';
-    else h+=slot('마술예장','인생 도중에 손에 들어와요',CY_ITEMS.map(it=>optCard({k:'item',id:it.id,n:it.n,d:it.d,on:PL.items.includes(it.id),chips:costChip(itemCost(PL,it))+apChip(itemAp(PL,it)),why:root?'근원접속자는 예장을 고를 수 없어요.':''})).join(''));
+    else h+=slot('마술예장','인생 도중에 손에 들어와요 · 싸움과 사건에서 선택지가 돼요',CY_ITEMS.map(it=>optCard({k:'item',id:it.id,n:it.n,d:it.d,on:PL.items.includes(it.id),chips:costChip(itemCost(PL,it))+apChip(itemAp(PL,it)),why:root?'근원접속자는 예장을 고를 수 없어요.':itemWhy(PL,it)})).join(''));
     h+=slot('피드백','하나에 FATE 2씩 돌려받아요',CY_FB.map(f=>{const ap=f.o.ap!==undefined?f.o.ap:-1;return optCard({k:'fb',id:f.id,n:f.n,d:f.d,on:PL.fb.includes(f.id),chips:chip('fp','FATE +2')+apChip(ap),why:planFbReq(PL,f)});}).join(''));
   } else if(st.k==='jr'){
     if(PL.era==='ancient')h+='<p class="help">신대·고대에는 현대의 행적을 정할 수 없어요. 대신 인생 도중의 갈림길로 전설을 쌓아요.</p>';
@@ -97,9 +97,9 @@ function renderPrep(){
     const R_=x=>x?x:'<span class="unk">운명에 맡김</span>';
     h+=`<div class="ogrid">${optCard({k:'rankup',id:'up',n:'계위 한 단계 올리기',d:'태어날 때 정해지는 계위 목표를 한 단계 올려요.',on:PL.rankUp,chips:costChip(FATE_COST.rankUp),why:!PL.depts.length?'마술계통이 하나 이상 있어야 해요.':''})}</div>
     <div class="sheetbox"><dl>
-      <dt>시대 · 세계선</dt><dd>${R_(PL.era&&byId(ERAS,PL.era).n)} · ${PL.era==='ancient'?R_(PL.region&&byId(REGIONS,PL.region).n):R_(PL.world&&byId(WORLDS,PL.world).n)}</dd>
-      <dt>기원 · 종족</dt><dd>${byId(CY_ORIGIN,PL.origin).n} · ${R_(PL.race&&byId(CY_RACE,PL.race).n)}</dd>
-      <dt>출생 · 출생지</dt><dd>${R_(PL.birth&&byId(CY_BIRTH,PL.birth).n)} · ${R_(PL.place&&byId(PLACES,PL.place).n)}</dd>
+      <dt>시대 · 세계선</dt><dd>${R_(PL.era&&byId(ERAS,PL.era).n)}${PL.era==='ancient'?' ('+R_(PL.region&&byId(REGIONS,PL.region).n)+')':''} · ${R_(PL.world&&byId(WORLDS,PL.world).n)}</dd>
+      <dt>기원 · 종족</dt><dd>${byId(CY_ORIGIN,PL.origin).n} · ${R_(PL.race&&raceView(PL,byId(CY_RACE,PL.race)).n)}</dd>
+      <dt>출생 · 출생지</dt><dd>${R_(PL.birth&&birthView(PL,byId(CY_BIRTH,PL.birth)).n)} · ${R_(PL.place&&byId(PLACES,PL.place).n)}</dd>
       <dt>마술회로</dt><dd>${R_(PL.talent&&byId(TALENTS,PL.talent).n)}</dd>
       <dt>마술속성</dt><dd>${PL.elMode?byId(CY_ELMODE,PL.elMode).n+' ('+(planEls(PL)||[]).map(e=>EL_NAME[e]).join(', ')+')':R_('')}</dd>
       <dt>마술계통</dt><dd>${nm(CY_DEPTS,PL.depts)}</dd>
@@ -126,7 +126,7 @@ function onPrepClick(ev){
   const o=ev.target.closest('.opt');if(!o||o.disabled)return;
   const k=o.dataset.k,id=o.dataset.id||null;
   if(k==='origin')PL.origin=id;
-  else if(k==='era'){PL.era=id;if(!id&&ERA_WORLD[PL._lastEra])PL.world=null;PL._lastEra=id;}
+  else if(k==='era')PL.era=id;
   else if(k==='region')PL.region=id;
   else if(k==='world')PL.world=id;
   else if(k==='race')PL.race=id;
@@ -161,11 +161,11 @@ function render(){
   $('vYear').innerHTML=`${yearLabel(S.year)}년<br>${S.alive?'살아 있음':'세상을 떠남'}`;
   $('vName').textContent=S.name;
   $('vSub').textContent=`${S.gender==='m'?'남':'여'} · ${yearLabel(S.birthYear)}년생 · ${S.country.n} · ${S.city}`;
-  $('vWorld').innerHTML=S.era==='ancient'?`<span class="od">${esc(S.reg.n)}</span> · 명성 ${Math.round(S.fame)}`:S.world?esc(byId(WORLDS,S.world).n):unk('-');
+  $('vWorld').innerHTML=S.era==='ancient'?`<span class="od">${esc(S.reg.n)}</span> · 명성 ${Math.round(S.fame)}`:S.worldPick?esc(byId(WORLDS,S.worldPick).n):unk('-');
   const bl=Object.entries(S.bonds||{}).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,6);
   $('vBonds').innerHTML=bl.length?bl.map(([k,v])=>`<li><span>${esc(charInfo(k).n)}</span><span class="bondbar"><i style="width:${v}%"></i></span><b>${v}</b></li>`).join(''):'<li><span class="unk">아직 없음</span></li>';
   $('vFam').innerHTML=S.crestGen>0?`${esc(S.famType)} <span class="od">${S.crestGen}대째</span>${S.heir?' · 후계자':''}`:esc(S.famType);
-  $('vRace').innerHTML=S.race==='human'?unk('인간'):`<span class="od">${esc(S.era==='ancient'&&S.race==='half'?'반신':byId(CY_RACE,S.race).n)}</span>`;
+  $('vRace').innerHTML=S.race==='human'?unk('인간'):`<span class="od">${esc(S.era==='ancient'&&S.race==='half'?'반신':byId(CY_RACE,S.race).n)}${S.wormBody?' · 벌레의 몸':''}</span>`;
   const knows=S.mage||S.church||S.sensed||S.aware&&S.circuits>=3;
   $('vCirc').innerHTML=S.circuits<3?(S.mage?`${S.circuits}개`:unk('거의 없음')):(knows?`<span class="od">${S.circuits}개</span> · 질 ${S.qual}`:unk('잠들어 있음'));
   $('vElem').innerHTML=(S.mage||S.church)?`<span class="od">${esc(S.els.map(e=>EL_NAME[e]).join('·'))}</span>`:unk('-');
@@ -179,12 +179,14 @@ function render(){
   const hm=hpMax();$('gHP').style.width=clamp(S.hp,0,100)+'%';$('nHP').textContent=`${Math.round(S.hp)}`;$('nHP').title=`최대 ${hm}`;
   const mm=mpMax();$('rowMP').hidden=!mm;if(mm){$('gMP').style.width=clamp(S.mp/mm*100,0,100)+'%';$('nMP').textContent=Math.round(S.mp);$('nMP').title=`최대 ${mm}`;}
   $('nL').textContent=luckRank(S.luck);
+  $('rowRoot').hidden=!rootOn();if(rootOn())setGauge('gR','nR',S.rootP||0);
+  const pw=power();$('nPow').textContent=`${fmtP(Math.round(pw*10)/10)} · ${pw>=7?'EX':pw>=5.5?'A':pw>=4?'B':pw>=2.5?'C':pw>=1?'D':'E'}`;
   $('vIll').hidden=!S.ill;if(S.ill)$('vIll').textContent=`질병: ${S.ill.n}${S.ill.sev>=3?' (중증)':S.ill.sev===1?' (가벼움)':''} · 해마다 체력이 깎여요`;
   $('vRank').textContent=S.noRank?'자택연구원':S.academy?RANK_FULL[S.curRank]+(S.curRank<rankTarget()?` → ${RANK_FULL[rankTarget()]}`:'')+(S.color?` · ${S.color}`:''):(S.mage?'시계탑 밖':'-');
   $('vAP').textContent=fmtP(S.ap)+(S.ap>=10?' · 위험':S.ap>=5?' · 높음':'');
   $('vFate').textContent='+'+fmtP(S.fate.reduce((s,x)=>s+x.n,0));
   $('vSeals').hidden=!S.warCount;
-  if(S.warCount){$('vSealN').textContent=S.seals;['s1','s2','s3'].forEach((id,i)=>$(id).classList.toggle('used',i>=S.seals));$('vServ').textContent=S.servant?`${S.servant.cls} · ${S.servant.name}`:(S.grailWin?'성배전쟁 승리':'서번트 없음');}
+  if(S.warCount){$('vSealN').textContent=S.seals?S.seals+'획':'없음';['s1','s2','s3'].forEach((id,i)=>$(id).classList.toggle('used',i>=S.seals));$('vServ').textContent=S.servant?`${S.servant.cls} · ${S.servant.name}`:(S.grailWin?'성배전쟁 승리':'서번트 없음');}
   const lab={plan:'예정',ok:'완료',fail:'실패',dead:'사망'};
   const rows=[...S.sched.map(j=>`<li class="${j.st}"><span>${esc(CY_JRMAP[j.id].n)}</span><span>${j.year} · ${lab[j.st]}</span></li>`),...(S.story||[]).slice(-10).map(x=>`<li class="${x.st}"><span>${esc(x.n)}</span><span>${lab[x.st]}</span></li>`)];
   $('vJr').innerHTML=rows.length?rows.join(''):'<li><span class="unk">아직 없음</span><span></span></li>';
@@ -331,23 +333,17 @@ const LIFE_END_TEXT={
   apostle:'피를 마시며 시간을 건넜다. 아침 해를 마지막으로 본 것이 언제였는지 기억나지 않는다.',
   ancestor:'사도 27조의 이름 하나가 되었다. 교회와 협회가 당신의 이름을 두려워하며 불렀다.',
   sealed:'봉인지정을 받아들였다. 당신의 재능은 유리병 속에서 영원히 보존된다.',
-  root:'모든 마술사의 비원, 근원의 소용돌이에 닿았다. 그 너머에서 돌아온 사람은 없다.'
+  root:'모든 마술사의 비원, 근원의 소용돌이에 닿았다. 만물의 시작과 끝이 기록된 그곳에서 영혼은 처음으로 거슬러 올라갔다. 그 너머에서 돌아온 사람은 없다.',
+  mage_end:'근원에 닿지 못한 채 생을 마쳤다. 평생의 연구는 마술각인에 새겨져, 언젠가 누군가가 그 끝을 이어 갈 것이다. 대부분의 마술사는 그렇게 끝난다.',
+  grail_mud:'더럽혀진 성배로 근원을 열려 했다. 문 대신 쏟아진 것은 「이 세상 모든 악」이었다.',
+  god_back:'신대가 저물던 날, 세계의 표면을 사람들에게 넘기고 뒷면으로 물러났다. 신화 속 이름만이 남았다.'
 };
 function finish(){
   if(S.finished||S.endingChoice)return;
   running=false;clearTimeout(timer);
   const key=lifeEndingKey();
-  if(key){showEnd(key);return;}
-  S.endingChoice=true;
-  log('어느덧 시간이 찾아왔다. 근원과 세상을 잇는 통로의 끝이 눈앞에 있다.','moon',true);
-  render();scrollLog();
-  endChoice();drain();
-}
-function endChoice(){
-  S.pending={eyebrow:'결말',img:'end_root',title:'최후의 선택',body:'마술사로 살아온 지금까지의 선택이 당신에게 걸맞은 결말을 열어 두었어요. 하나를 고르세요.',options:endOptions().map(o=>{
-    const e=o.id==='beast'?null:endingInfo(o.id);
-    return {label:o.ok?`${o.g} · ${o.id==='beast'?'？？？':e[1]}`:`${o.g} · 잠김`,sub:o.ok?'':o.cond,disabled:!o.ok,fn:()=>{o.id==='beast'?beastChain():showEnd(o.id);}};
-  })};
+  if(key==='beast'){S.endingChoice=true;render();scrollLog();beastChain();drain();return;}
+  showEnd(key);
 }
 function beastChain(){
   S.pending={eyebrow:'??? End',tone:'beast',img:'end_beast',title:'정말로?',body:'정말 그 결말을 원해? 돌아가고 싶다면 지금이 마지막 기회야. 네 모든 선택의 책임은 네가 지게 될 테니까.',options:[
@@ -355,7 +351,7 @@ function beastChain(){
       log('사실 처음 근원에 닿은 순간부터 알고 있었다. 자신의 기원이 인류를 멸망시키는 악, 비스트의 조각이라는 것을.','grail',true);
       S.pending={eyebrow:'인류악 현현 · 형태',tone:'beast',img:'end_beast',title:'어떤 모습으로 현현할까요',body:'',options:BEAST_FORM.map(f=>({label:f[1],sub:f[2],fn:()=>{S.beastForm=f[1];S.beastPow=[];beastPow();}}))};
     }},
-    {label:'돌아간다',sub:'다른 결말을 고를래요',fn:()=>endChoice()}
+    {label:'돌아간다',sub:'근원 속으로 사라져요',fn:()=>showEnd('root')}
   ]};
 }
 function beastPow(){

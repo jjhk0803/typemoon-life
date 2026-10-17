@@ -104,7 +104,8 @@ function lifeSummary(){
   return [
     `이름 ${S.name}, ${S.gender==='m'?'남':'여'}, ${S.age}세, 지금 ${yearLabel(S.year)}년, ${S.country.n} ${S.city}에 산다.`,
     S.era==='ancient'?`신대·고대의 ${S.reg.n}. 명성 ${S.fame}. 업적: ${S.deeds.join(', ')||'없음'}${S.np?'. 보물 '+S.np:''}${S.king?'. 왕':''}.`:`이야기: ${{sn:'Fate/stay night (2004년 제5차 성배전쟁)',zero:'Fate/Zero (1994년 제4차 성배전쟁)',fgo:'Fate/Grand Order (칼데아'+(S.fgoRole?', 직책 '+S.fgoRole:'')+')'}[S.route]||'없음'}.`,
-    S.servant?`함께 싸우는 서번트: ${S.servant.name} (${S.servant.cls}${S.servant.title?', '+S.servant.title:''}). ${S.servant.persona||''}`:'',
+    S.era!=='ancient'&&S.worldPick?`세계선: ${byId(WORLDS,S.worldPick).n}${rootOn()?`. 근원 탐구 ${Math.round(S.rootP||0)}/100`:''}.`:'',
+        S.servant?`함께 싸우는 서번트: ${S.servant.name} (${S.servant.cls}${S.servant.title?', '+S.servant.title:''}). ${S.servant.persona||''}`:'',
     `신뢰하는 사람: ${Object.entries(S.bonds||{}).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>charInfo(k).n+' '+v).join(', ')||'없음'}.`,
     `출생: ${S.famType}. 종족: ${byId(CY_RACE,S.race).n}. 마술회로 ${S.circuits}개(질 ${S.qual}). 속성 ${S.els.map(e=>EL_NAME[e]).join('·')}.`,
     `처지: ${st.join(', ')}. 직업: ${S.job||'없음'}. 결혼 ${S.married?'함':'안 함'}, 자녀 ${S.kids}명.`,

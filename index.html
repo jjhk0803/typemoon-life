@@ -162,6 +162,9 @@ dl.facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
 
 /* 도감 */
 section.dex{margin-top:40px;border-top:1px solid var(--line);padding-top:20px}
+section.lore details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:0 0 8px;font-size:14px;line-height:1.7}
+section.lore summary{cursor:pointer;font-weight:500}
+section.lore p,section.lore ul{color:var(--mute);margin:8px 0 0}
 section.dex h2{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0 0 4px}
 .dex-sub{color:var(--mute);font-size:13px;margin:0 0 14px}
 .dex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
@@ -363,6 +366,8 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
 .svnp{font-size:13px;color:var(--moon)!important;text-align:left}
 .svnp span{color:var(--mute);font-size:12px}
 .g.hp .bar i{background:var(--seal)}.g.mp .bar i{background:#7f8cff}
+.g.root .bar i{background:linear-gradient(90deg,#6b4bd6,#c9a6ff)}
+.g .pow{font-size:13px;color:var(--gold);font-weight:600;white-space:nowrap}
 .g .lrank{font-family:var(--f-display);font-size:18px;color:var(--gold);font-weight:400}
 .g.lk{grid-template-columns:44px 1fr 0}
 .ill{font-size:13px;color:var(--risk);border:1px dashed rgba(227,145,85,.5);border-radius:8px;padding:6px 10px}
@@ -463,6 +468,8 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
           <div class="g"><span>정신</span><div class="bar"><i id="gM"></i></div><span id="nM">-</span></div>
           <div class="g w"><span>재산</span><div class="bar"><i id="gW"></i></div><span id="nW">-</span></div>
           <div class="g lk"><span>행운</span><b class="lrank" id="nL">-</b><span></span></div>
+          <div class="g root" id="rowRoot" hidden><span>근원</span><div class="bar"><i id="gR"></i></div><span id="nR">-</span></div>
+          <div class="g lk"><span>전투력</span><b class="pow" id="nPow">-</b><span></span></div>
           <div class="ill" id="vIll" hidden></div>
         </div>
         <div class="seals" id="vSeals" hidden>
@@ -471,7 +478,7 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
             <path id="s2" d="M32 4 C 46 10, 51 24, 43 39"/>
             <path id="s3" d="M12 22 C 24 16, 40 16, 52 22"/>
           </svg>
-          <div class="txt">영주 <b id="vSealN">3</b>획<br><span id="vServ"></span></div>
+          <div class="txt">영주 <b id="vSealN">3획</b><br><span id="vServ"></span></div>
         </div>
         <div class="cy">
           <div class="cy-row"><span>계위</span><b id="vRank">-</b></div>
@@ -487,6 +494,15 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
     </main>
   </section>
 
+  <section class="dex lore" aria-label="세계관">
+    <h2>세계관 노트</h2>
+    <p class="dex-sub">이 게임의 규칙이 기대고 있는 TYPE-MOON의 설정을 짧게 정리했어요.</p>
+    <details><summary>근원의 소용돌이</summary><p>세계의 바깥에 있는, 만물의 시작이자 끝. 이 세상의 모든 것이 기록되어 있고, 손에 넣으면 무엇이든 할 수 있다고 해요. 마술도 초능력도 혼혈의 힘도 모두 이곳에서 흘러나온 가느다란 물줄기예요. 그래서 거의 모든 마술사가 대를 이어 이곳을 목표로 하지만, 에미야 키리츠구나 시로 같은 마술사용자는 관심이 없어요.</p><p>닿는 순간 인간 정도의 영혼은 처음으로 거슬러 올라가 사라져요. 닿은 사람은 돌아오지 못하고, 역사에 이름을 남긴 마술사들도 최대한 가까이 다가가 자신의 마술을 안정시키는 데 그쳤어요. 신대의 마술사는 근원에서 바로 마력을 얻었기에 닿으려는 생각조차 하지 않았다고 해요.</p><p><b>게임에서는</b> 현대의 마술사에게 「근원」 수치가 생겨요. 연구, 계위, 계통, 세부 항목, 발굴로 쌓이고, 70을 넘으면 도전할 수 있어요. 성공하면 근원 도달, 실패하면 억지력에 지워지거나 크게 다쳐요. 닿지 못하면 마술사의 삶은 그냥 끝나요.</p></details>
+    <details><summary>억지력과 마술협회</summary><p>세계는 스스로를 무너뜨릴 일을 막아요. 근원에 다가가는 자 앞에는 세계나 인류의 무의식이 보낸 억지력이 나타나고, 지금까지 그것을 피한 마술사는 없다고 해요. 마술협회는 근원을 관측하는 장치를 갖고 있어서, 근원에 이르는 의식은 협회의 감시 아래에서 해야 해요. 그렇지 않으면 범죄자로 쫓겨요.</p><p><b>게임에서는</b> 협회의 허가(시계탑 코즈 이상), 홀로 하는 의식, 억지력을 속이는 수단(아라야 결계식, 삼중결계, 통일언어, 허수마술) 중에서 고르고 승률이 보여요. 억지력 수치가 높으면 더 어려워져요.</p></details>
+    <details><summary>성배전쟁과 근원</summary><p>후유키의 성배전쟁은 본래 일곱 영령의 혼을 모아 근원으로 가는 구멍을 여는 의식이에요. 하지만 제3차 전쟁 이후 대성배는 「이 세상 모든 악」에 물들었고, 그 성배로는 근원에 닿을 수 없어요. 그래서 Zero와 stay night에서 성배는 결국 부서져요.</p><p><b>게임에서는</b> 성배전쟁에서 이기면 성배를 고르는 장면이 나와요. 후유키(stay night·Zero 세계선)와 도쿄의 성배는 더럽혀져 있어서 부수는 게 정답이고, 칼데아 세계선의 후유키, 루마니아의 대성배, 달의 성배는 깨끗해서 근원의 문을 열거나 소원을 빌 수 있어요. 전쟁이 끝나면 영주는 사라져요.</p></details>
+    <details><summary>마법</summary><p>마술은 시간과 돈을 들이면 언젠가 다른 방법으로도 이룰 수 있는 일이고, 마법은 그 시대의 문명으로는 아무리 애써도 이룰 수 없는 기적이에요. 과학이 발전하며 대부분의 마법은 마술로 떨어졌고, 지금 남은 것은 다섯 개뿐이에요.</p><ul><li>제1마법: 상세 불명(무의 부정으로 추측돼요)</li><li>제2마법: 평행세계의 운영 (젤레치)</li><li>제3마법: 혼의 물질화, 헤븐즈 필 (아인츠베른)</li><li>제4마법: 상세 불명</li><li>제5마법: 청(青), 시간과 소비 (아오자키 아오코)</li></ul><p>같은 길로 근원에 닿아도 첫 번째가 아니면 마법을 얻지 못해요. 아직 아무도 얻지 못한 여섯 번째 마법이 있다는 이야기만 남아 있어요. <b>게임에서는</b> 근원 탐구를 끝까지 채우고 운이 따르면 아주 드물게 제6법에 닿아요.</p></details>
+    <details><summary>Fate와 월희, 두 갈래의 세계</summary><p>Fate 계열은 인리정초가 강한 세계라 영령을 소환할 수 있고, 흡혈종과 사도의 힘이 약하며 사도 27조가 없어요. 월희 계열은 인리정초가 약해 영령 소환이 불가능하고 사도 27조가 밤을 지배해요. strange Fake 세계선은 두 성질을 모두 가져요. 공의 경계는 어느 쪽과도 직접 이어지지 않아요.</p></details>
+  </section>
   <section class="dex" aria-label="결말 도감">
     <h2>결말 도감</h2>
     <p class="dex-sub" id="dexSub"></p>

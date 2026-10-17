@@ -27,18 +27,40 @@ function planEls(P){
 function deptCost(P,d){
   if(P.origin==='root')return 0;
   const e=planEls(P);
-  const base=e&&d.els&&d.els.length&&d.els.some(x=>e.includes(x))?FATE_COST.deptHalf:FATE_COST.dept;
+  const base=P.era==='ancient'||e&&d.els&&d.els.length&&d.els.some(x=>e.includes(x))?FATE_COST.deptHalf:FATE_COST.dept;
   return base+(d.cp||0)*2;
 }
 function abilCost(P,a){
   const o=a.o;
   if(o.free&&o.free.every(x=>P.depts.includes(x)))return 0;
   if(o.cheap&&P.details.includes(o.cheap[0]))return o.cheap[1]*3;
+  if(a.id==='possess'&&(PROFILE.spirits||[]).length)return 3;
   return (o.mp||1)*3;
 }
 function eyeCost(P,e){return e.art&&P.details.includes('artieye')?0:e.mp*3;}
 function itemCost(P,it){const o=it.o;if(o.cheapDept&&P.depts.includes(o.cheapDept[0]))return o.cheapDept[1]*2;if(o.cheapRace&&P.race===o.cheapRace[0])return o.cheapRace[1]*2;return o.cp*2;}
 function itemAp(P,it){const o=it.o;if(o.apDept&&P.depts.includes(o.apDept[0]))return o.apDept[1];return o.ap||0;}
+/* 시대와 세계선에 따라 종족·출생 선택지가 바뀐다 */
+function planType(P){const w=P.world&&byId(WORLDS,P.world);return w?w.type:null;}
+function raceOk(P,r){return !!r&&!(r.anc&&P.era!=='ancient')&&!(r.modern&&P.era==='ancient');}
+function raceCost(P,r){
+  let c=FATE_COST.race[r.id];const W=P.world&&worldBase(P.world),T=planType(P);
+  if(r.id==='homun'&&['sn','apoc'].includes(W))c-=2;
+  if(r.id==='true'&&['tsuki','fake'].includes(W))c-=8;
+  if(r.id==='vamp'&&T==='fate')c-=2;
+  return Math.max(0,c);
+}
+function raceView(P,r){
+  let n=r.n,d=r.d,note='';const W=P.world&&worldBase(P.world),T=planType(P);
+  if(P.era==='ancient'&&r.id==='half'){n='신의 혼혈(반신)';d='신과 사람 사이에서 태어났어요. 명성과 힘을 안고 태어나 영웅이 되기 쉬워요.';}
+  if(P.era==='ancient'&&r.id==='vamp')n='흡혈종';
+  if(r.id==='homun'&&['sn','apoc'].includes(W))note='아인츠베른이 있는 세계';
+  if(r.id==='true'&&['tsuki','fake'].includes(W))note='진조가 사는 세계';
+  if(r.id==='vamp')note=T==='fate'?'이 세계의 흡혈종은 약해요':T?'이 세계의 사도는 강해요':'';
+  return {n,d,note};
+}
+function birthView(P,b){return P.era==='ancient'?{n:ANC_BIRTH[b.id][0],d:ANC_BIRTH[b.id][1]}:{n:b.n,d:b.d};}
+function itemWhy(P,it){return it.id==='relic'&&P.world&&!byId(WORLDS,P.world).sv?'영령을 부를 수 없는 세계예요.':'';}
 function jrCost(P,j){if(j.id==='dismantle'&&P.jr.includes('hgw4')&&P.jr.includes('hgw5'))return 0;return j.fp?j.fp*3:2;}
 function planApNoJr(P){return planCalc(Object.assign({},P,{jr:[]})).ap;}
 function planJrReq(P,j){
@@ -78,11 +100,11 @@ function planCalc(P){
   let cost=FATE_COST.origin[P.origin]||0,refund=0;
   const gains=[];
   const race=P.race?byId(CY_RACE,P.race):null,birth=P.birth?byId(CY_BIRTH,P.birth):null;
-  if(race){cost+=FATE_COST.race[race.id];gains.push(race.ap||0);}
+  if(race){cost+=raceCost(P,race);gains.push(race.ap||0);}
   if(birth){cost+=FATE_COST.birth[birth.id];gains.push(birth.ap||0);}
   if(P.era)cost+=byId(ERAS,P.era).cost;
   if(P.region)cost+=2;
-  if(P.world&&!ERA_WORLD[P.era])cost+=byId(WORLDS,P.world).cost;
+  if(P.world)cost+=byId(WORLDS,P.world).cost;
   if(P.place)cost+=byId(PLACES,P.place).cost;
   if(P.talent)cost+=FATE_COST.talent[P.talent];
   if(P.elMode&&!root)cost+=FATE_COST.elMode[P.elMode];
@@ -107,26 +129,31 @@ function planCalc(P){
   P.abil.forEach(id=>{const a=byId(CY_ABIL,id);if(a.o.notRace&&a.o.notRace===P.race)errs.push(`「${a.n}」은(는) 이 종족으로 고를 수 없어요.`);});
   if(root&&P.items.length)errs.push('근원접속자는 마술예장을 고를 수 없어요.');
   if(P.rankUp&&!P.depts.length)errs.push('계위를 올리려면 마술계통이 하나 이상 있어야 해요.');
+  P.items.forEach(id=>{const why=itemWhy(P,byId(CY_ITEMS,id));if(why)errs.push(`「${byId(CY_ITEMS,id).n}」: ${why}`);});
   const total=Math.max(0,cost-refund);
   return {cost:total,raw:cost,refund,ap,rank,errs,noRank:P.fb.includes('home')};
 }
-/* 시대가 정해지면 세계선과 고를 수 있는 것이 함께 줄어든다 */
-const ERA_WORLD={zero:'sn',sn:'sn',fgo:'fgo'};
-function planWorld(P){return ERA_WORLD[P.era]||P.world||null;}
-function jrFits(P,id){
-  const j=CY_JRMAP[id];
-  if(P.era==='ancient')return false;
-  const W=planWorld(P),w=JR_WORLD[id];
+/* 시대와 세계선이 정해지면 고를 수 있는 것이 함께 줄어든다 */
+function planWorld(P){return P.world||null;}
+function planYears(P){const w=P.world&&byId(WORLDS,P.world);return P.era==='ancient'||!w?null:w.years;}
+function jrFitsWorld(P,id,wid){
+  const j=CY_JRMAP[id],w=JR_WORLD[id],W=wid?worldBase(wid):null;
   if(w&&W&&!w.includes(W))return false;
-  if(P.era&&ERA_YEARS[P.era]&&j.year){const [lo,hi]=ERA_YEARS[P.era];if(j.year<hi+14||j.year>lo+70)return false;}
-  if(P.era==='sn'&&id==='hgw5')return false;
-  if(P.era==='zero'&&id==='hgw4')return false;
+  const Y=wid&&byId(WORLDS,wid).years;
+  if(Y&&j.year&&(j.year<Y[1]+14||j.year>Y[0]+70))return false;
+  if(wid==='sn'&&id==='hgw5')return false;
+  if(wid==='zero'&&id==='hgw4')return false;
   return true;
 }
+function jrFits(P,id){return P.era!=='ancient'&&jrFitsWorld(P,id,P.world);}
 function prunePlan(P){
-  if(ERA_WORLD[P.era])P.world=ERA_WORLD[P.era];
-  if(P.era==='ancient'){P.world=null;P.place=null;P.items=[];P.jr=[];}else P.region=null;
-  if(P.era==='sn')P.place=null;
+  if(['zero','sn','fgo'].includes(P.era)){P.world=P.era;P.era='modern';}
+  if(P.era&&!byId(ERAS,P.era))P.era=null;
+  if(P.world&&!byId(WORLDS,P.world))P.world=null;
+  if(P.era==='ancient'){P.place=null;P.items=[];P.jr=[];}else P.region=null;
+  if(P.race&&!raceOk(P,byId(CY_RACE,P.race)))P.race=null;
+  if(P.world==='sn')P.place=null;
+  P.items=P.items.filter(id=>!itemWhy(P,byId(CY_ITEMS,id)));
   P.jr=P.jr.filter(id=>jrFits(P,id));
   P.details=P.details.filter(d=>P.depts.includes(CY_DET[d].dept));
   if(P.origin==='root')P.items=[];
@@ -168,13 +195,13 @@ function rankTarget(){
 }
 function learnDept(id,why){
   if(S.depts.includes(id))return false;
-  const d=byId(CY_DEPTS,id);S.depts.push(id);addAp(d.ap||0);
+  const d=byId(CY_DEPTS,id);S.depts.push(id);addAp(d.ap||0);if(rootOn())S.rootP=(S.rootP||0)+2;
   log(`마술계통 「${d.n}」을(를) 익혔다.${why?' '+why:''}`,'moon');fate(1,`계통 「${d.n}」`);
   return true;
 }
 function learnDetail(id){
   if(S.details.includes(id))return false;
-  const d=CY_DET[id];S.details.push(id);addAp(d.o.ap||0);
+  const d=CY_DET[id];S.details.push(id);addAp(d.o.ap||0);if(rootOn())S.rootP=(S.rootP||0)+4;
   if(d.o.cp)S.wealth+=d.o.cp*5;
   log(`세부 항목 「${d.n}」을(를) 익혔다.`,'moon');fate(1,`세부 「${d.n}」`);
   return true;
@@ -233,6 +260,104 @@ function power(){
 function odds(rec,mod){return clamp(1/(1+Math.exp(-(power()+(mod||0)-rec)*1.1)),.05,.97);}
 function hasConcept(){return (S.eye&&S.eye.id==='rainbow')||S.items.some(id=>byId(CY_ITEMS,id).o.concept);}
 
+/* ---------------- 싸움: 능력·계통·예장·마안·종족이 선택지가 되고, 승률이 보인다 ----------------
+   foe: apostle 사도 · magus 마술사 · servant 서번트 · monster 마수 · human 사람 · counter 억지력 */
+function worldType(){const w=byId(WORLDS,S.worldPick||S.world||'');return w?w.type:null;}
+function foeMod(foe){
+  let m=0;const ab=id=>S.abil.includes(id);
+  if(ab('antimagic')&&(foe==='magus'||foe==='counter'))m+=.5;
+  if(ab('triple'))m+=.3;
+  if(S.items.includes('shroud')&&(foe==='magus'||foe==='apostle'))m+=.3;
+  if(foe==='apostle'){if(S.church)m+=.5;if(worldType()==='fate')m+=.6;}
+  if(foe==='counter'){if(S.details.includes('araya'))m+=1;if(S.details.includes('leyline'))m+=.3;}
+  return m;
+}
+const TACTICS=[
+  {id:'god',has:()=>S.race==='god',n:'신의 권능을 쓴다',m:f=>2.4,t:'신의 손이 움직였다.'},
+  {id:'true',has:()=>S.race==='true',n:'공상구현화로 자연을 비튼다',m:f=>2,t:'원하는 대로 땅과 바람이 뒤틀렸다.'},
+  {id:'dragon',has:()=>S.race==='dragon',n:'용의 숨결을 토한다',m:f=>2,t:'숨결 하나에 땅이 녹았다.'},
+  {id:'marble',has:()=>S.abil.includes('marble'),n:'고유결계를 펼친다',c:{mp:40},m:f=>f==='counter'?.8:1.6,t:'마음속 풍경이 현실을 덮어썼다.'},
+  {id:'rainbow',has:()=>S.eye&&S.eye.id==='rainbow',n:'무지개 마안으로 죽음의 선을 긋는다',c:{mp:20},m:f=>f==='counter'?.6:1.7,t:'세상에 그어진 죽음의 선이 보였다. 그 선을 따라 그었다.'},
+  {id:'zelretch',has:()=>S.items.includes('zelretch'),n:'보석검을 휘두른다',m:f=>1.5,t:'평행세계에서 끌어온 마력이 빛의 칼날이 되었다.'},
+  {id:'seventh',has:()=>S.items.includes('seventh'),n:'제7성전을 박는다',c:{hp:5},m:f=>({apostle:2.2,monster:1})[f]||.4,t:'파일벙커가 굉음을 내며 박혔다. 부정한 몸은 다시 일어나지 못했다.'},
+  {id:'atlas',has:()=>S.items.includes('atlas')&&!S.atlasUsed,n:'아틀라스의 서로 지원을 부른다',sub:'한 번뿐',once:'atlasUsed',m:f=>1.8,t:'계약서가 불타자 아틀라스원의 연금술사들이 나타났다.'},
+  {id:'originb',has:()=>S.items.includes('originb'),n:'기원탄을 쏜다',c:{wealth:3},m:f=>f==='magus'?1.6:.3,t:'탄환이 상대의 마술회로를 잘라 붙였다. 마술사는 비명을 질렀다.'},
+  {id:'truelang',has:()=>S.abil.includes('truelang'),n:'태초의 언어로 명령한다',c:{mp:20},m:f=>({human:1.5,magus:1.4,apostle:.8,monster:1,servant:.5,counter:.3})[f],t:'"멈춰." 그 한마디를 의심할 수 있는 것은 없었다.'},
+  {id:'possess',has:()=>S.abil.includes('possess'),n:'전생의 영령을 몸에 내린다',c:{hp:10},m:f=>(PROFILE.spirits||[]).length?1.5:1.1,t:'전생의 기억이 몸을 덮쳤다. 그 순간만큼은 영웅이었다.'},
+  {id:'outer',has:()=>S.details.includes('outer'),n:'이성의 신의 힘을 빌린다',c:{mental:8},m:f=>1.4,t:'하늘 너머의 무언가가 손을 뻗었다.'},
+  {id:'kanesada',has:()=>S.items.includes('kanesada'),n:'카네사다를 뽑는다',m:f=>({apostle:1.3,monster:1.3})[f]||.6,t:'500년 된 칼날이 마를 갈랐다.'},
+  {id:'blackkey',has:()=>S.details.includes('blackkey')||S.church,n:'흑건을 던진다',m:f=>({apostle:1.3,monster:.8})[f]||.4,t:'세례를 담은 흑건이 날아갔다.'},
+  {id:'baptism',has:()=>S.details.includes('baptism'),n:'세례영창을 왼다',c:{mp:15},m:f=>({apostle:1.3,monster:.7,servant:.4})[f]||.2,t:'성가가 울려 퍼지자 부정한 것이 타올랐다.'},
+  {id:'kaleido',has:()=>S.items.includes('kaleido'),n:'카레이도 스틱을 휘두른다',m:f=>1.2,t:'평행세계의 자신에게서 힘을 끌어왔다. 옷이 쓸데없이 화려해졌다.'},
+  {id:'jewel',has:()=>S.eye&&S.eye.id==='jewel',n:'보석 마안으로 굳힌다',c:{mp:15},m:f=>f==='servant'?.7:1.1,t:'시선이 닿은 곳부터 돌로 굳어 갔다.'},
+  {id:'snake',has:()=>S.details.includes('snake'),n:'기척을 지우고 급소를 친다',m:f=>['human','magus'].includes(f)?1.1:.4,t:'상대는 당신이 바로 뒤에 선 것을 끝내 몰랐다.'},
+  {id:'carrier',has:()=>S.abil.includes('carrier'),n:'신대의 신비를 재현한다',c:{mp:25},m:f=>1.1,t:'몸 안의 오래된 신비가 깨어났다.'},
+  {id:'insect',has:()=>S.abil.includes('insect'),n:'상대의 몸에 벌레를 심는다',c:{mp:10,mental:3},m:f=>({human:1.1,magus:1,apostle:.5,monster:.6,servant:.2})[f]||0,t:'벌레가 상대의 살갗 아래로 파고들었다. 그 몸이 당신 뜻대로 움직였다.'},
+  {id:'blood',has:()=>S.race==='half'&&S.halfAwake,n:'핏속의 인외를 깨운다',c:{hp:6,mental:4},m:f=>1,t:'머리카락이 붉게 물들었다. 몸 안의 짐승이 웃었다.'},
+  {id:'vampire',has:()=>S.apostle||S.race==='vamp',n:'흡혈종의 힘을 푼다',c:{mental:4},m:f=>1,t:'붉은 눈이 빛나고 손톱이 길게 자랐다.'},
+  {id:'gandr',has:()=>S.details.includes('gandr'),n:'보석을 터뜨린다',c:{wealth:5},m:f=>f==='servant'?.6:1,t:'보석에 담아 둔 마력을 영창 없이 터뜨렸다.'},
+  {id:'rune',has:()=>S.details.includes('rune'),n:'원초의 룬을 새긴다',c:{mp:20},m:f=>1,t:'신대의 룬이 허공에 빛났다.'},
+  {id:'astromagic',has:()=>S.details.includes('astromagic'),n:'별의 운행을 끌어온다',c:{mp:30},m:f=>1,t:'밤하늘의 별이 술식에 응했다.'},
+  {id:'fairy',has:()=>S.details.includes('fairy'),n:'동화의 대마술을 부른다',c:{mp:25},m:f=>1,t:'책장이 넘어가듯 동화 속 세계가 펼쳐졌다.'},
+  {id:'galvan',has:()=>S.abil.includes('galvan'),n:'전류로 마탄을 삼킨다',m:f=>f==='magus'?1:.4,t:'날아든 마탄이 몸의 전류에 녹아 마력이 되었다.'},
+  {id:'future',has:()=>S.details.includes('future'),n:'미래를 보고 움직인다',c:{mp:15},m:f=>.9,t:'몇 초 뒤의 미래를 보고 그 자리를 피했다.'},
+  {id:'ghostliner',has:()=>S.details.includes('ghostliner'),n:'영령의 힘을 빌린다',c:{mp:20},m:f=>.9,t:'영령의 그림자가 몸에 겹쳐졌다.'},
+  {id:'phantom',has:()=>S.details.includes('phantom'),n:'환수를 부른다',m:f=>.9,t:'곁을 지키던 환수가 울부짖었다.'},
+  {id:'dress',has:()=>S.items.includes('dress'),n:'하늘의 드레스를 두른다',c:{mp:15},m:f=>.9,t:'소성배의 권능이 몸을 감쌌다.'},
+  {id:'bajiquan',has:()=>S.details.includes('bajiquan')||S.depts.includes('martial'),n:'팔극권으로 파고든다',c:{hp:5},m:f=>f==='servant'?.3:.8,t:'한 걸음에 거리를 지우고 주먹을 꽂았다.'},
+  {id:'gold',has:()=>S.eye&&S.eye.id==='gold',n:'황금 마안으로 매료한다',c:{mp:10},m:f=>f==='servant'?.4:.8,t:'황금빛 눈에 사로잡힌 상대가 손을 내렸다.'},
+  {id:'galatea',has:()=>S.details.includes('galatea'),n:'호문쿨루스를 앞세운다',m:f=>.8,t:'당신이 만든 아이가 앞으로 나섰다.'},
+  {id:'verg',has:()=>S.details.includes('verg'),n:'받은 상처를 되돌려 준다',c:{hp:12},m:f=>f==='counter'?0:.8,t:'몸에 난 상처가 그대로 상대에게 옮겨 갔다.'},
+  {id:'geas',has:()=>S.details.includes('geas'),n:'셀프 기아스로 한계를 넘는다',c:{mental:6},m:f=>.8,t:'스스로에게 절대 계약을 걸었다.'},
+  {id:'golem',has:()=>S.abil.includes('golem'),n:'골렘을 앞세운다',c:{wealth:4},m:f=>f==='servant'?.4:.8,t:'강철 골렘이 엔진 소리를 내며 앞으로 나섰다.'},
+  {id:'hydra',has:()=>S.items.includes('hydra'),n:'히드라의 독을 쓴다',m:f=>f==='servant'?.4:.8,t:'어떤 해독제로도 막을 수 없는 독이 퍼졌다.'},
+  {id:'lantern',has:()=>S.items.includes('lantern'),n:'환등기계를 돌린다',c:{mp:10},m:f=>.8,t:'벽에 비친 그림자가 마수가 되어 뛰쳐나왔다.'},
+  {id:'prelati',has:()=>S.details.includes('prelati'),n:'스펠북을 펼친다',c:{mp:15},m:f=>.8,t:'마도서가 스스로 술식을 짰다.'},
+  {id:'juju',has:()=>S.abil.includes('juju'),n:'저주를 건다',c:{mp:12},m:f=>['human','magus'].includes(f)?.8:.4,t:'오래된 저주가 상대를 휘감았다.'},
+  {id:'proj',has:()=>S.abil.includes('proj'),n:'무기를 투영한다',c:{mp:12},m:f=>f==='servant'?.5:.7,t:'머릿속의 검을 꺼내 손에 쥐었다.'},
+  {id:'color',has:()=>S.eye&&S.eye.id==='color',n:'마안으로 운명을 비튼다',c:{mp:8},m:f=>['human','magus'].includes(f)?.7:.3,t:'눈이 마주친 순간 상대의 발이 엉켰다.'},
+  {id:'mercury',has:()=>S.items.includes('mercury'),n:'월령수액을 펼친다',c:{mp:10},m:f=>.7,t:'수은이 방패가 되고 칼날이 되었다.'},
+  {id:'shift',has:()=>S.details.includes('shift'),n:'짐승으로 변한다',c:{mp:15},m:f=>.7,t:'뼈가 비틀리며 몸이 짐승의 것으로 바뀌었다.'},
+  {id:'quantum',has:()=>S.details.includes('quantum'),n:'확률을 비튼다',c:{mp:10},m:f=>.2+S.luck/90,t:'일어날 리 없는 일이 일어났다.'},
+  {id:'enchant',has:()=>S.abil.includes('enchant'),n:'무기에 성질을 덧붙인다',c:{mp:10},m:f=>.6,t:'평범한 쇠붙이에 마를 베는 성질을 새겼다.'},
+  {id:'music',has:()=>S.abil.includes('music'),n:'선율로 마음을 흔든다',c:{mp:12},m:f=>['human','magus','monster'].includes(f)?.6:.2,t:'선율이 공기를 타고 퍼졌다.'},
+  {id:'mimic',has:()=>S.details.includes('mimic'),n:'허수에 숨긴 무기를 꺼낸다',m:f=>.6,t:'허공에서 숨겨 둔 무기를 꺼냈다.'},
+  {id:'noble',has:()=>S.eye&&S.eye.id==='noble',n:'마안으로 시선을 묶는다',c:{mp:5},m:f=>['human','magus'].includes(f)?.5:.2,t:'시선으로 상대를 붙잡았다.'},
+  {id:'animal',has:()=>S.abil.includes('animal'),n:'짐승들을 불러 모은다',c:{mp:5},m:f=>['human','apostle','monster'].includes(f)?.5:.2,t:'까마귀와 들개가 몰려들어 상대를 막았다.'},
+  {id:'battery',has:()=>S.abil.includes('battery'),n:'모아 둔 마나 결정을 깬다',m:f=>.5,t:'결정이 깨지며 모아 둔 마나가 한꺼번에 터졌다.'},
+  {id:'storch',has:()=>S.items.includes('storch'),n:'은실의 새를 날려 정찰한다',m:f=>.4,t:'은실의 새가 상대의 위치를 알려 왔다.'}
+];
+function costTxt(c){c=c||{};return [c.mp?`마력 ${c.mp}`:'',c.wealth?`재산 ${c.wealth}`:'',c.hp?`체력 ${c.hp}`:'',c.mental?`정신 ${c.mental}`:''].filter(Boolean).join(' · ');}
+function canPay(c){c=c||{};return (!c.mp||S.mp>=c.mp)&&(!c.wealth||S.wealth>=c.wealth)&&(!c.hp||S.hp>c.hp+5);}
+function payCost(c){c=c||{};return fx({mp:-(c.mp||0),wealth:-(c.wealth||0),hp:-(c.hp||0),mental:-(c.mental||0)});}
+function pctTxt(p){return `승률 ${Math.round(p*100)}%`;}
+/* 싸움 선택지. base: [[이름, 설명, 보정], ...] / 능력·예장·마안·종족으로 쓸 수 있는 수 가운데 강한 셋이 덧붙는다.
+   fn(보정, base의 몇 번째인지(능력이면 -1)) */
+function fightOpts(cfg,base,fn){
+  const core=(cfg.core||0)+foeMod(cfg.foe),pf=cfg.pf||(m=>odds(cfg.rec,m));
+  const out=base.map(([n,d,m],i)=>opt(n,[d,pctTxt(pf(core+m))].filter(Boolean).join(' · '),()=>fn(core+m,i)));
+  if(cfg.noTac)return out;
+  TACTICS.filter(t=>t.has()).map(t=>({t,m:t.m(cfg.foe)})).filter(x=>x.m>0).sort((a,b)=>b.m-a.m).slice(0,3)
+    .forEach(({t,m})=>out.push(opt(t.n,[t.sub,costTxt(t.c),pctTxt(pf(core+m))].filter(Boolean).join(' · '),()=>{if(t.once)S[t.once]=true;log(t.t,'moon',false,payCost(t.c));fn(core+m,-1);},!canPay(t.c))));
+  if(S.mage&&mpMax()>=30)out.push(opt('마술을 전력으로 쓴다',`마력 30 · ${pctTxt(pf(core+.7))}`,()=>{log('가진 마력을 전부 쏟아부었다.','moon',false,payCost({mp:30}));fn(core+.7,-1);},S.mp<30));
+  return out;
+}
+/* 전쟁이 끝나면 영주는 사라진다 */
+function endWar(){if(S.seals>0||S.servant)log('전쟁이 끝나자 손등의 영주가 희미해지더니 사라졌다.','grail');S.seals=0;S.servant=null;}
+/* 소생 마술, 오래된 펜던트, 예비 인형, 단독현현은 한 번 죽음을 비켜 가게 한다(병과 노환, 근원과 억지력은 제외) */
+const NO_ESCAPE=['노환','수명','절망','근원 도달','봉인지정','억지력의 수호자','이 세상 모든 악','인리 소각','이성의 신','신대의 종언'];
+function escapeDeath(cause){
+  if(NO_ESCAPE.includes(cause)||ILLS.some(i=>i.n===cause))return false;
+  let t='';
+  if(S.items.includes('pendant')&&!S.pendantUsed){S.pendantUsed=true;t='품속의 루비 펜던트가 깨지며 멈춘 심장을 다시 뛰게 했다. 누군가 오래 담아 둔 마력이었다.';}
+  else if(S.abil.includes('revive')&&!S.reviveUsed&&S.mp>=25){S.reviveUsed=true;S.mp-=25;t='숨이 끊어지기 직전, 소생 마술로 스스로를 되살렸다.';}
+  else if(S.details.includes('puppeteer')&&!S.puppetUsed){S.puppetUsed=true;S.health=100;t='공방에 둔 예비 인형이 눈을 떴다. 의식은 이미 새 몸으로 옮겨 와 있었다.';}
+  else if(S.abil.includes('solo')&&!S.soloUsed){S.soloUsed=true;t='죽음이 닿기 직전, 저도 모르게 전혀 다른 곳에 서 있었다. 단독현현.';}
+  if(!t)return false;
+  S.hp=Math.max(S.hp,30);S.deadEnd=null;S.deadText='';
+  log(t,'joy',true);fixStats();return true;
+}
+
 /* ---------------- 태어나기 ---------------- */
 function pickCountryFor(P){
   const C=n=>COUNTRIES.find(c=>c.n===n);
@@ -247,8 +372,18 @@ function pickCountryFor(P){
   if(P.birth==='user')return w([['미국',50],['일본',20],['영국',10],['독일',20]]);
   return null;
 }
+/* 세계선이 태어난 해를 정한다. 운명에 맡기면 행적과 맞는 세계선 중에서 고른다 */
+function pickWorld(P){
+  let cand=WORLDS.filter(w=>P.jr.every(id=>jrFitsWorld(P,id,w.id)));
+  if(!cand.length)cand=WORLDS;
+  const pl=P.place&&byId(PLACES,P.place);
+  if(pl&&pl.city==='미사키 마을'&&cand.some(w=>w.id==='tsuki'))return 'tsuki';
+  if(pl&&pl.city==='미후네 시'&&cand.some(w=>w.id==='kara'))return 'kara';
+  return wpick(cand,w=>w.w).id;
+}
 function lifeBirthYear(P){
-  if(P.era&&ERA_YEARS[P.era])return ri(ERA_YEARS[P.era][0],ERA_YEARS[P.era][1]);
+  const w=S.worldPick&&byId(WORLDS,S.worldPick);
+  if(w)return ri(w.years[0],w.years[1]);
   const ys=P.jr.map(id=>CY_JRMAP[id]).filter(j=>j.year||j.minYear).map(j=>j.year||j.minYear);
   if(!ys.length)return ri(1950,2004);
   const mn=Math.min(...ys),mx=Math.max(...ys);
@@ -360,9 +495,12 @@ function newLife(P,seed){
   S.aware=S.mage||S.church||S.race!=='human'&&S.race!=='half';
   if(S.mage)S.teacher=magusFam?'가문':root?'근원':'독학';
   S.mp=mpMax();
+  S.rootP=root?60:S.heir?Math.min(25,Math.round(S.crestGen*.6)):0;
   // 예장은 인생 도중에 손에 들어온다
   S.itemAt=P.items.map(id=>({id,age:ri(14,40)}));
-  // 시기
+  // 시기: 시대(운명에 맡기면 드물게 고대)와 세계선
+  S.eraPick=P.era||(!P.jr.length&&!P.items.length&&!P.place&&chance(.05)?'ancient':'modern');
+  S.worldPick=S.eraPick==='ancient'?P.world:(P.world||pickWorld(P));
   S.birthYear=lifeBirthYear(P);S.year=S.birthYear;
   S.sched=scheduleJourneys(P,S.birthYear);
   S.lastJY=S.sched.length?S.sched[S.sched.length-1].year:0;
@@ -387,14 +525,22 @@ function newLife(P,seed){
   scene({plain:'birth_plain',magus:'birth_magus',noble:'birth_noble',lord:'birth_noble',church:'birth_church',user:'birth_magus'}[birth]);
   if(['vamp','true','dragon','homun'].includes(S.race))scene('birth_inhuman');
   eraSetup(P);
-  if(S.era==='sn'&&S.route==='sn')log('후유키 시. 언젠가 이 도시에서 일곱 명의 마스터가 싸우게 된다.','moon');
+  if(S.route==='sn')log('후유키 시. 언젠가 이 도시에서 일곱 명의 마스터가 싸우게 된다.','moon');
 }
 
 /* ---------------- 수치: 체력·마력·건강·정신·재산·행운 ----------------
    체력 0 → 사망, 정신 0 → 사망, 건강이 낮으면 병에 잘 걸린다, 마력은 마술 쪽 사람에게만 있다 */
-const STAT_N={hp:'체력',mp:'마력',health:'건강',mental:'정신',wealth:'재산',luck:'행운'};
-function hpMax(){return S.long||S.apostle?100:clamp(Math.round(100-Math.max(0,S.age-55)*1.4),0,100);}
-function mpMax(){return (S.mage||S.church||S.sensed||S.apostle||['dragon','true'].includes(S.race))&&S.circuits>=3?clamp(Math.round(S.circuits*QMULT[S.qual]*1.3),5,200):0;}
+const STAT_N={hp:'체력',mp:'마력',health:'건강',mental:'정신',wealth:'재산',luck:'행운',rootP:'근원'};
+function hpMax(){return S.long||S.apostle?100:clamp(Math.round(100-Math.max(0,S.age-55)*(S.wormBody?.5:1.4)),0,100);}
+function mpMax(){
+  const on=(S.mage||S.church||S.sensed||S.apostle||['dragon','true','god'].includes(S.race))&&S.circuits>=3||S.items.includes('grimoire');
+  if(!on)return 0;
+  let m=Math.max(S.circuits,S.items.includes('grimoire')?8:0)*QMULT[S.qual]*1.3;
+  if(S.abil.includes('core'))m*=2;if(S.items.includes('azoth'))m*=1.2;
+  return clamp(Math.round(m),5,300);
+}
+/* 근원 탐구: 현대의 마술사에게만. 신대의 마술사는 근원에서 바로 마력을 얻으니 닿으려 하지 않는다 */
+function rootOn(){return S.mage&&S.era!=='ancient'&&!S.gaveUp;}
 function luckRank(v){
   v=Math.round(v);if(v>=92)return 'EX';
   const B=[[0,'E'],[15,'D'],[30,'C'],[45,'B'],[60,'A'],[92,'']];
@@ -402,10 +548,10 @@ function luckRank(v){
   return 'EX';
 }
 function lucky(p){return clamp(p+(S.luck-50)/250,.02,.98);}
-function fixStats(){S.hp=clamp(S.hp,0,Math.max(hpMax(),S.hp>0?1:0));S.mp=clamp(S.mp,0,mpMax());S.health=clamp(S.health,0,100);S.mental=clamp(S.mental,0,100);S.wealth=clamp(S.wealth,0,100);S.luck=clamp(S.luck,1,100);}
+function fixStats(){S.hp=clamp(S.hp,0,Math.max(hpMax(),S.hp>0?1:0));S.mp=clamp(S.mp,0,mpMax());S.health=clamp(S.health,0,100);S.mental=clamp(S.mental,0,100);S.wealth=clamp(S.wealth,0,100);S.luck=clamp(S.luck,1,100);S.rootP=clamp(S.rootP||0,0,100);}
 function fx(o){
   const parts=[];
-  Object.keys(o||{}).forEach(k=>{const v=o[k];if(!v||!(k in STAT_N))return;if(k==='mp'&&!mpMax())return;S[k]+=v;parts.push([STAT_N[k],v]);});
+  Object.keys(o||{}).forEach(k=>{const v=o[k];if(!v||!(k in STAT_N))return;if(k==='mp'&&!mpMax())return;if(k==='rootP'&&!rootOn())return;S[k]+=v;parts.push([STAT_N[k],v]);});
   fixStats();return parts;
 }
 function logx(text,o,cat,big){log(text,cat,big,fx(o));}
@@ -442,6 +588,9 @@ function treatEvent(first){
   const o=[opt(anc?'치유사를 찾아간다':'병원에서 치료받는다',`재산 ${cost} · 가장 확실해요`,()=>{S.wealth-=cost;cureTry(I.cure+.25+(S.wealth-40)/200,anc?'치유사의 손길':'병원 치료');},S.wealth<cost)];
   if(mpMax()>=20)o.push(opt('마술로 치료한다',`마력 20${I.magic?' · 마술로 생긴 병에 특히 잘 들어요':''}`,()=>{S.mp-=20;cureTry((I.magic?.8:.55)+(S.abil.includes('revive')?.2:0),'마술 치료');},S.mp<20));
   if(S.church||(S.aware&&S.country.cath))o.push(opt('교회의 기적을 빈다','',()=>cureTry(.45,'기도')));
+  if(S.abil.includes('insect'))o.push(opt('벌레로 병든 곳을 갈아 끼운다','충술 · 정신 8 · 확실하지만 몸이 사람에서 멀어져요',()=>{fx({mental:-8});cureTry(.8,'충술');}));
+  if(S.details.includes('puppeteer')&&!S.puppetUsed)o.push(opt('예비 인형 몸으로 옮겨 간다','색위의 인형사 · 한 번뿐 · 반드시 나아요',()=>{S.puppetUsed=true;S.health=100;S.hp=hpMax();log('병든 몸을 버리고 공방의 인형 몸으로 의식을 옮겼다.','moon',true);S.ill=null;}));
+  if(S.depts.includes('create')||S.depts.includes('plant'))o.push(opt(S.depts.includes('plant')?'마녀의 약초를 달인다':'연금술로 약을 만든다','재산 3',()=>{fx({wealth:-3});cureTry(.6,S.depts.includes('plant')?'마녀의 약':'연금술 약');},S.wealth<3));
   o.push(opt('쉬면서 버틴다','돈은 들지 않아요',()=>{fx({health:4});cureTry(I.cure*.45,'휴식');}));
   o.push(opt('민간요법에 기댄다',`행운 ${luckRank(S.luck)}에 맡겨요`,()=>cureTry(lucky(.22),'민간요법')));
   return {eyebrow:first?'진단':'투병',img:'hospital',title:`${I.n}${I.sev>=3?' (중증)':I.sev===1?' (가벼움)':''}`,
@@ -477,7 +626,10 @@ function yearBody(){
   if(S.age===1)h+=imr;else if(S.age<=5)h+=imr*.15;
   const base=clamp((62-S.health)/200,0,.25);
   const p=Math.min(.85,(h*1.6+base)*(1.25-S.luck/200));
-  if(!S.ill&&S.year>S.lastJY&&chance(p)){if(S.age>=5&&S.age<50&&chance(.22))accident();else catchIll();}
+  if(!S.ill&&S.year>S.lastJY&&chance(p)){
+    if(S.age>=5&&S.age<50&&chance(.22)){if((S.abil.includes('mindeye')||S.details.includes('future'))&&chance(.5))log(S.details.includes('future')?'미래시로 사고를 미리 보고 피했다.':'등줄기가 서늘해 발걸음을 멈췄다. 바로 앞에서 사고가 났다.','moon');else accident();}
+    else catchIll();
+  }
   if(S.race==='homun'&&S.age>=S.lifespan){die('수명','만들어진 몸이 수명을 다했다. 조용히 눈을 감았다.');return;}
   fixStats();
 }
@@ -490,21 +642,34 @@ function yearMoney(){
     if(S.retired)inc-=.3;
     inc-=S.kids*.25;
   }
+  if(a>=18){
+    if(S.abil.includes('appraise'))inc+=.5;
+    if(S.abil.includes('golem'))inc+=.4;
+    if(S.abil.includes('music'))inc+=.3;
+    if(S.details.includes('raiders'))inc+=.6;
+  }
   S.wealth+=inc;
-  if(mpMax())S.mp+=mpMax()*.35;
+  if(mpMax())S.mp+=mpMax()*(S.items.includes('zelretch')?1:S.abil.includes('battery')?.6:.35);
+  if(rootOn()&&a>=16&&a<=80){
+    S.rootP=(S.rootP||0)+.4+(S.academy?.4:0)+(S.abil.includes('split')?.3:0)+(S.items.includes('meter')?.3:0)+(S.origin==='root'?.5:0);
+    if(S.rootP>=25&&!S.rootIntro){S.rootIntro=true;major({kind:'gold',img:'end_root',eyebrow:'마술사의 비원',title:'근원의 소용돌이',body:'세계의 바깥, 만물의 시작과 끝이 기록된 곳. 모든 마술은 거기서 흘러나온 가느다란 물줄기예요. 닿으면 무엇이든 할 수 있지만, 닿은 사람은 영혼이 거슬러 올라가 돌아오지 못해요. 세계는 억지력으로 그 길을 막아요. 당신의 연구가 그곳을 향하기 시작했어요. (근원 탐구가 쌓이면 도전할 수 있어요)'});}
+  }
   S.mental+=(55-S.mental)*.04+(S.married?.6:0)-(S.ill?1:0);
   fixStats();
 }
 
 /* ---------------- 한 해 ---------------- */
 function step(){
+  if(S.grailQ){const w=S.grailQ;S.grailQ=null;grailChoice(w);return;}
   if(S.era==='ancient'){ancientStep();return;}
   S.age++;S.year++;
   yearMoney();
   worldNews();
   lifeStage();
   if(!S.alive)return;
-  S.itemAt.forEach(x=>{if(x.age===S.age&&!S.items.includes(x.id)){S.items.push(x.id);log(`마술예장 「${byId(CY_ITEMS,x.id).n}」을(를) 손에 넣었다.`,'joy');}});
+  S.itemAt.forEach(x=>{if(x.age===S.age&&!S.items.includes(x.id)){S.items.push(x.id);
+    if(x.id==='relic'){const c=pick(SERVANT_DB.filter(v=>v.k>=4&&!v.x));S.catalyst=c.n;log(`성유물을 손에 넣었다. 「${c.n}」과(와) 인연 깊은 유물이다. 성배전쟁이 열리면 이 영령을 부를 수 있다.`,'joy',true);}
+    else log(`마술예장 「${byId(CY_ITEMS,x.id).n}」을(를) 손에 넣었다.`,'joy');}});
   const j=S.sched.find(x=>x.year===S.year&&x.st==='plan');
   if(j){runJourney(j);return;}
   if(S.apostle){apostleYear();if(!S.alive||S.pending)return;}
@@ -518,6 +683,7 @@ function step(){
 }
 function die(cause,text,cat){
   if(!S.alive)return;
+  if(escapeDeath(cause))return;
   S.alive=false;S.cause=cause;S.deathAge=S.age;S.hp=0;
   log(text||`${cause}(으)로 세상을 떠났다.`,cat||'death',true);
 }
@@ -606,7 +772,7 @@ function promote(){
   if(S.curRank===0&&t>=1){S.curRank=1;log(`계위 「${RANK_FULL[1]}」을(를) 받았다.`,'moon');return;}
   if(S.curRank<t&&S.age>=19&&(chance(.16+(S.mental-50)/500)||S.age>=50)){
     S.curRank++;fate(S.curRank>=5?2:1,`계위 「${RANK_FULL[S.curRank]}」`);
-    logx(`계위가 「${RANK_FULL[S.curRank]}」(으)로 올랐다.`,{mental:5,wealth:3},S.curRank>=5?'joy':'moon',S.curRank>=5);
+    logx(`계위가 「${RANK_FULL[S.curRank]}」(으)로 올랐다.`,{mental:5,wealth:3,rootP:3},S.curRank>=5?'joy':'moon',S.curRank>=5);
     if(S.curRank===7)major({kind:'gold',img:'clocktower',eyebrow:'시계탑',title:'그랜드(관위)',body:'시계탑의 긴 역사에서도 손에 꼽는 전설의 계위에 올랐다.'});
   }
 }
@@ -686,7 +852,9 @@ const EVENTS=[
     opt('상담을 받는다','재산 6',()=>{logx('상담을 받기 시작했다. 조금씩 숨이 쉬어졌다.',{wealth:-6,mental:25},'joy');},S.wealth<6),
     opt('가까운 사람에게 털어놓는다',S.married||S.parents>0||Object.keys(S.bonds||{}).length?'곁에 누군가 있어요':'털어놓을 사람이 별로 없어요',()=>{const has=S.married||S.parents>0||Object.values(S.bonds||{}).some(v=>v>=20);logx(has?'오래 참았던 이야기를 털어놓았다. 누군가 끝까지 들어 주었다.':'어렵게 연락한 옛 친구가 짧게 답장을 보내왔다.',{mental:has?22:10},'joy');}),
     opt('혼자 견딘다',`행운 ${luckRank(S.luck)}`,()=>{if(chance(lucky(.4)))logx('어느 날 아침, 창문으로 들어온 햇빛이 조금 따뜻했다.',{mental:15},'life');else logx('견디는 것밖에 할 수 없었다.',{mental:3},'risk');}),
-    opt('술에 기댄다','당장은 편해지지만',()=>{logx('술로 밤을 넘겼다.',{mental:10,health:-10},'risk');})
+    opt('술에 기댄다','당장은 편해지지만',()=>{logx('술로 밤을 넘겼다.',{mental:10,health:-10},'risk');}),
+    ...(S.abil.includes('music')?[opt('음악으로 마음을 달랜다','음악 마술',()=>logx('스스로를 위해 연주했다. 소리가 마음의 금을 메웠다.',{mental:22},'joy'))]:[]),
+    ...(S.details.includes('geas')?[opt('셀프 기아스로 마음을 묶는다','살아라, 라고 계약해요 · 체력 5',()=>logx('"살아남는다"는 계약을 스스로에게 걸었다. 마음이 억지로 일어섰다.',{mental:30,hp:-5},'moon'))]:[])
   ]};}},
   {id:'path18',w:()=>S.age===18&&!S.mage&&!S.church&&S.edu==='secondary'?100:0,make:()=>({eyebrow:'열여덟',img:'birth_plain',title:'어른이 되는 해',body:'학교를 마칠 때가 됐어요. 어떤 길을 갈까요?',options:[
     opt('대학에 간다','공부를 이어 가요',()=>{if(chance(Math.pow(eduP(),2)*.8+(S.wealth-50)/150+.15)){S.edu='univ';S.wealth-=4;log(pick(['대학에 합격했다.','고향을 떠나 대학에 들어갔다.']),'joy');}else log('대학에 떨어졌다. 일을 하기로 했다.','risk');}),
@@ -703,7 +871,9 @@ const EVENTS=[
       if(r<.14){die('신비의 은닉','목격자는 남기지 않는다. 그것이 마술사의 규칙이었다.');}
       else if(r<.5){S.wiped=true;log('마술사는 귀찮다는 듯 손가락을 튕겼다. 다음 날 아무것도 기억나지 않았다.','moon');}
       else{becomeAware();log('마술사가 흥미롭다는 눈으로 당신을 봤다.','moon',true);if(S.circuits>=3)offerMentor();else if(S.country.cath&&chance(.4))offerChurch('그 자리에 교회의 대행자가 나타났다.');}}),
-    opt('못 본 척 돌아선다','아무 일도 없었어요',()=>{log('발걸음을 돌렸다. 가끔 그 밤이 꿈에 나온다.');S.mental-=3;})
+    opt('못 본 척 돌아선다','아무 일도 없었어요',()=>{log('발걸음을 돌렸다. 가끔 그 밤이 꿈에 나온다.');S.mental-=3;}),
+    ...(S.abil.includes('animal')?[opt('골목의 까마귀에게 물어본다','동물회화 · 들키지 않아요',()=>{chosen();becomeAware();log('까마귀가 그 사람이 마술사이고, 어디에 공방이 있는지까지 알려 주었다.','moon',true);if(S.circuits>=3)offerMentor();})]:[]),
+    ...(S.eye&&S.eye.id!=='noble'?[opt('마안으로 들여다본다',`${S.eye.n} · 정체를 꿰뚫어요`,()=>{chosen();S.eyesKnown=true;becomeAware();log('눈에 힘을 주자 술식의 흐름이 보였다. 상대도 당신의 눈을 알아보았다. "……마안이군."','moon',true);S.circuits>=3?offerMentor():offerChurch('교회는 마안을 그냥 두지 않았다.');})]:[])
   ]})},
   {id:'latent',w:()=>S.circuits>=3&&!S.mage&&!S.church&&S.age>=10&&S.age<=35?2:0,make:()=>({eyebrow:'잠든 회로',img:'latent',title:'몸 안을 흐르는 열',body:'가끔 등줄기를 타고 뜨거운 것이 흘러요. 손끝에서 작은 불꽃이 튄 적도 있어요. 이건 뭘까요?',options:[
     opt('정체를 파고든다','오컬트 책방부터',()=>{chosen();S.sensed=true;
@@ -716,9 +886,9 @@ const EVENTS=[
   ]})},
   {id:'mentor',w:()=>S.aware&&!S.mage&&!S.church&&S.age>=10&&S.age<=45?2.5:0,make:()=>{offerMentor();return S.pending;}},
   {id:'bitten',w:()=>S.apostle||S.long||S.age<12?0:(S.city==='미사키 마을'&&S.year>=1996&&S.year<=2001?6:.1)*(S.world==='tsuki'?3.5:S.world==='fake'?2.5:1),make:()=>({eyebrow:'습격',img:'apostle',title:'창백한 얼굴',body:'밤길에서 창백한 얼굴의 남자와 눈이 마주쳤어요. 붉은 눈이 웃어요. 목덜미에 차가운 손가락이 닿아요.',options:[
-    opt('맞서 싸운다','가진 힘을 다해요',()=>{chosen();becomeAware();
-      if(chance(odds(['tsuki','fake'].includes(S.world)?3:1.8))){log('온 힘을 다해 사도를 밀쳐 냈다. 그것은 아침 해를 피해 달아났다.','moon',true);fate(2,'사도를 물리침');}
-      else if(chance(.5)){log('쓰러지기 직전, 흑건이 사도를 꿰뚫었다.','moon',true);offerChurch('흑건을 던진 수녀가 다가왔다.');}
+    ...fightOpts({foe:'apostle',rec:['tsuki','fake'].includes(S.world)?3:2.2},[['맞서 싸운다','가진 힘을 다해요',0]],m=>{chosen();becomeAware();
+      if(chance(odds(['tsuki','fake'].includes(S.world)?3:2.2,m))){log('사도를 물리쳤다. 그것은 아침 해를 피해 달아났다.','moon',true);fate(2,'사도를 물리침');}
+      else if(chance(.5)){log('쓰러지기 직전, 흑건이 사도를 꿰뚫었다.','moon',true);if(!S.church)offerChurch('흑건을 던진 수녀가 다가왔다.');}
       else if(chance(['tsuki','fake'].includes(S.world)?1:.5))die('사도의 습격','다음 날 아침, 뉴스는 이것을 "연쇄 엽기 살인"이라고 불렀다.');else logx('사도를 떨쳐 냈지만 크게 다쳤다. 이 세계의 사도는 생각보다 약했다.',{hp:-35,mental:-10},'risk',true);}),
     opt('피를 받아들인다','죽지 않는 몸이 될지도',()=>{chosen();
       const p=clamp((.06+S.circuits/180+(S.luck-50)/300+(S.race==='half'?.2:0))*(S.world==='tsuki'?1.3:['fake','kara'].includes(S.world)?1:.6),.03,.55);
@@ -759,6 +929,8 @@ const EVENTS=[
     const options=ds.map(d=>opt(`「${d.n}」을(를) 공부한다`,d.d,()=>{chosen();learnDept(d.id);}));
     if(myDet.length){const id=pick(myDet);options.push(opt(`「${CY_DET[id].n}」을(를) 파고든다`,CY_DET[id].d,()=>{chosen();if(chance(odds(1.5,.5)))learnDetail(id);else log('연구는 벽에 부딪혔다.','risk');}));}
     options.push(opt('새로운 능력을 개발한다','억지력의 눈길을 끌 수도 있어요',()=>{chosen();if(chance(.6))randomAbility(false);else{hurt(10);log('실험이 실패해 몸을 다쳤다.','risk');}}));
+    const rb=8+(S.abil.includes('split')?3:0)+(S.abil.includes('appraise')?2:0)+(S.abil.includes('fastcast')?2:0)+(S.items.includes('meter')?2:0);
+    options.push(opt('근원을 향한 연구에 몰두한다',`근원 +${rb} · 정신 5 (지금 근원 ${Math.round(S.rootP||0)})`,()=>{chosen();logx(pick(['소용돌이를 향한 술식의 첫 줄을 고쳐 썼다.','가문이 남긴 연구 노트를 처음부터 다시 읽었다.','몇 달 동안 공방 밖으로 나오지 않았다.']),{rootP:rb,mental:-5},'moon');}));
     return {eyebrow:'연구',img:'research',title:'다음 연구 주제',body:'공방의 촛불 아래서 다음에 파고들 주제를 정해요.',options};
   }},
   {id:'faction',w:()=>S.academy==='시계탑'&&!S.faction&&S.age>=18?2:0,make:()=>({eyebrow:'시계탑 정치',img:'clocktower',title:'파벌의 권유',body:'시계탑은 세 파벌로 나뉘어 있어요. 어느 쪽에 설지 정해야 해요.',options:[
@@ -768,7 +940,9 @@ const EVENTS=[
   ]})},
   {id:'seal',w:()=>(S.abil.some(id=>!S.freeAbil.includes(id)&&(byId(CY_ABIL,id).o.ap||0)>0)||S.eye&&['jewel','rainbow'].includes(S.eye.id)||S.originKnown&&S.mage)&&S.mage&&!S.sealDone&&S.age>=25&&S.age<=60?.8:0,make:()=>{S.sealDone=true;return {eyebrow:'봉인지정',img:'sealing',title:'집행자가 온다',body:'비의재시국의 지표가 당신을 가리켰어요. 봉인지정은 보호 명령이라는 이름의 영구 보존이에요.',options:[
     opt('공방을 버리고 달아난다','계속 쫓기며 살아요',()=>{chosen();S.fugitive=true;log('공방을 불태우고 이름을 버린 채 달아났다.','risk',true);}),
-    opt('집행자와 맞서 싸운다','이기면 자유, 지면 끝이에요',()=>{chosen();if(chance(odds(5))){S.fugitive=true;fate(2,'집행자를 물리침');log('집행자들을 물리쳤다. 그래도 협회의 추적은 끝나지 않는다.','risk',true);}else{S.deadEnd='봉인지정 집행자';S.deadText='집행자들을 이기지 못했다. 회로와 각인은 표본 병 속에 보존되었다.';die('봉인지정 집행자',S.deadText);}}),
+    ...fightOpts({foe:'magus',rec:5},[['집행자와 맞서 싸운다','이기면 자유, 지면 끝이에요',0]],m=>{chosen();if(chance(odds(5,m))){S.fugitive=true;fate(2,'집행자를 물리침');log('집행자들을 물리쳤다. 그래도 협회의 추적은 끝나지 않는다.','risk',true);}else{S.deadEnd='봉인지정 집행자';S.deadText='집행자들을 이기지 못했다. 회로와 각인은 표본 병 속에 보존되었다.';die('봉인지정 집행자',S.deadText);}}),
+    ...(S.abil.includes('truelang')?[opt('태초의 언어로 집행자를 물린다','통일언어(진)',()=>{chosen();log('"돌아가라. 여기에는 아무도 없다." 집행자들은 의심 없이 돌아섰다.','moon',true);S.sealDone=true;})]:[]),
+    ...(S.depts.includes('imag')?[opt('허수 공간으로 잠수해 사라진다','허수마술 · 흔적이 남지 않아요',()=>{chosen();S.fugitive=true;log('허수의 바다로 잠수했다. 집행자들은 빈 공방만 찾았다.','moon',true);})]:[]),
     opt('봉인지정을 받아들인다','여기서 인생이 끝나요',()=>{S.sealed=true;S.alive=false;S.deathAge=S.age;S.cause='봉인지정';log('저항하지 않았다. 시계탑은 당신을 표본으로 영원히 보존했다.','death',true);})
   ]};}},
   {id:'grail',w:()=>{
@@ -811,13 +985,24 @@ const EVENTS=[
     opt('아이에게 물려준다','가문은 이어져요',()=>{chosen();fate(2,'각인 계승');S.mental+=8;log(`아이에게 마술각인을 넘겼다. ${S.crestGen+1}대째가 시작된다.`,'moon',true);}),
     opt('아직 넘기지 않는다','근원은 내가 닿아요',()=>{log('각인을 넘기지 않았다. 아이는 원망하는 눈으로 당신을 보았다.','moon');S.used.heir=0;S.heirWait=(S.heirWait||0)+1;if(S.heirWait>2)S.used.heir=1;})
   ]})},
-  {id:'root',w:()=>S.mage&&!S.root&&!S.rootTried&&S.curRank>=5&&S.age>=40?1.2:0,make:()=>({eyebrow:'근원',img:'end_root',title:'소용돌이로 가는 길',body:'수십 년의 연구 끝에, 근원으로 가는 길의 윤곽이 보여요. 억지력은 그 길을 걷는 자를 가만두지 않아요.',options:[
-    opt('도전한다','모든 마술사의 비원',()=>{chosen();S.rootTried=true;
-      if(chance(odds(8)*(S.ap>=5?.6:1))){S.root=true;S.alive=false;S.cause='근원 도달';S.deathAge=S.age;log('공방의 마법진이 빛을 삼켰다. 소용돌이 너머를 보았다. 그 뒤로 당신을 본 사람은 없다.','death',true);}
-      else if(chance(.4)){S.deadEnd='근원 도전';S.deadText='억지력의 수호자가 나타났다. 붉은 외투의 그림자가 마지막으로 본 것이었다.';die('억지력의 수호자',S.deadText);}
-      else{addAp(2);hurt(20);log('문턱에서 튕겨 나왔다. 억지력의 눈길이 당신에게 머물렀다.','risk',true);}}),
-    opt('아직은 때가 아니다','준비를 더 해요',()=>{S.used.root=0;S.rootWait=(S.rootWait||0)+1;if(S.rootWait>2)S.rootTried=true;log('길을 덮어 두었다.','moon');})
-  ]})}
+  {id:'root',repeat:true,w:()=>rootOn()&&!S.root&&!S.rootTried&&(S.rootP||0)>=70&&S.age>=25&&S.year>S.lastJY&&S.year-(S.rootLast||-99)>=4?2.5:0,make:()=>{S.rootLast=S.year;return rootChallenge();}},
+  {id:'quit_magic',w:()=>rootOn()&&!S.rootTried&&S.age>=45&&S.age<=70&&(S.rootP||0)<50?1:0,make:()=>({eyebrow:'근원',img:'research',title:'멀기만 한 소용돌이',body:`근원 탐구 ${Math.round(S.rootP||0)}. 평생을 걸어도 닿지 못할 것 같아요. 대부분의 마술사가 그렇게 끝나요.`,options:[
+    opt('마술을 내려놓고 평온하게 산다','근원을 포기해요',()=>{S.gaveUp=true;logx('공방의 문을 잠갔다. 처음으로 아무 목적 없이 봄을 보냈다.',{mental:15},'joy',true);}),
+    opt('그래도 계속 걷는다','근원 +5 · 정신 5',()=>{chosen();logx('다시 공방에 불을 켰다.',{rootP:5,mental:-5},'moon');})]})},
+  {id:'chaldea_buy',w:()=>S.mage&&S.world==='fgo'&&S.wealth>=80&&S.year>=2005&&S.year<=2014&&S.age>=30&&!S.fgoRole?1.5:0,make:()=>({eyebrow:'경매',img:'chaldea',title:'남극의 관측 기관',body:'아니무스피어 가문이 기관의 운영권 일부를 경매에 내놓았다는 소문이에요. 인리계속보장기관 피니스 칼데아.',options:[
+    opt('가진 것을 모두 건다','재산 50',()=>{chosen();S.chaldeaOwner=true;logx('간발의 차로 낙찰받았다. 칼데아 소장 대리라는 직함이 생겼다.',{wealth:-50,mental:10},'joy',true);}),
+    opt('관심 없다','',()=>log('경매에는 가지 않았다.'))]})},
+  {id:'dig',repeat:true,w:()=>(S.depts.includes('arch')||S.details.includes('raiders'))&&S.age>=18&&S.age<=65&&S.year-(S.lastDig||-99)>=7?2:0,make:()=>{
+    S.lastDig=S.year;const svW=(byId(WORLDS,S.worldPick||S.world)||{}).sv;
+    const cand=SERVANT_DB.filter(v=>v.k>=3&&!v.x).sort(()=>R()-.5).slice(0,3);
+    return {eyebrow:'고고학',img:'research',title:'유적 발굴',body:`발굴 현장에서 신대의 유물이 나왔어요. 몇몇은 이름 높은 영령과 인연이 깊어요.${svW?' 성배전쟁에서 촉매로 쓰면 그 영령을 부를 수 있어요.':' 하지만 이 세계에서는 영령을 부를 수 없어요.'}`,options:[
+      ...cand.map(c=>opt(`「${c.n}」의 성유물을 챙긴다`,svW?`${c.c} · ${'★'.repeat(c.k)} · 성배전쟁에서 이 영령을 불러요`:'이 세계에서는 쓸 수 없어요',()=>{chosen();S.catalyst=c.n;log(`「${c.n}」과(와) 인연 깊은 유물을 챙겼다.`,'joy',true);},!svW)),
+      opt('유물을 판다','재산 12',()=>logx('유물을 경매에 넘겼다.',{wealth:12},'joy')),
+      opt('유물 속 술식을 연구한다','근원 6 · 원초의 룬을 익힐지도',()=>{chosen();fx({rootP:6});if(!S.details.includes('rune')&&chance(.5))learnDetail('rune');else log('유물에 새겨진 신대의 술식을 해독했다.','moon');})]};}},
+  {id:'insect_use',repeat:true,w:()=>S.abil.includes('insect')&&S.age>=20&&S.age<=80&&S.year-(S.lastInsect||-99)>=6?2:0,make:()=>{S.lastInsect=S.year;return {eyebrow:'충술',img:'mentor_old',title:'벌레의 쓰임새',body:'몸 안팎의 벌레가 꿈틀거려요. 벌레를 남의 몸에 심으면 그 몸을 마음대로 움직일 수 있어요. 자신의 몸을 벌레로 갈아 끼우면 늙지 않을 수도 있어요.',options:[
+    opt('원수의 몸에 벌레를 심어 조종한다','재산 +12 · 억지력 +1 · 정신 6',()=>{chosen();addAp(1);logx('그 사람은 다음 날부터 당신 말이라면 무엇이든 들었다. 본인은 끝내 이유를 몰랐다.',{wealth:12,mental:-6},'risk',true);if(chance(.2)){log('교회가 그 일을 냄새 맡았다. 대행자의 습격을 간신히 피했다.','risk');hurt(20);}}),
+    opt('병든 사람의 장기를 벌레로 대신한다','정신 +6 · 재산 +5',()=>{chosen();logx('망가진 심장 대신 벌레가 뛰게 했다. 환자는 울면서 고맙다고 했다.',{mental:6,wealth:5},'joy');fate(1,'벌레로 사람을 살림');}),
+    opt('자신의 몸을 벌레로 갈아 끼운다','늙음과 병이 물러나지만 사람에서 멀어져요',()=>{chosen();S.ill=null;S.leBonus+=12;S.wormBody=true;logx('썩어 가는 살을 벌레로 갈아 끼웠다. 거울 속의 얼굴이 조금 낯설었다.',{health:35,hp:30,mental:-15},'risk',true);})]};}}
 ];
 function enterClock(t){
   S.academy='시계탑';fate(2,'시계탑 입학');
@@ -868,19 +1053,81 @@ function opportunity(){
   return true;
 }
 
+/* ---------------- 근원과 성배 ----------------
+   근원 탐구가 쌓이면 도전한다. 억지력을 넘거나 속여야 하고, 협회의 감시 밖에서 하면 범죄가 된다.
+   깨끗한 성배는 근원으로 가는 문을 열지만, 「이 세상 모든 악」에 물든 후유키의 성배로는 닿을 수 없다. */
+const ROOT_REC=8;
+function rootMod(){return ((S.rootP||0)-70)/12+(S.origin==='root'?1.5:0)-(S.ap>=5?.8:0);}
+function rootChallenge(extra){
+  const legal=S.academy&&S.curRank>=4,trick=S.details.includes('araya')||S.abil.includes('triple')||S.abil.includes('truelang')||S.depts.includes('imag');
+  const pf=m=>odds(ROOT_REC,m+rootMod());
+  const o=[
+    opt('협회의 감시 아래 의식을 치른다',legal?`시계탑의 허가 · ${pctTxt(pf(.3+(extra||0)))}`:'시계탑에서 코즈(개위) 이상이어야 해요',()=>rootResolve(.3+(extra||0),true),!legal),
+    opt('홀로 의식을 치른다',`실패하면 협회의 범죄자가 돼요 · ${pctTxt(pf(extra||0))}`,()=>rootResolve(extra||0,false)),
+    opt('억지력의 눈을 속인다',trick?`결계와 언어로 길을 숨겨요 · ${pctTxt(pf(1.2+(extra||0)))}`:'아라야 결계식, 삼중결계, 통일언어, 허수마술 중 하나가 필요해요',()=>rootResolve(1.2+(extra||0),false),!trick)
+  ];
+  o.push(opt('아직은 때가 아니다','더 준비해요',()=>log('소용돌이로 가는 길을 덮어 두었다.','moon')));
+  return {eyebrow:'근원',img:'end_root',title:'소용돌이로 가는 길',body:`근원 탐구 ${Math.round(S.rootP||0)}. 세계의 바깥, 모든 것이 시작되고 끝나는 곳의 윤곽이 보여요. 억지력은 그 길을 걷는 자를 가만두지 않고, 닿은 사람은 돌아오지 못해요.`,options:o};
+}
+function rootResolve(m,legal){
+  chosen();
+  if(chance(odds(ROOT_REC,m+rootMod()))){reachRoot();return;}
+  S.rootTry=(S.rootTry||0)+1;
+  if(chance(.45)){S.endKey='cy_norm1';die('억지력의 수호자','억지력의 수호자가 나타났다. 붉은 외투의 그림자가 마지막으로 본 것이었다.');return;}
+  addAp(2);hurt(30);logx('문턱에서 튕겨 나왔다. 억지력의 눈길이 당신에게 머물렀다.',{rootP:-25,mental:-10},'risk',true);
+  if(!legal&&chance(.5)){S.fugitive=true;log('협회가 무허가 의식을 관측했다. 이름이 범죄자 명부에 올랐다.','risk',true);}
+  if(S.rootTry>=2)S.rootTried=true;
+}
+function reachRoot(){
+  unlock('root_reach');S.root=true;
+  if(S.abil.includes('solo')&&S.fortnia&&S.ap>=10&&!S.fb.includes('redshadow')){S.endKey='beast';log('근원에 닿은 순간 알았다. 자신의 기원이 인류를 멸망시키는 악, 비스트의 조각이라는 것을.','grail',true);}
+  else if((S.rootP||0)>=100&&S.luck>=60&&chance(.2)){S.endKey='cy_true2';unlock('root_sixth');log('소용돌이의 가장 안쪽에서, 아직 아무도 앉지 않은 여섯 번째 자리를 보았다.','moon',true);}
+  else if(S.origin==='root')S.endKey='cy_norm3';
+  log('공방의 마법진이 빛을 삼켰다. 소용돌이에 닿은 순간, 영혼은 처음으로 거슬러 올라가 녹아내렸다. 그 너머에서 돌아온 사람은 없다.','death',true);
+  S.alive=false;S.cause='근원 도달';S.deathAge=S.age;scene('end_root');
+}
+/* 이긴 성배전쟁의 성배: dirty(후유키, 도쿄) · clean(칼데아 세계선의 후유키, 루마니아, 달) · small(아종) */
+function grailKind(war){
+  if(war==='lesser')return 'small';
+  if(war==='hgw4'||war==='hgw5')return S.world==='fgo'?'clean':'dirty';
+  if(war==='proto')return 'dirty';
+  return 'clean';
+}
+function grailChoice(war){
+  const k=grailKind(war),mageOk=rootOn();
+  scene(k==='dirty'?'grail_fire':'end_root');
+  if(k==='dirty'){
+    S.pending={eyebrow:'성배',img:'grail_fire',title:'검게 물든 잔',body:'손에 넣은 성배에서 검은 진흙이 배어 나와요. 「이 세상 모든 악」에 물든 성배예요. 이것으로는 근원에 닿을 수 없고, 소원도 끔찍한 방식으로만 이뤄져요.',options:[
+      opt('성배를 부순다','이 전쟁을 여기서 끝내요',()=>{chosen();unlock('grail_break');fate(3,'더럽혀진 성배를 부숨');logx('성배를 부쉈다. 쏟아질 뻔한 진흙이 허공에서 흩어졌다.',{mental:5},'grail',true);}),
+      opt('그래도 근원의 문을 연다',mageOk?'모든 마술사의 비원 · 매우 위험해요':'마술사만 할 수 있어요',()=>{chosen();if(chance(.75)){S.endKey='grail_mud';log('문이 열리는 대신 진흙이 쏟아졌다. 이 세상 모든 악이 당신을 삼켰다.','death',true);S.alive=false;S.cause='이 세상 모든 악';S.deathAge=S.age;}else logx('진흙에 휩쓸렸다가 간신히 기어 나왔다. 그날 밤 도시에 불이 내렸다.',{hp:-50,mental:-30},'risk',true);},!mageOk),
+      opt('소원을 빈다','무엇이든 이뤄지긴 해요',()=>{chosen();logx('소원은 이뤄졌다. 다만 누군가 그 대가를 치렀다. 그 얼굴을 꿈에서 자주 보았다.',{wealth:30,mental:-25},'risk',true);addAp(1);})]};
+    return;
+  }
+  const o=[];
+  if(k==='clean')o.push(opt('근원의 문을 연다',mageOk?`성배의 힘을 빌려요 · ${pctTxt(odds(ROOT_REC,2.5+rootMod()))}`:'마술사만 할 수 있어요',()=>{unlock('grail_door');fx({rootP:30});rootResolve(2.5,war!=='apoc');},!mageOk));
+  o.push(opt('부를 빈다','재산 +40',()=>{chosen();logx('소원은 그대로 이뤄졌다.',{wealth:40},'joy');}),
+    opt('건강을 빈다','병이 낫고 몸이 회복돼요',()=>{chosen();S.ill=null;S.leBonus+=8;logx('몸이 가벼워졌다. 오래된 병이 씻은 듯 사라졌다.',{health:40,hp:40},'joy');}),
+    opt('행운을 빈다','행운이 크게 올라요',()=>{chosen();logx('그날부터 이상하게 일이 잘 풀렸다.',{luck:25},'joy');}),
+    opt('성배를 봉인하고 떠난다','아무것도 빌지 않아요',()=>{fate(2,'성배를 봉인함');logx('성배를 봉인했다. 그것이 옳았다고 믿는다.',{mental:6},'moon');}));
+  S.pending={eyebrow:'성배',img:'end_root',title:k==='small'?'작은 성배':'만능의 소원기',body:k==='small'?'아종 성배는 근원에 닿을 만큼의 힘은 없지만, 소원 하나쯤은 들어줘요.':'성배는 더럽혀지지 않았어요. 일곱 영령의 혼이 모인 이 잔은 근원으로 가는 문을 열 수 있어요.',options:o};
+}
+
 /* ---------------- 행적 ---------------- */
+function svObj(sv){
+  const params={};String(sv.st||'').split('/').forEach(x=>{const m=x.trim().match(/^(\S+)\s+(\S+)$/);if(m)params[m[1]]=m[2];});
+  if(!Object.keys(params).length){const pr=()=>['E','E','D','C','B','A','A+'][clamp(sv.k+ri(-1,1),0,6)];Object.assign(params,{근력:pr(),내구:pr(),민첩:pr(),마력:pr(),행운:pr(),보구:pr()});}
+  S.servantsSeen=(S.servantsSeen||[]).concat(sv.n);
+  PROFILE.svMet=PROFILE.svMet||{};PROFILE.svMet[sv.n]=1;
+  return {cls:sv.c,name:sv.n,tier:sv.k,title:sv.t,np:sv.np,npr:sv.npr,npd:sv.npd,persona:sv.p,params};
+}
 function rollServant(boost){
+  if(S.catalyst){const c=SERVANT_DB.find(x=>x.n===S.catalyst);S.catalyst=null;if(c){log(`성유물이 빛났다. 촉매에 이끌려 「${c.n}」이(가) 응답했다.`,'grail',true);unlock('catalyst');return svObj(c);}}
   const past=(PROFILE.spirits||[]).filter(x=>!(S.name===x.name));
   if(past.length&&chance(boost?.15:.08)){const x=pick(past);const pr=()=>['E','E','D','C','B','A','A+'][clamp(x.tier+ri(-1,1),0,6)];log(`소환진 너머에서 낯익은 기척이 느껴졌다. 「${x.epithet}」 ${x.name}. 당신의 전생이다.`,'grail',true);return {cls:x.cls,name:x.name,tier:x.tier,past:true,params:{근력:pr(),내구:pr(),민첩:pr(),마력:pr(),행운:pr(),보구:x.np?'A':pr()}};}
   const CW={세이버:14,아처:14,랜서:14,라이더:14,캐스터:14,어새신:14,버서커:14,룰러:2,어벤저:2,얼터에고:1.2,포리너:1.2,문캔서:.6,프리텐더:.6};
   const cls=wpick(Object.keys(CW),c=>CW[c]);
   const pool=SERVANT_DB.filter(x=>x.c===cls&&!x.x&&!(S.servantsSeen||[]).includes(x.n));
-  const sv=wpick(pool.length?pool:SERVANT_DB.filter(x=>x.c===cls&&!x.x),x=>({1:10,2:22,3:30,4:20,5:8})[x.k]*(boost&&x.k>=4?3:1));
-  S.servantsSeen=(S.servantsSeen||[]).concat(sv.n);
-  PROFILE.svMet=PROFILE.svMet||{};PROFILE.svMet[sv.n]=1;
-  const params={};String(sv.st||'').split('/').forEach(x=>{const m=x.trim().match(/^(\S+)\s+(\S+)$/);if(m)params[m[1]]=m[2];});
-  if(!Object.keys(params).length){const pr=()=>['E','E','D','C','B','A','A+'][clamp(sv.k+ri(-1,1),0,6)];Object.assign(params,{근력:pr(),내구:pr(),민첩:pr(),마력:pr(),행운:pr(),보구:pr()});}
-  return {cls,name:sv.n,tier:sv.k,title:sv.t,np:sv.np,npr:sv.npr,npd:sv.npd,persona:sv.p,params};
+  return svObj(wpick(pool.length?pool:SERVANT_DB.filter(x=>x.c===cls&&!x.x),x=>({1:10,2:22,3:30,4:20,5:8})[x.k]*(boost&&x.k>=4?3:1)));
 }
 function runJourney(j){
   const J=CY_JRMAP[j.id];
@@ -893,30 +1140,28 @@ function runJourney(j){
     major({kind:'summon',sv,war:J.n,img:'summon'});
     const tag={hgw4:'zero',hgw5:'sn',apoc:'apoc'}[J.id];const rv=tag&&rival(tag);if(rv)log(`맞서야 할 마스터 중에 ${rv}이(가) 있다.`,'grail');
   }
-  const pw=power()+(sv?(sv.tier-3)*.7:0)-(J.need==='concept'&&!hasConcept()?2:0);
-  const gap=pw-J.rec;
+  const core=(sv?(sv.tier-3)*.7:0)-(J.need==='concept'&&!hasConcept()?2:0);
+  const gap=power()+core-J.rec;
   const hint=J.deadly===0?'':gap>=1?'당신에게는 쉬운 일이에요.':gap>=0?'해볼 만해요.':gap>=-1.5?'버거운 상대예요.':'추천 계위에 한참 못 미쳐요. 목숨이 걸렸어요.';
-  S.pending={eyebrow:`${J.src} · 추천 ${RANK_FULL[J.rec]}`,img:JR_IMG[J.id]||'research',title:J.n,body:J.intro+(hint?' '+hint:''),tone:J.war?'summon':'',
-    options:J.ch.map((c,i)=>opt(c[0],c[1],()=>resolveJourney(j,J,i,sv))).concat(magicOpt(m=>resolveJourney(j,J,0,sv,m)))};
+  const foe=J.war?'servant':JR_FOE[J.id]||'magus';
+  S.pending={eyebrow:`${J.src} · 추천 ${RANK_FULL[J.rec]}`,img:JR_IMG[J.id]||'research',title:J.n,body:J.intro+(hint?' '+hint:'')+(sv?' 영주가 남아 있으면 위기 때 자동으로 써요.':''),tone:J.war?'summon':'',
+    options:J.deadly===0?J.ch.map((c,i)=>opt(c[0],c[1],()=>resolveJourney(j,J,i,sv,c[3]))):fightOpts({foe,rec:J.rec,core},J.ch.map(c=>[c[0],c[1],c[3]]),(m,i)=>resolveJourney(j,J,i,sv,m))};
 }
-function magicOpt(fn){return mpMax()>=30?[opt('마술을 전력으로 쓴다',`마력 30 (지금 ${Math.round(S.mp)}) · 성공률이 크게 올라요`,()=>{S.mp-=30;log('가진 마력을 전부 쏟아부었다.','moon',false,[['마력',-30]]);fn(.7);},S.mp<30)]:[];}
-function resolveJourney(j,J,i,sv,extra){
-  const c=J.ch[i];
-  if(!extra)log(c[2],J.war?'grail':'moon');
-  let mod=(sv?(sv.tier-3)*.7:0)+(extra?extra:c[3]);
-  if(J.need==='concept'&&!hasConcept())mod-=2;
-  if(sv&&S.seals>0&&power()+mod<J.rec){S.seals--;mod+=.6;log(`영주 1획을 사용했다. "${pick(['이겨라','보구를 해방해','물러서지 마'])}!"`,'grail');}
+const JR_FOE={chaos:'apostle',roa:'apostle',walachia:'apostle',hakuyoku:'apostle',baltan:'apostle',adra:'monster',giant:'monster',albion:'monster',train:'magus',ogawa:'magus',garan:'magus',aoko:'magus',fortnia:'monster'};
+function resolveJourney(j,J,i,sv,mod){
+  if(i>=0)log(J.ch[i][2],J.war?'grail':'moon');
+  if(sv&&S.seals>0&&odds(J.rec,mod)<.5){S.seals--;mod+=.6;log(`영주 1획을 사용했다. "${pick(['이겨라','보구를 해방해','물러서지 마'])}!"`,'grail');}
   const p=J.deadly===0?1:odds(J.rec,mod);
   S.done.push(J.id);
   if(chance(p)){
     j.st='ok';S.jexp+=.3;S.mental+=4;fate(3,`행적 「${J.n}」`);
     log(J.win,'joy',true);
-    if(sv){if(J.id!=='apoc'){S.grailWin=true;fate(4,'성배전쟁 승리');}S.servantSurvived=true;log(`${sv.name}이(가) 마지막으로 웃으며 사라졌다.`,'grail');S.servant=null;}
+    if(sv){S.grailWin=true;fate(4,'성배전쟁 승리');S.servantSurvived=true;log(`${sv.name}이(가) 마지막으로 웃으며 사라졌다.`,'grail');endWar();S.grailQ=J.id;}
     giveReward(J);
   } else {
     const dp=clamp(.3+(J.rec-power()-mod)*.12,.08,.85)*(J.deadly===undefined?1:J.deadly);
-    if(sv)S.servant=null;
-    if(chance(dp)){j.st='dead';S.deadEnd=J.n;S.deadText=J.die;die(J.n,J.die);}
+    if(sv)endWar();
+    if(chance(dp)){j.st='dead';S.deadEnd=J.n;S.deadText=J.die;die(J.n,J.die);if(S.alive)j.st='fail';}
     else{j.st='fail';fate(1,`행적 「${J.n}」 생존`);hurt(18);S.mental-=10;log(J.lose,'risk',true);if(J.r.t==='academy'&&!S.academy)S.academy='시계탑';}
   }
 }
@@ -982,8 +1227,14 @@ function lifeEndingKey(){
   if(S.root)return 'root';
   if(S.apostle)return S.ancestor?'ancestor':'apostle';
   if(S.sealed)return 'sealed';
-  if(S.mage)return null; // 최후의 선택으로
   if(S.fgoDone)return 'restorer';
+  if(S.mage&&S.era!=='ancient'){
+    if(S.chaldeaOwner)return 'cy_true3';
+    if(S.gaveUp)return 'cy_true1';
+    if(S.fugitive)return 'cy_norm2';
+    if(S.rootTry)return 'cy_norm1';
+    return 'mage_end';
+  }
   if(S.church)return S.burial?'burial':'executor';
   if(S.grailWin)return 'grail';
   if(S.warCount)return 'master';
@@ -993,19 +1244,6 @@ function lifeEndingKey(){
   if(S.deathAge<5)return 'short';
   if(S.deathAge>=100)return 'century';
   return 'normal';
-}
-function endOptions(){
-  const ap=S.ap,grand=S.curRank>=7||rankTarget()>=7&&S.academy;
-  const apAbil=S.abil.some(id=>!S.freeAbil.includes(id)&&(byId(CY_ABIL,id).o.ap||0)>0)||(S.eye&&(byId(CY_EYE,S.eye.id).ap||0)>0);
-  return [
-    {id:'cy_true1',g:'True End',ok:ap<5,cond:'억지력 5 미만'},
-    {id:'cy_true2',g:'True End',ok:ap<5&&grand,cond:'억지력 5 미만 · 그랜드(관위)'},
-    {id:'cy_true3',g:'True End',ok:ap<5&&S.wealth>=80,cond:`억지력 5 미만 · 재산 80 이상 (지금 ${Math.round(S.wealth)})`},
-    {id:'cy_norm1',g:'Normal End',ok:ap>=5,cond:'억지력 5 이상'},
-    {id:'cy_norm2',g:'Normal End',ok:ap>=5&&(apAbil||S.fugitive),cond:'억지력 5 이상 · 억지력을 얻는 능력이나 봉인지정'},
-    {id:'cy_norm3',g:'Normal End',ok:ap>=5&&grand,cond:'억지력 5 이상 · 그랜드(관위)'},
-    {id:'beast',g:'??? End',ok:ap>=10&&S.abil.includes('solo')&&!S.fb.includes('redshadow')&&S.fortnia,cond:'？？？'}
-  ];
 }
 function endingInfo(key){return LIFE_ENDINGS.concat(CY_ENDINGS).find(e=>e[0]===key);}
 function settleFate(key){

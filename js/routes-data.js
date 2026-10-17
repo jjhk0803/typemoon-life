@@ -3,10 +3,8 @@
    시대 루트 자료: 시대, 고대 지역, 등장인물(신뢰도 대화), FGO 챕터, 업적
    ========================================================= */
 const ERAS=[
-  {id:'ancient',n:'신대·고대',cost:8,d:'신과 영웅의 시대. 현대까지 살아남으려면 영령이 되거나, 사도가 되거나, 마법에 닿아야 해요. 그러지 못하면 그 시대에 잠들어요.'},
-  {id:'zero',n:'Fate/Zero 세대',cost:5,d:'1966~1972년생. 에미야 키리츠구와 같은 세대. 1994년 제4차 성배전쟁이 기다려요.'},
-  {id:'sn',n:'Fate/stay night 세대',cost:5,d:'1986~1988년생. 후유키의 호무라바라 학원에서 에미야 시로와 같은 시기를 보내요. 2004년 제5차 성배전쟁.'},
-  {id:'fgo',n:'칼데아 세대',cost:8,d:'1993~1997년생. 인리계속보장기관 피니스 칼데아에 들어가 마스터, 마술사, 스태프, 소장 보좌로 인리를 지켜요. 매우 어려워요.'}
+  {id:'modern',n:'근대·현대',cost:0,d:'고른 세계선의 시대에 태어나요. 세계선이 곧 태어난 해와 나이를 정해요.'},
+  {id:'ancient',n:'신대·고대',cost:8,d:'신과 영웅의 시대. 영령이 되거나, 사도가 되거나, 마법에 닿아 살아남으면 고른 세계선의 현대로 건너가요. 그러지 못하면 그 시대에 잠들어요.'}
 ];
 const REGIONS=[
   {id:'greece',n:'그리스',year:[-1300,-1150],title:'그리스의 대영웅',mentor:'현자 켄타우로스',monster:['네메아의 사자를 닮은 마수','히드라의 후예','바다의 괴물'],war:'트로이 전쟁',god:'올림포스의 신들',cls:{라이더:3,아처:3,버서커:2,세이버:2,랜서:2,캐스터:1},
@@ -137,13 +135,23 @@ const ACH=[
   ['legend','전설',[
     ...REGIONS.map(r=>[`spirit_${r.id}`,r.title,`${r.n}에서 태어나 영령의 좌에 올랐다.`,8]),
     ['ancient_apostle','수천 년의 밤','고대에 사도가 되어 현대까지 살아남았다.',10],
-    ['magician','마법 도달','다섯(혹은 여섯) 번째 기적에 닿았다.',15]]]
+    ['magician','마법 도달','다섯(혹은 여섯) 번째 기적에 닿았다.',15],
+    ['god_back','물러난 신','신령으로 태어나 신대와 함께 세계의 뒷면으로 물러났다.',10]]],
+  ['root','근원',[
+    ['grail_break','더럽혀진 성배','「이 세상 모든 악」에 물든 성배를 소원 대신 부쉈다.',6],
+    ['grail_door','성배의 문','깨끗한 성배로 근원으로 가는 문을 열었다.',8],
+    ['root_reach','근원의 소용돌이','모든 마술사의 비원, 근원에 닿았다.',15],
+    ['root_sixth','제6법','다섯 자리가 찬 세상에서 여섯 번째 마법을 남겼다.',20],
+    ['catalyst','성유물의 인연','성유물을 촉매로 원하는 영령을 불러냈다.',5]]]
 ];
 const ACH_ALL=ACH.flatMap(g=>g[2]);
 const EXTRA_ENDINGS=[
   ['spirit','영령이 되다','죽은 뒤 영령의 좌에 올랐다'],
   ['ancient_death','시대 속에 잠들다','현대에 닿지 못하고 그 시대에서 생을 마쳤다'],
   ['magician','마법사','마법에 닿아 시대를 건넜다'],
+  ['god_back','세계의 뒷면으로','신으로 태어나 신대와 함께 물러났다'],
+  ['mage_end','근원에 닿지 못한 마술사','마술사로 살다 근원에 닿지 못하고 생을 마쳤다'],
+  ['grail_mud','이 세상 모든 악','더럽혀진 성배로 근원을 열려다 진흙에 삼켜졌다'],
   ['incineration','인리 소각','인류사를 지키지 못했다'],
   ['crypter','이문대의 왕','크립터로 생을 마쳤다'],
   ['restorer','인리를 지킨 사람','칼데아에서 인류의 미래를 되찾았다']
@@ -177,20 +185,23 @@ IMGS.push(...[
   ['ch_ritsuka','후지마루 리츠카','fujimaru ritsuka (male), 1boy, black hair, chaldea uniform, smile, upper body']
 ].map(a=>({id:a[0],n:a[1],p:a[2]})));
 
-Object.assign(END_IMG,{spirit:'throne',ancient_death:'era_ancient',magician:'end_root',incineration:'singularity',crypter:'lostbelt',restorer:'chaldea'});
+Object.assign(END_IMG,{god_back:'throne',mage_end:'research',grail_mud:'grail_fire',spirit:'throne',ancient_death:'era_ancient',magician:'end_root',incineration:'singularity',crypter:'lostbelt',restorer:'chaldea'});
 
 /* ================= 세계선 =================
    인리를 긍정하는 세계(편찬사상)들. 세계선마다 일어나는 사건과 행적이 다르다. */
 const WORLDS=[
-  {id:'sn',n:'Fate/stay night 세계선',type:'fate',sv:1,anc:0,w:30,cost:1,d:'인리를 긍정하는 세계. 1939년 3차, 1994년 4차, 2004년 5차 성배전쟁. 로드 엘멜로이 2세의 사건부도 이 세계.'},
-  {id:'apoc',n:'Fate/Apocrypha 세계선',type:'fate',sv:1,anc:0,w:10,cost:1,d:'인리를 긍정하는 세계. 3차 성배전쟁 때 대성배를 빼앗겨 후유키의 전쟁은 없고, 루마니아에서 성배대전이 열려요.'},
-  {id:'fgo',n:'Fate/Grand Order 세계선',type:'fate',sv:1,anc:0,w:12,cost:1,d:'인리를 긍정하는 세계. 2004년이 후유키의 1차 성배전쟁. 2016년 마신왕에 의한 인리 소각이 일어나요.'},
-  {id:'proto',n:'Fate/Prototype 세계선',type:'fate',sv:1,anc:0,w:6,cost:2,d:'인리를 긍정하는 세계. 1991년과 1999년, 도쿄에서 열린 두 번의 성배전쟁.'},
-  {id:'extra',n:'Fate/Extra 세계선',type:'fate',sv:1,anc:0,w:8,cost:2,d:'인리를 긍정하는 세계. 1970년 전 세계의 마나가 고갈되고, 훗날 달의 영자 컴퓨터 위에서 성배전쟁이 열려요.'},
-  {id:'fake',n:'Fate/strange Fake 세계선',type:'both',sv:1,anc:1,w:6,cost:2,d:'두 세계의 성질을 모두 가진 특이한 세계. 영령 소환도 되고 사도 27조도 존재해요. 미국 스노우필드의 거짓 성배전쟁.'},
-  {id:'tsuki',n:'월희·마법사의 밤 세계선',type:'tsuki',sv:0,anc:1,w:16,cost:1,d:'인리를 부정하는 세계. 인리정초가 약해 영령 소환이 불가능하고, 사도 27조가 존재해요. 미사키 시의 마법사와 흡혈귀.'},
-  {id:'kara',n:'공의 경계 세계선',type:'other',sv:0,anc:0,w:12,cost:1,d:'다른 세계선과 직접적인 관련이 없는 세계. 1995~1999년 미후네 시의 기묘한 사건들. 성배전쟁은 없어요.'}
+  {id:'zero',base:'sn',n:'Fate/Zero',type:'fate',sv:1,anc:0,w:12,cost:4,years:[1966,1972],ky:1994,d:'1966~1972년생. 에미야 키리츠구와 같은 세대. 1994년 후유키의 제4차 성배전쟁이 기다려요.'},
+  {id:'sn',n:'Fate/stay night',type:'fate',sv:1,anc:0,w:22,cost:4,years:[1986,1988],ky:2004,d:'1986~1988년생. 후유키 시의 호무라바라 학원에서 에미야 시로와 같은 시기를 보내요. 2004년 제5차 성배전쟁. 로드 엘멜로이 2세의 사건부도 이 세계.'},
+  {id:'apoc',n:'Fate/Apocrypha',type:'fate',sv:1,anc:0,w:8,cost:1,years:[1978,1990],ky:2008,d:'1978~1990년생. 3차 성배전쟁 때 대성배를 빼앗겨 후유키의 전쟁은 없어요. 2008년 루마니아의 성배대전.'},
+  {id:'fgo',n:'Fate/Grand Order',type:'fate',sv:1,anc:0,w:12,cost:6,years:[1993,1997],ky:2015,d:'1993~1997년생. 인리계속보장기관 피니스 칼데아에 들어가 마스터, 마술사, 스태프, 소장 보좌로 인리를 지켜요. 매우 어려워요.'},
+  {id:'proto',n:'Fate/Prototype',type:'fate',sv:1,anc:0,w:6,cost:2,years:[1972,1984],ky:1999,d:'1972~1984년생. 1991년과 1999년, 도쿄에서 열린 두 번의 성배전쟁.'},
+  {id:'extra',n:'Fate/Extra',type:'fate',sv:1,anc:0,w:6,cost:2,years:[2008,2014],ky:2032,d:'2008~2014년생. 1970년에 전 세계의 마나가 말라 마술이 쇠퇴한 세계. 2032년 달의 영자 컴퓨터 위에서 성배전쟁이 열려요.'},
+  {id:'fake',n:'Fate/strange Fake',type:'both',sv:1,anc:1,w:6,cost:2,years:[1982,1994],ky:2012,d:'1982~1994년생. 두 세계의 성질을 함께 가진 세계. 영령 소환도 되고 사도 27조도 있어요. 2012년 미국 스노우필드의 거짓 성배전쟁.'},
+  {id:'tsuki',n:'월희·마법사의 밤',type:'tsuki',sv:0,anc:1,w:16,cost:1,years:[1974,1984],ky:1999,d:'1974~1984년생. 인리정초가 약해 영령을 부를 수 없고, 사도 27조가 밤을 지배하는 세계. 미사키 시의 마법사와 흡혈귀.'},
+  {id:'kara',n:'공의 경계',type:'other',sv:0,anc:0,w:12,cost:1,years:[1974,1981],ky:1998,d:'1974~1981년생. 다른 세계선과 직접 이어지지 않은 세계. 1995~1999년 미후네 시의 기묘한 사건들. 성배전쟁은 없어요.'}
 ];
+/* Fate/Zero는 stay night와 같은 세계선의 앞 세대 */
+function worldBase(id){const w=byId(WORLDS,id);return w&&w.base||id;}
 
 /* 행적이 일어나는 세계선(적히지 않은 행적은 어디서나) */
 const JR_WORLD={hakuyoku:['tsuki','fake'],hgw4:['sn','fake'],hgw5:['sn','fgo','fake'],dismantle:['sn'],lesser:['sn','fgo'],adra:['sn','fake'],train:['sn','fake'],apoc:['apoc'],
