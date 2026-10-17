@@ -74,12 +74,24 @@ h1 .one{color:var(--seal)}
 .code-in input{width:110px;background:var(--night-3);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:var(--f-mono);font-size:13px;text-transform:uppercase}
 
 /* 본문 그리드 */
-main{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:28px;padding-top:24px}
-@media (max-width:820px){main{grid-template-columns:minmax(0,1fr)}}
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);gap:28px;padding-top:24px}
+@media (max-width:900px){main{grid-template-columns:minmax(0,1fr)}}
+.side{position:sticky;top:max(16px,env(safe-area-inset-top,0px));align-self:start;max-height:calc(100vh - 32px);overflow-y:auto;display:grid;gap:16px;padding-right:2px}
+@media (max-width:900px){.side{position:static;max-height:none;overflow:visible}}
+.panel{border:1px solid var(--seal);border-radius:16px;background:var(--night-2);box-shadow:0 0 40px rgba(211,58,82,.12)}
+.panel-bar{display:none;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--mute)}
+.panel .sheet{width:100%;max-height:none;border:0;background:transparent;box-shadow:none!important}
+@media (max-width:900px){
+  .panel{position:fixed;left:0;right:0;bottom:0;z-index:40;border-radius:16px 16px 0 0;max-height:62vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+  .panel-bar{display:flex;position:sticky;top:0;background:var(--night-2);z-index:1}
+  .panel.folded .sheet{display:none}
+  .panel.folded{max-height:none}
+  #game.has-panel{padding-bottom:62vh}
+  #game.has-panel.fold-pad{padding-bottom:56px}
+}
 
 /* 신상 카드 */
-.card{background:var(--night-2);border:1px solid var(--line);border-radius:14px;padding:20px;position:sticky;top:max(16px,env(safe-area-inset-top,0px));align-self:start}
-@media (max-width:820px){.card{position:static}}
+.card{background:var(--night-2);border:1px solid var(--line);border-radius:14px;padding:20px}
 .agebox{display:flex;align-items:baseline;gap:10px;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:14px}
 .age{font-family:var(--f-display);font-size:64px;line-height:1}
 .age small{font-size:20px;color:var(--mute);margin-left:4px}
@@ -111,8 +123,11 @@ dl.facts dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .chron-head h2{font-family:var(--f-display);font-weight:400;font-size:22px;margin:0}
 .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--mute)}
 .legend span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--c)}
-#log{list-style:none;margin:0;padding:0 4px 0 0;max-height:70vh;overflow-y:auto;border-top:1px solid var(--line)}
-@media (max-width:820px){#log{max-height:none}}
+#log{list-style:none;margin:0;padding:0 4px 0 0;max-height:72vh;overflow-y:auto;border-top:1px solid var(--line)}
+@media (max-width:900px){#log{max-height:none}}
+#log .fxs{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:6px;vertical-align:1px}
+#log .fxs i{font-style:normal;font-family:var(--f-mono);font-size:11px;padding:0 5px;border-radius:4px;background:var(--night-3)}
+#log .fxs i.up{color:var(--fate)}#log .fxs i.dn{color:var(--risk)}
 #log li{display:grid;grid-template-columns:52px 40px minmax(0,1fr);gap:10px;padding:9px 0;border-bottom:1px solid rgba(42,47,77,.55);font-size:14px;animation:in .35s ease-out}
 @keyframes in{from{opacity:.2;transform:translateY(4px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){#log li{animation:none}.lunar{box-shadow:none}}
@@ -347,6 +362,10 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
 .svtitle{color:var(--gold);font-size:13px;margin:-2px 0 4px}
 .svnp{font-size:13px;color:var(--moon)!important;text-align:left}
 .svnp span{color:var(--mute);font-size:12px}
+.g.hp .bar i{background:var(--seal)}.g.mp .bar i{background:#7f8cff}
+.g .lrank{font-family:var(--f-display);font-size:18px;color:var(--gold);font-weight:400}
+.g.lk{grid-template-columns:44px 1fr 0}
+.ill{font-size:13px;color:var(--risk);border:1px dashed rgba(227,145,85,.5);border-radius:8px;padding:6px 10px}
 .closex{position:absolute;right:max(14px,env(safe-area-inset-right,0px));top:max(14px,env(safe-area-inset-top,0px))}
 </style>
 </head>
@@ -400,7 +419,26 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
       <label class="toggle"><input type="checkbox" id="autoPause" checked> 큰 사건에서 멈추기</label>
     </div>
     <main>
-      <aside class="card" aria-live="polite">
+      <section class="chron" aria-label="연대기">
+        <div class="scene-box" id="scene"></div>
+        <div class="chron-head">
+          <h2>연대기</h2>
+          <div class="legend" aria-hidden="true">
+            <span style="--c:var(--gold)">경사</span>
+            <span style="--c:var(--od)">신비</span>
+            <span style="--c:var(--seal)">성배</span>
+            <span style="--c:var(--risk)">위기</span>
+          </div>
+        </div>
+        <ol id="log"></ol>
+        <div id="endBox"></div>
+      </section>
+      <div class="side">
+        <div class="panel" id="modal" hidden>
+          <div class="panel-bar"><span>선택</span><button class="btn sm" type="button" id="panelFold" aria-expanded="true">접기</button></div>
+          <div class="sheet" id="sheet" role="region" aria-live="polite" aria-labelledby="mTitle"></div>
+        </div>
+        <aside class="card" aria-live="polite">
         <div class="agebox">
           <div class="age" id="vAge">0<small>세</small></div>
           <div class="year" id="vYear"></div>
@@ -419,10 +457,13 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
           <dt>익힌 것</dt><dd id="vSkill"></dd>
         </dl>
         <div class="gauges">
+          <div class="g hp"><span>체력</span><div class="bar"><i id="gHP"></i></div><span id="nHP">-</span></div>
+          <div class="g mp" id="rowMP"><span>마력</span><div class="bar"><i id="gMP"></i></div><span id="nMP">-</span></div>
           <div class="g h"><span>건강</span><div class="bar"><i id="gH"></i></div><span id="nH">-</span></div>
           <div class="g"><span>정신</span><div class="bar"><i id="gM"></i></div><span id="nM">-</span></div>
           <div class="g w"><span>재산</span><div class="bar"><i id="gW"></i></div><span id="nW">-</span></div>
-          <div class="g"><span>행운</span><div class="bar"><i id="gL"></i></div><span id="nL">-</span></div>
+          <div class="g lk"><span>행운</span><b class="lrank" id="nL">-</b><span></span></div>
+          <div class="ill" id="vIll" hidden></div>
         </div>
         <div class="seals" id="vSeals" hidden>
           <svg viewBox="0 0 64 44" aria-hidden="true">
@@ -441,21 +482,8 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
           <div class="cy-h">행적 · 이야기</div>
           <ol class="jr" id="vJr"></ol>
         </div>
-      </aside>
-      <section class="chron" aria-label="연대기">
-        <div class="scene-box" id="scene"></div>
-        <div class="chron-head">
-          <h2>연대기</h2>
-          <div class="legend" aria-hidden="true">
-            <span style="--c:var(--gold)">경사</span>
-            <span style="--c:var(--od)">신비</span>
-            <span style="--c:var(--seal)">성배</span>
-            <span style="--c:var(--risk)">위기</span>
-          </div>
-        </div>
-        <ol id="log"></ol>
-        <div id="endBox"></div>
-      </section>
+        </aside>
+      </div>
     </main>
   </section>
 
@@ -469,9 +497,6 @@ footer{margin-top:40px;color:var(--mute);font-size:12px;border-top:1px solid var
   <footer>TYPE-MOON 세계관(Fate · 월희 · 공의 경계 · 마법사의 밤 · 로드 엘멜로이 2세의 사건부)을 바탕으로 한 비공식 비상업 팬 게임이에요. 공식과 관계없고, 수치는 놀이용 근사치예요. 서번트와 인물 자료는 팬 로어북을 줄여 정리했어요. 다음 생 준비의 항목과 결말은 팬 CYOA 「Type Moon / Becoming Magus」(Made by Selina)를 바탕으로 했고, 설명 문장은 새로 썼어요.</footer>
 </div>
 
-<div class="modal" id="modal" hidden>
-  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="mTitle"></div>
-</div>
 <div class="modal" id="setModal" hidden>
   <div class="sheet setsheet" role="dialog" aria-modal="true" aria-label="설정">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px"><h3 style="margin:0">설정</h3><button class="btn" type="button" id="setClose">닫기</button></div>

@@ -149,6 +149,7 @@ const EXTRA_ENDINGS=[
   ['restorer','인리를 지킨 사람','칼데아에서 인류의 미래를 되찾았다']
 ];
 IMGS.push(...[
+  ['hospital','투병','quiet hospital room at night, moonlight through the window, empty bed with white sheets, flowers on the table, no humans'],
   ['era_ancient','신대','ancient greek temple on a cliff at dusk, giant statue of a god, burning braziers, epic sky, mythological atmosphere, no humans'],
   ['era_japan','고대 일본','heian era japanese mountain shrine at night, torii gate, full moon, fog, lanterns, no humans'],
   ['era_britain','브리튼','ancient britain hill fort at dawn, round table hall, misty lake, sword in stone, no humans'],
@@ -181,17 +182,18 @@ Object.assign(END_IMG,{spirit:'throne',ancient_death:'era_ancient',magician:'end
 /* ================= 세계선 =================
    인리를 긍정하는 세계(편찬사상)들. 세계선마다 일어나는 사건과 행적이 다르다. */
 const WORLDS=[
-  {id:'sn',n:'Fate/stay night 세계선',w:30,cost:1,d:'1939년 3차, 1994년 4차, 2004년 5차 성배전쟁. 로드 엘멜로이 2세의 사건부도 이 세계.'},
-  {id:'apoc',n:'Fate/Apocrypha 세계선',w:10,cost:1,d:'3차 성배전쟁 때 대성배를 빼앗겼어요. 후유키의 전쟁은 없고, 루마니아에서 성배대전이 열려요.'},
-  {id:'fgo',n:'Fate/Grand Order 세계선',w:12,cost:1,d:'2004년이 후유키의 1차 성배전쟁. 2016년 마신왕에 의한 인리 소각이 일어나요.'},
-  {id:'kara',n:'공의 경계 세계선',w:12,cost:1,d:'1995~1999년 미후네 시의 기묘한 사건들. 성배전쟁과는 관계가 없어요.'},
-  {id:'tsuki',n:'월희·마법사의 밤 세계선',w:16,cost:1,d:'미사키 시의 마법사와 흡혈귀. 2000년 무렵 월희의 사건.'},
-  {id:'proto',n:'Fate/Prototype 세계선',w:6,cost:2,d:'1991년과 1999년, 도쿄에서 열린 두 번의 성배전쟁.'},
-  {id:'fake',n:'Fate/strange Fake 세계선',w:6,cost:2,d:'stay night에서 갈라져 나와, 미국 스노우필드에서 거짓 성배전쟁이 열려요.'},
-  {id:'extra',n:'Fate/Extra 세계선',w:8,cost:2,d:'1970년 전 세계의 마나가 고갈된 세계. 훗날 달의 영자 컴퓨터 위에서 성배전쟁이 열려요.'}
+  {id:'sn',n:'Fate/stay night 세계선',type:'fate',sv:1,anc:0,w:30,cost:1,d:'인리를 긍정하는 세계. 1939년 3차, 1994년 4차, 2004년 5차 성배전쟁. 로드 엘멜로이 2세의 사건부도 이 세계.'},
+  {id:'apoc',n:'Fate/Apocrypha 세계선',type:'fate',sv:1,anc:0,w:10,cost:1,d:'인리를 긍정하는 세계. 3차 성배전쟁 때 대성배를 빼앗겨 후유키의 전쟁은 없고, 루마니아에서 성배대전이 열려요.'},
+  {id:'fgo',n:'Fate/Grand Order 세계선',type:'fate',sv:1,anc:0,w:12,cost:1,d:'인리를 긍정하는 세계. 2004년이 후유키의 1차 성배전쟁. 2016년 마신왕에 의한 인리 소각이 일어나요.'},
+  {id:'proto',n:'Fate/Prototype 세계선',type:'fate',sv:1,anc:0,w:6,cost:2,d:'인리를 긍정하는 세계. 1991년과 1999년, 도쿄에서 열린 두 번의 성배전쟁.'},
+  {id:'extra',n:'Fate/Extra 세계선',type:'fate',sv:1,anc:0,w:8,cost:2,d:'인리를 긍정하는 세계. 1970년 전 세계의 마나가 고갈되고, 훗날 달의 영자 컴퓨터 위에서 성배전쟁이 열려요.'},
+  {id:'fake',n:'Fate/strange Fake 세계선',type:'both',sv:1,anc:1,w:6,cost:2,d:'두 세계의 성질을 모두 가진 특이한 세계. 영령 소환도 되고 사도 27조도 존재해요. 미국 스노우필드의 거짓 성배전쟁.'},
+  {id:'tsuki',n:'월희·마법사의 밤 세계선',type:'tsuki',sv:0,anc:1,w:16,cost:1,d:'인리를 부정하는 세계. 인리정초가 약해 영령 소환이 불가능하고, 사도 27조가 존재해요. 미사키 시의 마법사와 흡혈귀.'},
+  {id:'kara',n:'공의 경계 세계선',type:'other',sv:0,anc:0,w:12,cost:1,d:'다른 세계선과 직접적인 관련이 없는 세계. 1995~1999년 미후네 시의 기묘한 사건들. 성배전쟁은 없어요.'}
 ];
+
 /* 행적이 일어나는 세계선(적히지 않은 행적은 어디서나) */
-const JR_WORLD={hgw4:['sn','fake'],hgw5:['sn','fgo','fake'],dismantle:['sn'],lesser:['sn','fgo'],adra:['sn','fake'],train:['sn','fake'],apoc:['apoc'],
+const JR_WORLD={hakuyoku:['tsuki','fake'],hgw4:['sn','fake'],hgw5:['sn','fgo','fake'],dismantle:['sn'],lesser:['sn','fgo'],adra:['sn','fake'],train:['sn','fake'],apoc:['apoc'],
   ogawa:['kara'],garan:['kara','tsuki'],watch:['tsuki','kara'],aoko:['tsuki'],chaos:['tsuki'],roa:['tsuki'],walachia:['tsuki']};
 const WORLD_ARCS={
   edo:{year:1651,city:'에도',n:'영화성배전',ach:'edo_war',p:'m:미야모토 이오리',tag:'edo',st:[['에도의 밤',3,'게이안 4년의 에도. 영령검호들이 밤거리에 모여들어요.'],['떠도는 서번트',3.5,'주인 없는 떠돌이 서번트들이 의식을 어지럽혀요.'],['영화의 끝',4.5,'일곱 개의 성배가 모이는 마지막 밤.']]},

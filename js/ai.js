@@ -109,7 +109,7 @@ function lifeSummary(){
     `출생: ${S.famType}. 종족: ${byId(CY_RACE,S.race).n}. 마술회로 ${S.circuits}개(질 ${S.qual}). 속성 ${S.els.map(e=>EL_NAME[e]).join('·')}.`,
     `처지: ${st.join(', ')}. 직업: ${S.job||'없음'}. 결혼 ${S.married?'함':'안 함'}, 자녀 ${S.kids}명.`,
     `익힌 계통: ${S.depts.map(id=>byId(CY_DEPTS,id).n).join(', ')||'없음'}. 능력: ${S.abil.map(id=>byId(CY_ABIL,id).n).join(', ')||'없음'}. 마안: ${S.eye&&S.eyesKnown?S.eye.n:'없음'}.`,
-    `건강 ${Math.round(S.health)}, 정신 ${Math.round(S.mental)}, 재산 ${Math.round(S.wealth)}, 행운 ${S.luck} (0~100). 억지력 ${fmtP(S.ap)}.`,
+    `체력 ${Math.round(S.hp)}/${hpMax()}, 마력 ${Math.round(S.mp)}/${mpMax()}, 건강 ${Math.round(S.health)}, 정신 ${Math.round(S.mental)}, 재산 ${Math.round(S.wealth)} (0~100), 행운 ${luckRank(S.luck)}${S.ill?', 질병 '+S.ill.n:''}. 억지력 ${fmtP(S.ap)}.`,
     `최근 기록: ${S.events.slice(-8).map(e=>`${yearLabel(e.y)}년 ${e.text}`).join(' / ')}`
   ].join('\n');
 }
@@ -128,7 +128,7 @@ ${lifeSummary()}
 - title은 12자 이내, body는 2~3문장 '-요' 체로 상황을 보여 준다. label은 12자 이내, sub는 20자 이내.
 - 결과 text는 1~2문장, 과거형 평서문(-다)으로 쓴다. 인물을 '당신'이라 부르지 않고 주어 없이 쓴다.
 - effects에는 아래 키만 쓴다. 필요 없는 키는 빼라.
-  health/mental/wealth: -40~30 정수, ap(억지력): -2~3 정수, circuits: 0~20 정수,
+  hp(체력, 0이 되면 죽음): -40~20 정수, mp(마력, 마술사만): -40~30 정수, health(건강, 낮으면 병에 잘 걸림)/mental(정신, 0이 되면 죽음)/wealth(재산): -40~30 정수, luck(행운): -10~10 정수, ap(억지력): -2~3 정수, circuits: 0~20 정수,
   aware: true(신비를 알게 됨), mage: "스승 이름"(마술사가 됨), church: true(대행자가 됨),
   learn: 마술계통 이름(${CY_DEPTS.filter(d=>!d.side).map(d=>d.n).join(', ')} 중 하나),
   ability: 능력 이름(${CY_ABIL.filter(a=>a.id!=='solo').map(a=>a.n).join(', ')} 중 하나),

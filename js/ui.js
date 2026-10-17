@@ -56,12 +56,14 @@ function renderPrep(){
   if(st.k==='era'){
     h+=slot('시대','',rnd('era',!PL.era,'1950~2004년 사이 어딘가. 지금까지의 인생.')+ERAS.map(e=>optCard({k:'era',id:e.id,n:e.n,d:e.d,on:PL.era===e.id,chips:costChip(e.cost)})).join(''));
     if(PL.era==='ancient')h+=slot('지역','어느 나라의 영웅이 될까',rnd('region',!PL.region,'신화와 전설의 땅 중 한 곳.')+REGIONS.map(r=>optCard({k:'region',id:r.id,n:r.n,d:`${r.title}. ${r.war}, ${r.monster[0]}.`,on:PL.region===r.id,chips:costChip(2)})).join(''));
-    else h+=slot('세계선','인리를 긍정하는 세계들',rnd('world',!PL.world,'세계선마다 일어나는 사건이 달라요.')+WORLDS.map(w=>optCard({k:'world',id:w.id,n:w.n,d:w.d,on:PL.world===w.id,chips:costChip(w.cost)})).join(''));
+    else if(ERA_WORLD[PL.era]){const w=byId(WORLDS,ERA_WORLD[PL.era]);h+=slot('세계선','이 시대의 세계선',optCard({k:'',id:w.id,n:w.n,d:w.d,on:true,chips:chip('free','시대에 포함')}));}
+    else h+=slot('세계선','Fate(인리 긍정) · 월희(인리 부정) · 그 밖',rnd('world',!PL.world,'세계선마다 일어나는 사건이 달라요.')+WORLDS.map(w=>optCard({k:'world',id:w.id,n:w.n,tag:{fate:'영령 O · 27조 X',tsuki:'영령 X · 27조 O',both:'영령 O · 27조 O',other:'영령 X · 27조 X'}[w.type],d:w.d,on:PL.world===w.id,chips:costChip(w.cost)})).join(''));
   } else if(st.k==='birth'){
     h+=slot('기원','',CY_ORIGIN.map(o=>optCard({k:'origin',id:o.id,n:o.n,d:o.id==='root'?'근원과 이어진 채 태어나요. 마술속성·계통·세부 항목이 무료가 돼요. 대신 마술예장을 고를 수 없고, 억지력이 5에서 시작하며 이후 얻는 억지력이 두 배가 돼요.':'평범하게 다시 태어나요.',on:PL.origin===o.id,chips:costChip(FATE_COST.origin[o.id])+(o.id==='root'?chip('ap','억지력 5에서 시작'):'')})).join(''));
     h+=slot('종족','고르지 않으면 거의 확실히 인간',rnd('race',!PL.race,'거의 확실히 인간. 일본이라면 아주 드물게 혼혈.')+CY_RACE.map(r=>optCard({k:'race',id:r.id,n:r.n,d:r.d,on:PL.race===r.id,chips:costChip(FATE_COST.race[r.id])+apChip(r.ap)})).join(''));
     h+=slot('출생','고르지 않으면 대부분 평범한 가정',rnd('birth',!PL.birth,'나라별 실제 확률. 마술사 가문은 수만~수십만분의 1.')+CY_BIRTH.map(r=>optCard({k:'birth',id:r.id,n:r.n,d:r.d,on:PL.birth===r.id,chips:costChip(FATE_COST.birth[r.id])+apChip(r.ap)})).join(''));
-    h+=slot('출생지','고르지 않으면 세계 인구 비율대로',rnd('place',!PL.place,'인도와 중국이 3분의 1이 넘어요.')+PLACES.map(p=>optCard({k:'place',id:p.id,n:p.n,d:p.d,on:PL.place===p.id,chips:costChip(p.cost)})).join(''));
+    if(PL.era==='ancient'||PL.era==='sn')h+=`<p class="help">${PL.era==='sn'?'Fate/stay night 세대는 후유키 시에서 태어나요.':'신대·고대는 시대 단계에서 고른 지역에서 태어나요.'}</p>`;
+    else h+=slot('출생지','고르지 않으면 세계 인구 비율대로',rnd('place',!PL.place,'인도와 중국이 3분의 1이 넘어요.')+PLACES.map(p=>optCard({k:'place',id:p.id,n:p.n,d:p.d,on:PL.place===p.id,chips:costChip(p.cost)})).join(''));
   } else if(st.k==='talent'){
     h+=slot('마술회로','',rnd('talent',!PL.talent,'90%는 회로가 거의 없어요. 마술사 가문이면 평균 30개쯤.')+TALENTS.map(t=>optCard({k:'talent',id:t.id,n:t.n,d:t.d,on:PL.talent===t.id,chips:costChip(FATE_COST.talent[t.id])})).join(''));
     h+=slot('마술속성','',rnd('elmode',!PL.elMode,'대부분 지·수·화·풍 중 하나. 아주 드물게 허수나 애버리지 원.')+CY_ELMODE.map(m=>optCard({k:'elmode',id:m.id,n:m.n,d:m.d,on:PL.elMode===m.id,chips:costChip(root?0:FATE_COST.elMode[m.id])})).join(''));
@@ -79,10 +81,12 @@ function renderPrep(){
     h+=slot('능력','',CY_ABIL.map(a=>{const on=PL.abil.includes(a.id);let why=a.o.notRace&&a.o.notRace===PL.race?'이 종족으로는 고를 수 없어요.':'';if(a.id==='core'&&PL.fb.includes('small'))why='작은 그릇과 함께 고를 수 없어요.';
       return optCard({k:'abil',id:a.id,n:a.n,d:a.d,on,why,chips:costChip(abilCost(PL,a))+apChip(a.o.ap)+(a.o.free&&abilCost(PL,a)?chip('','무료 조건: '+a.o.free.map(x=>byId(CY_DEPTS,x).n).join('+')):'')});}).join(''));
   } else if(st.k==='item'){
-    h+=slot('마술예장','인생 도중에 손에 들어와요',CY_ITEMS.map(it=>optCard({k:'item',id:it.id,n:it.n,d:it.d,on:PL.items.includes(it.id),chips:costChip(itemCost(PL,it))+apChip(itemAp(PL,it)),why:root?'근원접속자는 예장을 고를 수 없어요.':''})).join(''));
+    if(PL.era==='ancient')h+='<p class="help">신대·고대에는 현대의 마술예장이 없어요.</p>';
+    else h+=slot('마술예장','인생 도중에 손에 들어와요',CY_ITEMS.map(it=>optCard({k:'item',id:it.id,n:it.n,d:it.d,on:PL.items.includes(it.id),chips:costChip(itemCost(PL,it))+apChip(itemAp(PL,it)),why:root?'근원접속자는 예장을 고를 수 없어요.':''})).join(''));
     h+=slot('피드백','하나에 FATE 2씩 돌려받아요',CY_FB.map(f=>{const ap=f.o.ap!==undefined?f.o.ap:-1;return optCard({k:'fb',id:f.id,n:f.n,d:f.d,on:PL.fb.includes(f.id),chips:chip('fp','FATE +2')+apChip(ap),why:planFbReq(PL,f)});}).join(''));
   } else if(st.k==='jr'){
-    h+=slot('행적','정해 둔 행적은 꼭 일어나요',CY_JR.map(j=>{
+    if(PL.era==='ancient')h+='<p class="help">신대·고대에는 현대의 행적을 정할 수 없어요. 대신 인생 도중의 갈림길로 전설을 쌓아요.</p>';
+    else h+=slot('행적',`정해 둔 행적은 꼭 일어나요 · ${planWorld(PL)?byId(WORLDS,planWorld(PL)).n+'에서 일어나는 것만':'세계선을 고르면 그 세계의 것만 남아요'}`,CY_JR.filter(j=>jrFits(PL,j.id)).map(j=>{
       const cnt=PL.jr.filter(x=>x===j.id).length,on=cnt>0;
       const when=j.year?`${j.year}년`:j.minYear?`${j.minYear}년 이후`:j.age?`${j.age[0]}~${j.age[1]}세`:j.last?'여정의 끝':j.after?'교수 추적 이후':'';
       let card=optCard({k:'jr',id:j.id,n:j.n,tag:j.src,d:j.intro.length>110?j.intro.slice(0,108)+'…':j.intro,on,why:planJrReq(PL,j),chips:costChip(jrCost(PL,j))+chip('','추천 '+RANK_FULL[j.rec])+chip('',when)+(j.war?chip('ap','서번트 소환'):'')});
@@ -122,7 +126,7 @@ function onPrepClick(ev){
   const o=ev.target.closest('.opt');if(!o||o.disabled)return;
   const k=o.dataset.k,id=o.dataset.id||null;
   if(k==='origin')PL.origin=id;
-  else if(k==='era'){PL.era=id;if(id!=='ancient')PL.region=null;else PL.world=null;}
+  else if(k==='era'){PL.era=id;if(!id&&ERA_WORLD[PL._lastEra])PL.world=null;PL._lastEra=id;}
   else if(k==='region')PL.region=id;
   else if(k==='world')PL.world=id;
   else if(k==='race')PL.race=id;
@@ -145,7 +149,7 @@ function onPrepClick(ev){
 function renderEntry(e){
   const li=document.createElement('li');
   li.className=e.cat+(e.big?' big':'');
-  li.innerHTML=`<span class="y">${yearLabel(e.y)}</span><span class="a">${e.a}세</span><span class="t">${e.ai?'<span class="ai-tag">AI</span>':''}${esc(e.text)}</span>`;
+  li.innerHTML=`<span class="y">${yearLabel(e.y)}</span><span class="a">${e.a}세</span><span class="t">${e.ai?'<span class="ai-tag">AI</span>':''}${esc(e.text)}${e.fx?`<span class="fxs">${e.fx.map(([n,v])=>`<i class="${v>0?'up':'dn'}">${n} ${v>0?'+':''}${Math.round(v)}</i>`).join('')}</span>`:''}</span>`;
   (renderEntry.target||logEl).appendChild(li);
 }
 function scrollLog(){if(getComputedStyle(logEl).maxHeight!=='none')logEl.scrollTop=logEl.scrollHeight;}
@@ -171,7 +175,11 @@ function render(){
   if(S.ancestor)aff='사도 27조';else if(S.apostle)aff='사도';else if(S.fugitive)aff='봉인지정 도망자';else if(S.church)aff=S.burial?'매장기관':'성당교회 대행자';else if(S.academy)aff=`시계탑${S.faction?' · '+S.faction+'파':''}`;else if(S.mage)aff='프리랜서 마술사';else if(S.aware)aff='신비를 아는 일반인';
   $('vAff').innerHTML=aff==='없음'?unk('없음'):`<span class="od">${esc(aff)}</span>`;
   $('vSkill').innerHTML=S.depts.length||S.abil.length?esc([...S.depts.map(id=>byId(CY_DEPTS,id).n),...S.details.map(id=>CY_DET[id].n),...S.abil.map(id=>byId(CY_ABIL,id).n)].join(', ')):unk(S.job?S.job+(S.retired?' (은퇴)':''):'-');
-  setGauge('gH','nH',S.health);setGauge('gM','nM',S.mental);setGauge('gW','nW',S.wealth);setGauge('gL','nL',S.luck);
+  setGauge('gH','nH',S.health);setGauge('gM','nM',S.mental);setGauge('gW','nW',S.wealth);
+  const hm=hpMax();$('gHP').style.width=clamp(S.hp,0,100)+'%';$('nHP').textContent=`${Math.round(S.hp)}`;$('nHP').title=`최대 ${hm}`;
+  const mm=mpMax();$('rowMP').hidden=!mm;if(mm){$('gMP').style.width=clamp(S.mp/mm*100,0,100)+'%';$('nMP').textContent=Math.round(S.mp);$('nMP').title=`최대 ${mm}`;}
+  $('nL').textContent=luckRank(S.luck);
+  $('vIll').hidden=!S.ill;if(S.ill)$('vIll').textContent=`질병: ${S.ill.n}${S.ill.sev>=3?' (중증)':S.ill.sev===1?' (가벼움)':''} · 해마다 체력이 깎여요`;
   $('vRank').textContent=S.noRank?'자택연구원':S.academy?RANK_FULL[S.curRank]+(S.curRank<rankTarget()?` → ${RANK_FULL[rankTarget()]}`:'')+(S.color?` · ${S.color}`:''):(S.mage?'시계탑 밖':'-');
   $('vAP').textContent=fmtP(S.ap)+(S.ap>=10?' · 위험':S.ap>=5?' · 높음':'');
   $('vFate').textContent='+'+fmtP(S.fate.reduce((s,x)=>s+x.n,0));
@@ -212,6 +220,7 @@ function showChoice(p){
     if(S.pending===p)S.pending=null;
     S.aiTag=!!p.fromAi;
     try{o.fn();}finally{S.aiTag=false;}
+    checkVitals();
     render();scrollLog();drain();
   });
 }
@@ -226,7 +235,7 @@ function showTalk(p){
   sh.querySelectorAll('.optbtn').forEach(b=>b.onclick=()=>{
     const ch=sc.choices[+b.dataset.i];
     if(S.pending===p)S.pending=null;
-    const n=talkChoose(p,ch);render();scrollLog();
+    const n=talkChoose(p,ch);checkVitals();render();scrollLog();
     sh.innerHTML=`${p.img?imgHTML(p.img,'scene portrait'):''}<div class="eyebrow">대화</div><h3>${esc(c.n)}</h3><p class="line">${esc(ch.reply)}</p>
       <p class="bondchg ${n>0?'up':n<0?'down':''}">신뢰 ${n>0?'+':''}${n} · 지금 ${bond(p.char)}</p><button class="btn primary" type="button" id="mOk">계속</button>`;
     $('mOk').focus();
@@ -302,6 +311,7 @@ function skipToChoice(){
   renderEntry.target=frag;
   let g=0;
   while(S.alive&&!S.pending&&g++<1500){step();majorQueue.length=0;}
+  checkVitals();
   renderEntry.target=null;logEl.appendChild(frag);skipping=false;
   render();scrollLog();drain();
 }
@@ -572,6 +582,8 @@ $('firstGo').onclick=()=>{PL=planBlank();startLife(PL);};
 $('bPrep').onclick=()=>{clearTimeout(timer);running=false;$('modal').hidden=true;showScreen('prep');renderPrep();};
 $('bPause').onclick=()=>{if(!running)return;paused=!paused;$('bPause').textContent=paused?'계속':'일시정지';if(!paused&&$('modal').hidden)schedule();};
 $('bSkip').onclick=skipToChoice;
+$('panelFold').onclick=()=>{const f=$('modal').classList.toggle('folded');$('panelFold').textContent=f?'펼치기':'접기';$('panelFold').setAttribute('aria-expanded',String(!f));$('game').classList.toggle('fold-pad',f);};
+new MutationObserver(()=>{const open=!$('modal').hidden;$('game').classList.toggle('has-panel',open);if(open&&window.matchMedia('(min-width:901px)').matches)$('modal').scrollIntoView({block:'nearest'});}).observe($('modal'),{attributes:true,attributeFilter:['hidden']});
 document.querySelectorAll('.speed button').forEach(b=>b.onclick=()=>{speed=+b.dataset.s;document.querySelectorAll('.speed button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));if(running&&!paused&&$('modal').hidden&&S&&!S.pending)schedule();});
 $('bSettings').onclick=()=>openSettings();
 $('setClose').onclick=()=>{$('setModal').hidden=true;if(S&&S.finished&&!S.judge)renderJudge(!!S.judgeWait);};

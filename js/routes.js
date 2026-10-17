@@ -128,22 +128,22 @@ const ANC_EVENTS=[
     opt('신비를 배운다','별과 신들의 언어',()=>{chosen();S.mage=true;if(S.circuits<10)S.circuits=ri(10,25);clsAdd({캐스터:3});const d=deptsForMe(1)[0];if(d)learnDept(d.id,'신대의 마술이다.');log('신대의 마술을 배웠다. 현대의 마술사가 들으면 기절할 만한 것들이었다.','moon',true);}),
     opt('거절한다','내 길은 내가 찾아요',()=>{log('스승의 손을 뿌리쳤다.');})]})},
   {id:'a_monster',repeat:true,w:()=>S.age>=15&&S.age<=55&&S.monsterN<3?2.5:0,make:()=>{const m=pick(S.reg.monster);return {eyebrow:'괴물',img:'hero_battle',title:m,body:`${m}이(가) 마을을 덮쳤어요. 사람들이 당신을 바라봐요.`,options:[
-    opt('정면으로 맞선다','이기면 이름이 남아요',()=>{chosen();S.monsterN++;if(chance(odds(2.2+S.monsterN*.6))){addFame(18,m+' 퇴치');clsAdd({세이버:1,랜서:1,버서커:1});log(`${m}을(를) 쓰러뜨렸다. 사람들이 그 이름을 노래로 불렀다.`,'joy',true);}else if(chance(.5)){die('괴물과의 싸움',`${m}에게 쓰러졌다.`);}else{S.health-=25;log('간신히 살아남았다. 흉터가 평생 남았다.','risk',true);}}),
-    opt('지혜로 꾀어낸다','함정과 속임수',()=>{chosen();S.monsterN++;if(chance(.35+S.luck/250)){addFame(12,m+'를 꾀어 물리침');clsAdd({어새신:2,캐스터:1});log(`꾀를 써서 ${m}을(를) 물리쳤다.`,'joy',true);}else{S.health-=15;log('꾀가 들통났다. 겨우 달아났다.','risk');}}),
+    opt('정면으로 맞선다','이기면 이름이 남아요',()=>{chosen();S.monsterN++;if(chance(odds(2.2+S.monsterN*.6))){addFame(18,m+' 퇴치');clsAdd({세이버:1,랜서:1,버서커:1});log(`${m}을(를) 쓰러뜨렸다. 사람들이 그 이름을 노래로 불렀다.`,'joy',true);}else if(chance(.5)){die('괴물과의 싸움',`${m}에게 쓰러졌다.`);}else{hurt(25);log('간신히 살아남았다. 흉터가 평생 남았다.','risk',true);}}),
+    opt('지혜로 꾀어낸다','함정과 속임수',()=>{chosen();S.monsterN++;if(chance(.35+S.luck/250)){addFame(12,m+'를 꾀어 물리침');clsAdd({어새신:2,캐스터:1});log(`꾀를 써서 ${m}을(를) 물리쳤다.`,'joy',true);}else{hurt(15);log('꾀가 들통났다. 겨우 달아났다.','risk');}}),
     opt('다른 영웅을 기다린다','내 몫이 아니에요',()=>{S.fame-=3;log('다른 누군가가 괴물을 물리쳤다. 그 이름은 당신의 것이 아니었다.');})]};}},
   {id:'a_war',repeat:true,w:()=>S.age>=16&&S.age<=48&&S.warN<2?1.8:0,make:()=>({eyebrow:'전쟁',img:'hero_battle',title:S.reg.war,body:`${S.reg.war}이(가) 시작됐어요. 나라가 전사를 부르고 있어요.`,options:[
-    opt('선봉에 선다','가장 위험하고 가장 빛나는 자리',()=>{chosen();S.warN++;if(chance(odds(2.8))){addFame(25,S.reg.war+'의 선봉');clsAdd({세이버:2,라이더:2});log('선봉에서 적진을 꿰뚫었다. 적들이 그 이름을 두려워하게 되었다.','joy',true);}else if(chance(.55))die(S.reg.war,'적진 한가운데서 쓰러졌다. 시신은 방패에 실려 돌아왔다.');else{S.health-=30;log('살아남았지만 다리를 절게 되었다.','risk',true);}}),
+    opt('선봉에 선다','가장 위험하고 가장 빛나는 자리',()=>{chosen();S.warN++;if(chance(odds(2.8))){addFame(25,S.reg.war+'의 선봉');clsAdd({세이버:2,라이더:2});log('선봉에서 적진을 꿰뚫었다. 적들이 그 이름을 두려워하게 되었다.','joy',true);}else if(chance(.55))die(S.reg.war,'적진 한가운데서 쓰러졌다. 시신은 방패에 실려 돌아왔다.');else{hurt(30);log('살아남았지만 다리를 절게 되었다.','risk',true);}}),
     opt('군사로 참여한다','머리로 싸워요',()=>{chosen();S.warN++;if(chance(odds(2))){addFame(12,S.reg.war+'의 책략');clsAdd({캐스터:2,라이더:1});log('책략으로 아군을 승리로 이끌었다.','joy',true);}else log('작전은 실패했지만 살아 돌아왔다.','risk');}),
     opt('참전하지 않는다','살아남는 것도 용기',()=>{S.fame-=5;S.leBonus+=2;log('전쟁에 나가지 않았다. 손가락질도 받았다.');})]})},
   {id:'a_oracle',w:()=>S.age>=10&&S.age<=25?2:0,make:()=>({eyebrow:'신탁',img:'era_ancient',title:'두 갈래의 운명',body:'신탁소의 무녀가 말해요. "짧고 찬란한 생인가, 길고 평온한 생인가. 둘 중 하나만 고를 수 있다."',options:[
     opt('짧고 찬란한 생','이름은 영원히 남아요',()=>{chosen();S.glory=true;S.fameMult=1.6;S.leBonus-=14;log('찬란한 운명을 골랐다. 무녀가 눈을 감았다.','moon',true);}),
     opt('길고 평온한 생','오래 사랑하며 살아요',()=>{S.fameMult=.6;S.leBonus+=14;log('평온한 운명을 골랐다.','moon');}),
-    opt('신탁을 비웃는다','운명은 내가 정해요',()=>{chosen();S.health-=10;addFame(6);clsAdd({어벤저:1,버서커:1});log('신탁을 비웃었다. 그날 밤 이유 없는 열이 났다.','risk');})]})},
+    opt('신탁을 비웃는다','운명은 내가 정해요',()=>{chosen();hurt(10);addFame(6);clsAdd({어벤저:1,버서커:1});log('신탁을 비웃었다. 그날 밤 이유 없는 열이 났다.','risk');})]})},
   {id:'a_treasure',w:()=>S.age>=16&&S.age<=50&&S.fame>=10&&!S.np?1.6:0,make:()=>{const t=NP_NAMES[S.region];return {eyebrow:'보물',img:'era_ancient',title:t,body:`전설 속의 「${t}」이(가) 잠든 곳을 알아냈어요. 시련을 넘은 자만이 손에 쥘 수 있대요.`,options:[
-    opt('시련에 도전한다','손에 넣으면 훗날의 보구가 돼요',()=>{chosen();if(chance(odds(2.8))){S.np=t;addFame(12,t+' 획득');log(`「${t}」을(를) 손에 넣었다. 이것은 훗날 보구가 될 것이다.`,'joy',true);}else{S.health-=20;log('시련에 실패했다.','risk');}}),
+    opt('시련에 도전한다','손에 넣으면 훗날의 보구가 돼요',()=>{chosen();if(chance(odds(2.8))){S.np=t;addFame(12,t+' 획득');log(`「${t}」을(를) 손에 넣었다. 이것은 훗날 보구가 될 것이다.`,'joy',true);}else{hurt(20);log('시련에 실패했다.','risk');}}),
     opt('신에게 돌려보낸다','욕심을 버려요',()=>{S.luck=Math.min(100,S.luck+12);log('보물을 신전에 바쳤다. 신들이 그것을 기억했다.','moon');})]};}},
   {id:'a_god',w:()=>S.age>=12?1:0,make:()=>({eyebrow:'신',img:'era_ancient',title:`${S.reg.god}의 시선`,body:`${S.reg.god}이(가) 당신을 내려다봐요. 시련이냐, 총애냐, 아니면 반역이냐.`,options:[
-    opt('시련을 받아들인다','신의 시험',()=>{chosen();if(chance(odds(3.2))){addFame(20,'신의 시련 극복');log('신의 시련을 넘었다. 하늘에서 천둥이 축복처럼 울렸다.','joy',true);}else{S.health-=25;log('시련에 꺾였다. 신은 냉담했다.','risk',true);if(chance(.25))die('신의 저주','신의 저주가 끝내 몸을 갉아먹었다.');}}),
+    opt('시련을 받아들인다','신의 시험',()=>{chosen();if(chance(odds(3.2))){addFame(20,'신의 시련 극복');log('신의 시련을 넘었다. 하늘에서 천둥이 축복처럼 울렸다.','joy',true);}else{hurt(25);log('시련에 꺾였다. 신은 냉담했다.','risk',true);if(chance(.25))die('신의 저주','신의 저주가 끝내 몸을 갉아먹었다.');}}),
     opt('신을 거역한다','신에게 등을 돌려요',()=>{chosen();addFame(15,'신에게 맞섬');addAp(1);clsAdd({어벤저:2,버서커:1});log('신을 거역했다. 사람들은 두려워하면서도 그 이름을 입에 올렸다.','risk',true);}),
     opt('몸을 낮춘다','조용히 지나가요',()=>{log('신의 시선은 다른 곳으로 옮겨 갔다.');})]})},
   {id:'a_king',w:()=>S.age>=25&&S.age<=55&&S.fame>=40&&!S.king?2:0,make:()=>({eyebrow:'왕좌',img:'era_ancient',title:'왕관의 무게',body:'사람들이 당신을 왕으로 추대하려 해요.',options:[
@@ -159,7 +159,7 @@ const ANC_EVENTS=[
   {id:'a_edo',w:()=>S.region==='japan'&&S.year>=1650&&S.year<=1652&&S.age>=15&&S.age<=60&&!S.used.a_edo?100:0,make:()=>{worldArc('edo');return S.pending;}},
   {id:'a_immortal',w:()=>S.age>=35&&(S.circuits>=10||S.fame>=35)&&!S.apostle?1.2:0,make:()=>({eyebrow:'불멸',img:'birth_inhuman',title:'시대를 건너는 길',body:'이 몸은 곧 늙어 죽어요. 하지만 시대를 건너는 방법이 둘 있어요. 피를 마시는 자들과 계약하거나, 마법에 닿거나.',options:[
     opt('흡혈종과 계약한다','사도가 되어 현대까지',()=>{chosen();if(chance(.55))ancientTransit('apostle');else die('사도화 실패','몸이 피를 견디지 못했다.');}),
-    opt('마법을 탐구한다','기적에 닿을 수 있다면',()=>{chosen();const p=clamp((power()-5)/12,.02,.3);if(S.mage&&chance(p))ancientTransit('magician');else{addAp(1);S.health-=20;log('기적의 문턱에서 튕겨 나왔다.','risk',true);}},!S.mage),
+    opt('마법을 탐구한다','기적에 닿을 수 있다면',()=>{chosen();const p=clamp((power()-5)/12,.02,.3);if(S.mage&&chance(p))ancientTransit('magician');else{addAp(1);hurt(20);log('기적의 문턱에서 튕겨 나왔다.','risk',true);}},!S.mage),
     opt('인간으로 죽는다','이름만 남기면 충분해요',()=>{addFame(5);log('불멸을 거절했다. 남은 날을 사람들과 보냈다.','moon');})]})}
 ];
 function ancientOpportunity(){
@@ -175,16 +175,15 @@ function ancientOpportunity(){
 function ancientStep(){
   S.age++;S.year++;if(S.year===0)S.year=1;
   if(['vamp','true','dragon'].includes(S.race)&&S.age>=60&&!S.transited){ancientTransit(S.race==='vamp'?'apostle':'inhuman');return;}
-  if(S.age>35)S.health-=R()*(S.age>55?2.5:1.2);
-  S.health=clamp(S.health,1,100);S.mental=clamp(S.mental,1,100);S.wealth=clamp(S.wealth,0,100);
-  if(S.age===16&&!S.married)log(pick(['성인식을 치렀다.','처음으로 칼을 쥐었다.','처음으로 사냥에 나섰다.']));
-  if(ancientOpportunity())return;
-  if(chance(.25))log(pick(['풍년이 들었다.','이웃 마을과 다툼이 있었다.','긴 가뭄이 들었다.','신전에 제물을 바쳤다.','여행자에게서 먼 나라 이야기를 들었다.','역병이 돌았다.','큰 축제가 열렸다.']));
-  const L=44+S.leBonus+(S.race==='half'?10:0);
-  const b=.085,A=Math.LN2*b/(Math.exp(b*(L+4))-1);
-  let h=A*Math.exp(b*S.age);if(S.age===1)h+=.15;else if(S.age<=5)h+=.02;
-  h*=1+Math.max(0,55-S.health)/30;
-  if(chance(Math.min(.9,h)))die(pick(['병','상처','노환','역병']),S.age>50?'긴 생을 마치고 눈을 감았다.':'병을 이기지 못했다.');
+  if(S.age>=16)S.wealth+=S.king?1:S.birth==='lord'?.6:.1;
+  if(mpMax())S.mp+=mpMax()*.35;
+  S.mental+=(55-S.mental)*.04;fixStats();
+  if(S.age===16&&!S.married)logx(pick(['성인식을 치렀다.','처음으로 칼을 쥐었다.','처음으로 사냥에 나섰다.']),{mental:3,health:2});
+  if(ancientOpportunity()){checkVitals();return;}
+  if(chance(.3)){const r=pick([['풍년이 들었다.',{wealth:5,mental:3}],['이웃 마을과 다툼이 있었다.',{hp:-6,mental:-3}],['긴 가뭄이 들었다.',{wealth:-6,health:-4}],['신전에 제물을 바쳤다.',{wealth:-2,luck:2}],['여행자에게서 먼 나라 이야기를 들었다.',{mental:4}],['역병이 돌았다.',{health:-8}],['큰 축제가 열렸다.',{mental:6}],['도적 떼에게 습격당했다.',{wealth:-8,hp:-10}]]);logx(r[0],r[1],r[1].hp||r[1].health?'risk':'life');}
+  const keepLe=S.country.le;S.country.le=44+(S.race==='half'?10:0);
+  yearBody();S.country.le=keepLe;
+  checkVitals();
 }
 function ancientTransit(kind){
   const reg=S.reg;
@@ -195,6 +194,8 @@ function ancientTransit(kind){
   const y=ri(1990,2010);
   log(`그리고 ${y-S.year}년의 시간이 흘렀다.`,'moon',true);
   S.era='modern';S.year=y;S.age=y-S.birthYear;
+  S.world=kind==='apostle'?wpick([['tsuki',50],['fake',15],['sn',20],['apoc',5],['fgo',5],['kara',5]],x=>x[1])[0]:wpick(WORLDS,w=>w.w).id;
+  log(`이 시대의 세계선: ${byId(WORLDS,S.world).n}.`,'moon');
   S.country=COUNTRIES.find(c=>c.n===REGION_COUNTRY[reg.id])||pick(COUNTRIES);S.city=pick(S.country.cities);
   S.long=true;S.endYear=y+ri(12,40);S.health=100;
   log(`현대의 ${S.country.n} ${S.city}. 아무도 당신이 ${reg.n}의 영웅이었다는 것을 모른다.`,'moon',true);
@@ -256,7 +257,7 @@ function snStage(rt,i){
     S.pending={eyebrow:`${R_.n} · ${i+1}/3`,img:'grail_war',title:st[0],body:st[2]+(rv?` 상대는 ${rv}.`:''),options:[
       opt('정면으로 맞선다','힘으로',()=>snResolve(rt,i,base)),
       opt(`${charInfo(hero).n}을(를) 믿고 맡긴다`,`신뢰 ${bond(hero)}`,()=>snResolve(rt,i,base+bond(hero)/40)),
-      opt('함정을 파고 기다린다','신중하게',()=>snResolve(rt,i,base+.3))
+      opt('함정을 파고 기다린다','신중하게',()=>snResolve(rt,i,base+.3)),...magicOpt(m=>snResolve(rt,i,base+m))
     ]};
   });
 }
@@ -269,7 +270,7 @@ function snResolve(rt,i,mod){
   S.snFail=(S.snFail||0)+1;
   if(chance(rt==='hf'?.5:.35)){S.deadEnd=`${R_.n} · ${st[0]}`;S.deadText=rt==='hf'?'검은 그림자가 발밑에서 솟아올랐다. 마지막으로 본 것은 사쿠라의 울 것 같은 얼굴이었다.':'그 밤을 넘기지 못했다.';die('제5차 성배전쟁',S.deadText);return;}
   if(S.snFail>=2){log('전쟁은 당신 없이 끝났다. 어떤 결말이었는지는 소문으로만 들었다.','risk',true);S.snActive=false;return;}
-  S.health-=20;log('크게 다쳤지만 살아남았다. 싸움은 계속된다.','risk',true);snStage(rt,i+1);
+  hurt(20);log('크게 다쳤지만 살아남았다. 싸움은 계속된다.','risk',true);snStage(rt,i+1);
 }
 function snEnd(rt){
   S.snActive=false;story('제5차 성배전쟁','ok');
@@ -311,7 +312,7 @@ function zeroStage(i){
     S.pending={eyebrow:`Fate/Zero · ${i+1}/3`,img:'grail_war',title:st[0],body:st[2]+(rv?` 상대는 ${rv}.`:''),options:[
       opt('정면으로 맞선다','',()=>zeroResolve(i,base)),
       opt(`${charInfo(partner).n}을(를) 믿는다`,`신뢰 ${bond(partner)}`,()=>zeroResolve(i,base+bond(partner)/40)),
-      opt('그림자 속에서 움직인다','마술사 살해자의 방식',()=>zeroResolve(i,base+.3))
+      opt('그림자 속에서 움직인다','마술사 살해자의 방식',()=>zeroResolve(i,base+.3)),...magicOpt(m=>zeroResolve(i,base+m))
     ]};
   });
 }
@@ -321,13 +322,13 @@ function zeroResolve(i,mod){
   if(chance(odds(st[1],mod))){story(`Zero · ${st[0]}`,'ok');log(`「${st[0]}」을(를) 넘었다.`,'grail',true);fate(2,`Zero ${i+1}단계`);zeroStage(i+1);return;}
   story(`Zero · ${st[0]}`,'fail');
   if(chance(.4)){S.deadEnd=`Zero · ${st[0]}`;S.deadText='마술사들의 전쟁은 자비가 없었다.';die('제4차 성배전쟁',S.deadText);return;}
-  S.health-=20;log('크게 다쳤지만 살아남았다.','risk',true);zeroStage(i+1);
+  hurt(20);log('크게 다쳤지만 살아남았다.','risk',true);zeroStage(i+1);
 }
 function zeroEnd(){
   S.zeroActive=false;story('제4차 성배전쟁','ok');
   if(S.zeroSide==='einz'&&bond('kiritsugu')>=22&&bond('irisviel')>=30){
     S.pending={eyebrow:'시민회관',img:'grail_fire',title:'성배의 정체',body:'당신은 알아챘어요. 성배는 「이 세상의 모든 악」으로 더럽혀져 있어요. 키리츠구가 그것을 파괴하면, 쏟아진 진흙이 도시를 불태울 거예요.',options:[
-      opt('키리츠구에게 진실을 알리고 함께 막는다','아무도 본 적 없는 결말 (매우 어려움)',()=>{chosen();if(chance(odds(6,bond('kiritsugu')/50))){unlock('zero_fire');S.noFire=true;log('진흙이 쏟아지기 전에 대성배의 구멍을 닫았다. 그날 밤 후유키에 불은 내리지 않았다.','grail',true);major({kind:'gold',img:'end_peace',eyebrow:'Fate/Zero',title:'대화재 저지',body:'아무도 본 적 없는 결말에 닿았어요.'});}else{unlock('zero_grail');log('막지 못했다. 성배가 부서지고, 신도에 불이 내렸다.','grail',true);S.health-=20;}}),
+      opt('키리츠구에게 진실을 알리고 함께 막는다','아무도 본 적 없는 결말 (매우 어려움)',()=>{chosen();if(chance(odds(6,bond('kiritsugu')/50))){unlock('zero_fire');S.noFire=true;log('진흙이 쏟아지기 전에 대성배의 구멍을 닫았다. 그날 밤 후유키에 불은 내리지 않았다.','grail',true);major({kind:'gold',img:'end_peace',eyebrow:'Fate/Zero',title:'대화재 저지',body:'아무도 본 적 없는 결말에 닿았어요.'});}else{unlock('zero_grail');log('막지 못했다. 성배가 부서지고, 신도에 불이 내렸다.','grail',true);hurt(20);}}),
       opt('키리츠구의 선택을 지켜본다','',()=>{unlock('zero_grail');log('키리츠구는 세이버에게 성배를 파괴하라고 명했다. 그날 밤 신도에 불이 내렸다.','grail',true);})
     ]};return;
   }
@@ -359,13 +360,13 @@ function fgoBomb(){
   const r=S.fgoRole,isM=r==='a'||r==='master';
   scene('chaldea');
   const opts=isM?[
-    opt('브리핑에 제시간에 간다','성실하게',()=>{if(r==='a'){S.fgoFrozen=true;S.fgoActive=false;log('관제실이 폭발했다. 마지막으로 본 것은 붉은 경보등이었다. 몸이 코피 속에서 얼어붙었다.','risk',true);story('레프의 폭탄','fail');}else{S.fgoActive=false;S.health-=30;log('폭발에 휘말려 중상을 입었다. 냉동 보존된 채 이야기는 당신 없이 흘러갔다.','risk',true);story('레프의 폭탄','fail');}}),
+    opt('브리핑에 제시간에 간다','성실하게',()=>{if(r==='a'){S.fgoFrozen=true;S.fgoActive=false;log('관제실이 폭발했다. 마지막으로 본 것은 붉은 경보등이었다. 몸이 코피 속에서 얼어붙었다.','risk',true);story('레프의 폭탄','fail');}else{S.fgoActive=false;hurt(30);log('폭발에 휘말려 중상을 입었다. 냉동 보존된 채 이야기는 당신 없이 흘러갔다.','risk',true);story('레프의 폭탄','fail');}}),
     opt('늦잠을 잔다','어젯밤 너무 늦게 잤어요',()=>{chosen();S.fgoMaster=true;unlock('fgo_lastmaster');log('늦잠을 잤다. 그 덕분에 살아남았다. 남은 마스터는 단 둘이었다.','moon',true);story('레프의 폭탄','ok');}),
     opt('관제실로 달려간다','누군가 아직 거기 있어요',()=>{chosen();meet('mash');if(chance(.15)){S.deadEnd='레프의 폭탄';S.deadText='불길 속에서 빠져나오지 못했다.';die('레프의 폭탄',S.deadText);return;}S.fgoMaster=true;addBond('mash',15);log('잔해 아래 깔린 마슈의 손을 잡았다. "선배……" 그 순간 레이시프트가 시작됐다.','moon',true);story('레프의 폭탄','ok');})
   ]:[
     opt('관제를 지킨다','시스템을 살려요',()=>{chosen();meet('romani');addBond('romani',10);log('불길 속에서도 관제 콘솔을 지켰다. 로마니가 "고마워"라고 짧게 말했다.','moon',true);story('레프의 폭탄','ok');}),
     opt('소장 곁으로 간다','소장님이 위험해요',()=>{chosen();meet('olga');addBond('olga',12);log('소장을 찾아 달렸지만, 그녀는 이미 레이시프트에 휘말린 뒤였다.','moon',true);story('레프의 폭탄','ok');}),
-    opt('의무실로 부상자를 옮긴다','한 명이라도 더',()=>{chosen();meet('romani');addBond('romani',8);S.health-=10;log('부상자들을 의무실로 옮겼다. 손이 피투성이가 되었다.','moon',true);story('레프의 폭탄','ok');})
+    opt('의무실로 부상자를 옮긴다','한 명이라도 더',()=>{chosen();meet('romani');addBond('romani',8);hurt(10);log('부상자들을 의무실로 옮겼다. 손이 피투성이가 되었다.','moon',true);story('레프의 폭탄','ok');})
   ];
   opts.forEach(o=>{const f=o.fn;o.fn=()=>{f();if(S.alive&&S.fgoActive&&!S.pending){S.fgoYearDone=S.year;fgoYear();}};});
   S.pending={eyebrow:'2016년 · 칼데아',img:'chaldea',title:'레프의 폭탄',body:'첫 레이시프트 실험 직전, 관제실이 폭발했어요. 인류의 미래가 불타기 시작했어요.',options:opts};
@@ -391,7 +392,7 @@ function fgoChain(list,i){
     S.pending={eyebrow:`Fate/Grand Order · ${c.part===1.5?'1.5':c.part}부 · 추천 전력 ${c.rec}`,img:c.part===2?'lostbelt':'singularity',title:c.n,body:c.intro+` (지금 전력 ${fmtP(fgoPower())})`,options:[
       opt('정면으로 돌파한다','서번트들의 힘을 믿어요',()=>fgoResolve(list,i,0)),
       opt(`${charInfo(c.p).n}과(와) 손잡는다`,`신뢰 ${bond(c.p)}`,()=>fgoResolve(list,i,bond(c.p)/40)),
-      opt('신중하게 정보를 모은다','느리지만 확실해요',()=>fgoResolve(list,i,.3))
+      opt('신중하게 정보를 모은다','느리지만 확실해요',()=>fgoResolve(list,i,.3)),...magicOpt(m=>fgoResolve(list,i,m))
     ]};
   });
 }
@@ -411,7 +412,7 @@ function fgoResolve(list,i,mod){
     if(chance(.5)){S.deadEnd=c.n;S.deadText='레이시프트 너머에서 돌아오지 못했다. 칼데아의 관제실에 긴 경보음이 울렸다.';die(c.n,S.deadText);return;}
     S.fgoRetry=(S.fgoRetry||0)+1;
     if(S.fgoRetry>=3){fgoFall(c);return;}
-    S.health-=20;log('간신히 귀환했다. 다시 도전해야 한다.','risk',true);fgoChain(list,i);return;
+    hurt(20);log('간신히 귀환했다. 다시 도전해야 한다.','risk',true);fgoChain(list,i);return;
   }
   fgoFall(c);
 }
@@ -470,7 +471,7 @@ function worldStage(k,i){
     S.pending={eyebrow:`${A.n} · ${i+1}/3`,img:'grail_war',title:st[0],body:st[2],options:[
       opt('정면으로 맞선다','',()=>worldResolve(k,i,base)),
       opt(`${charInfo(A.p).n}을(를) 믿는다`,`신뢰 ${bond(A.p)}`,()=>worldResolve(k,i,base+bond(A.p)/40)),
-      opt('신중하게 움직인다','',()=>worldResolve(k,i,base+.3))]};
+      opt('신중하게 움직인다','',()=>worldResolve(k,i,base+.3)),...magicOpt(m=>worldResolve(k,i,base+m))]};
   });
 }
 function worldResolve(k,i,mod){
@@ -479,6 +480,6 @@ function worldResolve(k,i,mod){
   if(chance(odds(st[1],mod))){story(`${A.n} · ${st[0]}`,'ok');fate(2,`${A.n} ${i+1}단계`);worldStage(k,i+1);return;}
   story(`${A.n} · ${st[0]}`,'fail');
   if(chance(.45)){S.deadEnd=`${A.n} · ${st[0]}`;S.deadText=k==='extra'?'패배한 마스터의 데이터는 지워진다. 현실의 몸도 함께 멈췄다.':'그 밤을 넘기지 못했다.';die(A.n,S.deadText);return;}
-  S.health-=20;log('크게 다쳤지만 살아남았다. 전쟁은 당신을 남겨 두고 끝났다.','risk',true);S.servant=null;
+  hurt(20);log('크게 다쳤지만 살아남았다. 전쟁은 당신을 남겨 두고 끝났다.','risk',true);S.servant=null;
 }
 EVENTS.unshift({id:'world_arc',w:()=>{const A=WORLD_ARCS[S.world];return A&&S.year===A.year&&S.age>=14&&S.age<=75&&(S.mage||S.circuits>=3||S.world==='extra')&&!S.apostle?100:0;},make:()=>{worldArc(S.world);return S.pending;}});

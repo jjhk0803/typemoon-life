@@ -82,7 +82,7 @@ function planCalc(P){
   if(birth){cost+=FATE_COST.birth[birth.id];gains.push(birth.ap||0);}
   if(P.era)cost+=byId(ERAS,P.era).cost;
   if(P.region)cost+=2;
-  if(P.world)cost+=byId(WORLDS,P.world).cost;
+  if(P.world&&!ERA_WORLD[P.era])cost+=byId(WORLDS,P.world).cost;
   if(P.place)cost+=byId(PLACES,P.place).cost;
   if(P.talent)cost+=FATE_COST.talent[P.talent];
   if(P.elMode&&!root)cost+=FATE_COST.elMode[P.elMode];
@@ -107,25 +107,27 @@ function planCalc(P){
   P.abil.forEach(id=>{const a=byId(CY_ABIL,id);if(a.o.notRace&&a.o.notRace===P.race)errs.push(`「${a.n}」은(는) 이 종족으로 고를 수 없어요.`);});
   if(root&&P.items.length)errs.push('근원접속자는 마술예장을 고를 수 없어요.');
   if(P.rankUp&&!P.depts.length)errs.push('계위를 올리려면 마술계통이 하나 이상 있어야 해요.');
-  if(P.era==='ancient'){
-    if(P.jr.length)errs.push('신대·고대에는 현대의 행적을 정할 수 없어요.');
-    if(P.place)errs.push('신대·고대에는 출생지 대신 지역을 골라요.');
-    if(P.items.length)errs.push('신대·고대에는 현대의 마술예장이 없어요.');
-    if(P.world)errs.push('신대·고대에는 아직 세계선이 갈라지지 않았어요.');
-  } else if(P.region)errs.push('지역은 신대·고대에서만 골라요.');
-  if(P.world&&(P.era==='sn'||P.era==='zero')&&!['sn','fake'].includes(P.world))errs.push('이 세대는 Fate/stay night 세계선(또는 strange Fake)이어야 해요.');
-  if(P.world&&P.era==='fgo'&&P.world!=='fgo')errs.push('칼데아 세대는 Grand Order 세계선이어야 해요.');
-  P.jr.forEach(id=>{const w=JR_WORLD[id];const W=P.world||(P.era==='fgo'?'fgo':(P.era==='sn'||P.era==='zero')?'sn':null);if(w&&W&&!w.includes(W))errs.push(`행적 「${CY_JRMAP[id].n}」은(는) ${byId(WORLDS,W).n}에서 일어나지 않아요.`);});
-  if(P.era&&ERA_YEARS[P.era]){
-    const [lo,hi]=ERA_YEARS[P.era];
-    P.jr.forEach(id=>{const j=CY_JRMAP[id];if(j.year&&(j.year<hi+14||j.year>lo+70))errs.push(`행적 「${j.n}」(${j.year}년)은 이 시대에 태어나면 겪을 수 없어요.`);});
-    if(P.era==='sn'&&P.jr.includes('hgw5'))errs.push('Fate/stay night 세대에서는 제5차 성배전쟁이 이야기로 진행돼요. 행적에서 빼 주세요.');
-    if(P.era==='zero'&&P.jr.includes('hgw4'))errs.push('Fate/Zero 세대에서는 제4차 성배전쟁이 이야기로 진행돼요. 행적에서 빼 주세요.');
-  }
   const total=Math.max(0,cost-refund);
   return {cost:total,raw:cost,refund,ap,rank,errs,noRank:P.fb.includes('home')};
 }
+/* 시대가 정해지면 세계선과 고를 수 있는 것이 함께 줄어든다 */
+const ERA_WORLD={zero:'sn',sn:'sn',fgo:'fgo'};
+function planWorld(P){return ERA_WORLD[P.era]||P.world||null;}
+function jrFits(P,id){
+  const j=CY_JRMAP[id];
+  if(P.era==='ancient')return false;
+  const W=planWorld(P),w=JR_WORLD[id];
+  if(w&&W&&!w.includes(W))return false;
+  if(P.era&&ERA_YEARS[P.era]&&j.year){const [lo,hi]=ERA_YEARS[P.era];if(j.year<hi+14||j.year>lo+70)return false;}
+  if(P.era==='sn'&&id==='hgw5')return false;
+  if(P.era==='zero'&&id==='hgw4')return false;
+  return true;
+}
 function prunePlan(P){
+  if(ERA_WORLD[P.era])P.world=ERA_WORLD[P.era];
+  if(P.era==='ancient'){P.world=null;P.place=null;P.items=[];P.jr=[];}else P.region=null;
+  if(P.era==='sn')P.place=null;
+  P.jr=P.jr.filter(id=>jrFits(P,id));
   P.details=P.details.filter(d=>P.depts.includes(CY_DET[d].dept));
   if(P.origin==='root')P.items=[];
   for(let k=0;k<3;k++){
@@ -140,8 +142,8 @@ function prunePlan(P){
 /* ---------------- 상태와 기록 ---------------- */
 let S=null;
 let logSink=null;
-function log(text,cat,big){
-  const e={y:S.year,a:S.age,text,cat:cat||'life',big:!!big,ai:!!S.aiTag};
+function log(text,cat,big,fxp){
+  const e={y:S.year,a:S.age,text,cat:cat||'life',big:!!big,ai:!!S.aiTag,fx:fxp&&fxp.length?fxp:null};
   S.events.push(e);
   if(logSink)logSink(e);
 }
@@ -220,7 +222,7 @@ function power(){
   S.items.forEach(id=>{p+=byId(CY_ITEMS,id).o.pw||0;});
   p+={human:0,vamp:1,homun:.3,half:.6,dragon:2,true:2.5}[S.race]||0;
   if(S.apostle&&S.race==='human')p+=1;
-  p+=Math.min(S.depts.length,5)*.15+S.jexp+(S.luck-50)/120+Math.min(S.circuits,100)/60;
+  p+=Math.min(S.depts.length,5)*.15+S.jexp+(S.luck-50)/120+(S.mental-50)/150+Math.min(S.circuits,100)/60+(S.ill?-S.ill.sev*.3:0);
   if(S.world==='extra'&&S.year>=1970&&S.mage)p-=1.2;
   if(S.fb.includes('careless'))p-=.3;
   if(S.fb.includes('legs'))p-=.3;
@@ -280,7 +282,7 @@ function newLife(P,seed){
   const root=P.origin==='root';
   const g=chance(.5)?'m':'f';
   S={seed,plan:JSON.parse(JSON.stringify(P)),gender:g,age:0,alive:true,finished:false,events:[],rar:[],fate:[],
-    health:clamp(Math.round(72+gauss()*11),25,100),mental:clamp(Math.round(62+gauss()*14),15,100),luck:ri(1,100),
+    hp:100,mp:0,ill:null,health:clamp(Math.round(72+gauss()*11),25,100),mental:clamp(Math.round(62+gauss()*14),15,100),luck:ri(1,100),
     wealth:0,edu:'none',job:null,married:false,kids:0,parents:2,retired:false,mil:false,leBonus:0,
     origin:P.origin,race:P.race||'human',birth:'plain',famType:'평범한 가정',crestGen:0,heir:false,
     circuits:0,qual:'E',els:[],originWord:root?'근원':pick(ORIGINS),originKnown:root,eye:null,eyesKnown:false,
@@ -357,6 +359,7 @@ function newLife(P,seed){
   if(S.church&&!S.depts.includes('eighth'))S.depts.push('eighth');
   S.aware=S.mage||S.church||S.race!=='human'&&S.race!=='half';
   if(S.mage)S.teacher=magusFam?'가문':root?'근원':'독학';
+  S.mp=mpMax();
   // 예장은 인생 도중에 손에 들어온다
   S.itemAt=P.items.map(id=>({id,age:ri(14,40)}));
   // 시기
@@ -387,15 +390,117 @@ function newLife(P,seed){
   if(S.era==='sn'&&S.route==='sn')log('후유키 시. 언젠가 이 도시에서 일곱 명의 마스터가 싸우게 된다.','moon');
 }
 
+/* ---------------- 수치: 체력·마력·건강·정신·재산·행운 ----------------
+   체력 0 → 사망, 정신 0 → 사망, 건강이 낮으면 병에 잘 걸린다, 마력은 마술 쪽 사람에게만 있다 */
+const STAT_N={hp:'체력',mp:'마력',health:'건강',mental:'정신',wealth:'재산',luck:'행운'};
+function hpMax(){return S.long||S.apostle?100:clamp(Math.round(100-Math.max(0,S.age-55)*1.4),0,100);}
+function mpMax(){return (S.mage||S.church||S.sensed||S.apostle||['dragon','true'].includes(S.race))&&S.circuits>=3?clamp(Math.round(S.circuits*QMULT[S.qual]*1.3),5,200):0;}
+function luckRank(v){
+  v=Math.round(v);if(v>=92)return 'EX';
+  const B=[[0,'E'],[15,'D'],[30,'C'],[45,'B'],[60,'A'],[92,'']];
+  for(let i=0;i<B.length-1;i++){const [lo,l]=B[i],hi=B[i+1][0];if(v<hi){const p=clamp(Math.floor((v-lo)/((hi-lo)/4)),0,3);return l+'+'.repeat(p);}}
+  return 'EX';
+}
+function lucky(p){return clamp(p+(S.luck-50)/250,.02,.98);}
+function fixStats(){S.hp=clamp(S.hp,0,Math.max(hpMax(),S.hp>0?1:0));S.mp=clamp(S.mp,0,mpMax());S.health=clamp(S.health,0,100);S.mental=clamp(S.mental,0,100);S.wealth=clamp(S.wealth,0,100);S.luck=clamp(S.luck,1,100);}
+function fx(o){
+  const parts=[];
+  Object.keys(o||{}).forEach(k=>{const v=o[k];if(!v||!(k in STAT_N))return;if(k==='mp'&&!mpMax())return;S[k]+=v;parts.push([STAT_N[k],v]);});
+  fixStats();return parts;
+}
+function logx(text,o,cat,big){log(text,cat,big,fx(o));}
+function hurt(n,why){S.hp-=n;S.health-=n*.3;if(why)S.hurtWhy=why;fixStats();}
+function checkVitals(){
+  if(!S||!S.alive||S.long||S.apostle)return;
+  if(S.year<=S.lastJY){S.hp=Math.max(S.hp,1);S.mental=Math.max(S.mental,1);return;}
+  if(S.hp<=0){die(S.ill?S.ill.n:(S.hurtWhy||'깊은 상처'),S.ill?`${S.ill.n}을(를) 끝내 이겨 내지 못했다.`:'상처가 깊었다. 다시 일어나지 못했다.');return;}
+  if(S.mental<=0)die('절망','마음이 완전히 꺼져 버렸다. 스스로 생을 내려놓았다.');
+}
+/* 질병 */
+const ILLS=[
+  {id:'cold',n:'독감',sev:1,dmg:[3,8],cure:.8,w:s=>6},
+  {id:'pneu',n:'폐렴',sev:2,dmg:[10,20],cure:.6,w:s=>s.age<6||s.age>60?6:2},
+  {id:'inf',n:'감염병',sev:2,dmg:[10,22],cure:.55,w:s=>s.country.le<70?5:1.5},
+  {id:'tb',n:'결핵',sev:2,dmg:[8,16],cure:.5,w:s=>s.country.le<72?3:.4},
+  {id:'diab',n:'당뇨',sev:2,dmg:[4,9],cure:.25,w:s=>s.age>40?3:0},
+  {id:'heart',n:'심장병',sev:3,dmg:[12,25],cure:.35,w:s=>s.age>45?3+(s.age-45)/10:0},
+  {id:'cancer',n:'암',sev:3,dmg:[15,30],cure:.3,w:s=>s.age>40?2.5+(s.age-40)/12:.2},
+  {id:'stroke',n:'뇌졸중',sev:3,dmg:[20,40],cure:.4,w:s=>s.age>55?2+(s.age-55)/10:0},
+  {id:'mpoison',n:'마력 중독',sev:2,dmg:[8,18],cure:.5,magic:1,w:s=>s.mage?2:0},
+  {id:'curse',n:'저주',sev:2,dmg:[10,20],cure:.3,magic:1,w:s=>s.aware&&s.era!=='ancient'?1:0},
+  {id:'plague',n:'역병',sev:3,dmg:[15,30],cure:.3,w:s=>s.era==='ancient'?4:0}
+];
+function catchIll(){
+  const ill=wpick(ILLS,x=>x.w(S));
+  S.ill={id:ill.id,n:ill.n,sev:ill.sev,dmg:ill.dmg,cure:ill.cure,magic:ill.magic,lastTreat:-99};
+  logx(`${ill.n}에 걸렸다.`,{health:-ill.sev*3,mental:-ill.sev*2},'risk',ill.sev>=2);
+  if(S.age>=10&&!S.pending)S.pending=treatEvent(true);
+}
+function treatEvent(first){
+  const I=S.ill;I.lastTreat=S.year;
+  const cost=I.sev*8+4,anc=S.era==='ancient';
+  const o=[opt(anc?'치유사를 찾아간다':'병원에서 치료받는다',`재산 ${cost} · 가장 확실해요`,()=>{S.wealth-=cost;cureTry(I.cure+.25+(S.wealth-40)/200,anc?'치유사의 손길':'병원 치료');},S.wealth<cost)];
+  if(mpMax()>=20)o.push(opt('마술로 치료한다',`마력 20${I.magic?' · 마술로 생긴 병에 특히 잘 들어요':''}`,()=>{S.mp-=20;cureTry((I.magic?.8:.55)+(S.abil.includes('revive')?.2:0),'마술 치료');},S.mp<20));
+  if(S.church||(S.aware&&S.country.cath))o.push(opt('교회의 기적을 빈다','',()=>cureTry(.45,'기도')));
+  o.push(opt('쉬면서 버틴다','돈은 들지 않아요',()=>{fx({health:4});cureTry(I.cure*.45,'휴식');}));
+  o.push(opt('민간요법에 기댄다',`행운 ${luckRank(S.luck)}에 맡겨요`,()=>cureTry(lucky(.22),'민간요법')));
+  return {eyebrow:first?'진단':'투병',img:'hospital',title:`${I.n}${I.sev>=3?' (중증)':I.sev===1?' (가벼움)':''}`,
+    body:`${I.n}을(를) 앓고 있어요. 낫지 않으면 해마다 체력이 깎여요. (지금 체력 ${Math.round(S.hp)}, 건강 ${Math.round(S.health)}, 재산 ${Math.round(S.wealth)})`,options:o};
+}
+function cureTry(p,how){
+  if(!S.ill)return;
+  if(chance(clamp(p,.05,.95))){logx(`${how}(으)로 ${S.ill.n}이(가) 나았다.`,{health:6,mental:5},'joy');S.ill=null;}
+  else logx(`${how}는 효과가 없었다. ${S.ill.n}은(는) 계속됐다.`,{mental:-4},'risk');
+}
+function accident(){
+  const d=Math.round(ri(20,85)*(1.25-S.luck/100));
+  const t=S.era==='ancient'?pick(['말에서 떨어졌다.','사냥 중에 짐승에게 물렸다.','절벽에서 미끄러졌다.']):pick(['교통사고를 당했다.','공사장 옆을 지나다 떨어진 자재에 맞았다.','계단에서 크게 넘어졌다.','물에 빠졌다가 겨우 구조됐다.']);
+  S.hurtWhy='사고';log(t,'risk',true,fx({hp:-d,health:-Math.round(d*.25)}));
+}
+/* 한 해의 몸과 돈 */
+function yearBody(){
+  if(S.long||S.apostle){S.hp=100;S.health=Math.max(S.health,80);return;}
+  const mx=hpMax();
+  if(mx<=0){die('노환','가족이 지켜보는 가운데 조용히 눈을 감았다. 노환이었다.');return;}
+  if(S.age>45)S.health-=R()*(S.age>75?2.2:S.age>60?1.4:.8);
+  if(S.age>18&&S.age<45)S.health+=R()*.8;
+  if(S.ill){
+    const d=ri(S.ill.dmg[0],S.ill.dmg[1]);S.hp-=d;S.health-=S.ill.sev*1.5;S.mental-=S.ill.sev;
+    if(chance(lucky(S.ill.cure*.22*(S.health/60)))){logx(`${S.ill.n}이(가) 어느새 나았다.`,{mental:4},'joy');S.ill=null;}
+    else if(S.age<10){if(chance(.45+S.wealth/220)){log(`부모님의 간호로 ${S.ill.n}이(가) 나았다.`,'life');S.ill=null;}}
+    else if(S.year-S.ill.lastTreat>=2&&!S.pending)S.pending=treatEvent(false);
+  } else S.hp+=12;
+  const L=(S.country.le||70)+S.leBonus+(S.wealth-50)*.08;
+  const b=.085,A=Math.LN2*b/(Math.exp(b*(L+4))-1);
+  let h=A*Math.exp(b*S.age);
+  const imr=clamp((82-(S.country.le||70))*.004,.002,.12);
+  if(S.age===1)h+=imr;else if(S.age<=5)h+=imr*.15;
+  const base=clamp((62-S.health)/200,0,.25);
+  const p=Math.min(.85,(h*1.6+base)*(1.25-S.luck/200));
+  if(!S.ill&&S.year>S.lastJY&&chance(p)){if(S.age>=5&&S.age<50&&chance(.22))accident();else catchIll();}
+  if(S.race==='homun'&&S.age>=S.lifespan){die('수명','만들어진 몸이 수명을 다했다. 조용히 눈을 감았다.');return;}
+  fixStats();
+}
+function yearMoney(){
+  const a=S.age;let inc=0;
+  if(a>=18){
+    if(S.job&&!S.retired)inc+=S.edu==='univ'?1.2:S.edu==='secondary'?.8:.5;
+    else if(S.mage||S.church)inc+=['noble','lord','user'].includes(S.birth)?.6:.2;
+    else if(!S.retired)inc-=.6;
+    if(S.retired)inc-=.3;
+    inc-=S.kids*.25;
+  }
+  S.wealth+=inc;
+  if(mpMax())S.mp+=mpMax()*.35;
+  S.mental+=(55-S.mental)*.04+(S.married?.6:0)-(S.ill?1:0);
+  fixStats();
+}
+
 /* ---------------- 한 해 ---------------- */
 function step(){
   if(S.era==='ancient'){ancientStep();return;}
   S.age++;S.year++;
-  if(!S.long&&!S.apostle){
-    if(S.age>45)S.health-=R()*(S.age>75?2.6:S.age>60?1.6:.9);
-    if(S.age>18&&S.age<45)S.health+=R()*.6;
-  } else S.health=Math.max(S.health,80);
-  S.health=clamp(S.health,1,100);S.mental=clamp(S.mental,1,100);S.wealth=clamp(S.wealth,0,100);
+  yearMoney();
   worldNews();
   lifeStage();
   if(!S.alive)return;
@@ -405,51 +510,33 @@ function step(){
   if(S.apostle){apostleYear();if(!S.alive||S.pending)return;}
   promote();
   if(!opportunity())flavor();
-  if(S.pending||!S.alive)return;
-  if(chance(.42))mundane();
-  lifeDeath();
+  if(!S.alive)return;
+  if(!S.pending&&chance(.45))mundane();
+  if(S.year>S.lastJY&&S.long&&S.year>=S.endYear){S.alive=false;S.deathAge=S.age;S.cause='여정의 끝';log('긴 세월이 흘렀다. 이 세상에서 해야 할 일은 모두 끝났다.','death',true);return;}
+  yearBody();
+  checkVitals();
 }
 function die(cause,text,cat){
   if(!S.alive)return;
-  S.alive=false;S.cause=cause;S.deathAge=S.age;
+  S.alive=false;S.cause=cause;S.deathAge=S.age;S.hp=0;
   log(text||`${cause}(으)로 세상을 떠났다.`,cat||'death',true);
 }
-function lifeDeath(){
-  if(!S.alive||S.year<=S.lastJY)return;
-  if(S.long){
-    if(S.year>=S.endYear){S.alive=false;S.deathAge=S.age;S.cause='여정의 끝';log('긴 세월이 흘렀다. 이 세상에서 해야 할 일은 모두 끝났다.','death',true);}
-    return;
-  }
-  if(S.race==='homun'&&S.age>=S.lifespan){die('수명','만들어진 몸이 수명을 다했다. 조용히 눈을 감았다.');return;}
-  const L=S.country.le+S.leBonus+(S.wealth-50)*.08;
-  const b=.085,A=Math.LN2*b/(Math.exp(b*(L+4))-1);
-  let h=A*Math.exp(b*S.age);
-  const imr=clamp((82-S.country.le)*.004,.002,.12);
-  if(S.age===1)h+=imr;else if(S.age<=5)h+=imr*.15;
-  h*=1+Math.max(0,55-S.health)/30;
-  if(chance(Math.min(.9,h))){
-    let cause;
-    if(S.age<=5)cause=pick(S.country.le<70?['감염병','영양실조','폐렴']:['선천적인 병','갑작스러운 열병','사고']);
-    else if(S.age<40)cause=pick(['교통사고','감염병','사고','갑작스러운 병']);
-    else if(S.age<70)cause=pick(['심장질환','암','뇌졸중','교통사고','간질환']);
-    else cause=pick(['노환','폐렴','심부전','암','노환']);
-    die(cause,{노환:'가족이 지켜보는 가운데 조용히 눈을 감았다. 노환이었다.',폐렴:'겨울을 넘기지 못했다. 폐렴이었다.'}[cause]);
-  }
-}
+function lifeDeath(){yearBody();checkVitals();}
 function worldNews(){
   const y=S.year,a=S.age;
-  if(y===1969&&a>=6&&chance(.6))log('텔레비전에서 인류가 달에 내리는 장면을 보았다. 그날 밤 달이 유난히 가까워 보였다.');
+  if(y===1969&&a>=6&&chance(.6))logx('텔레비전에서 인류가 달에 내리는 장면을 보았다. 그날 밤 달이 유난히 가까워 보였다.',{mental:3});
   if(y===1989&&S.country.eu&&a>=8&&chance(.5))log('베를린 장벽이 무너졌다는 소식을 들었다.');
-  if(y===2000&&a>=6&&chance(.5))log('새천년을 맞았다. 세상은 끝나지 않았다.');
-  if(S.world==='extra'&&y===1970&&a>=4)log('그해, 전 세계에서 마나가 사라졌다는 소문이 마술사들 사이에 돌았다. 마술은 급격히 쇠퇴했다.',S.mage?'risk':'life',!!S.mage);
+  if(y===2000&&a>=6&&chance(.5))logx('새천년을 맞았다. 세상은 끝나지 않았다.',{mental:2});
+  if(y===2008&&a>=20&&chance(.5))logx('세계 금융 위기가 왔다.',{wealth:-6,mental:-3},'risk');
+  if(S.world==='extra'&&y===1970&&a>=4)logx('그해, 전 세계에서 마나가 사라졌다는 소문이 마술사들 사이에 돌았다. 마술은 급격히 쇠퇴했다.',S.mage?{mp:-30,mental:-8}:{},S.mage?'risk':'life',!!S.mage);
   if(S.world==='fgo'&&y===2016&&a>=1&&!S.fgoActive){log('2016년, 어느 날 세상이 불타 사라졌다. 그리고 아무도 모르는 사이, 아무 일도 없었다는 듯 돌아왔다.','moon',true);}
   if(S.world==='fgo'&&y===2017&&a>=1&&!S.fgoActive&&!S.fgoFrozen)log('2017년 겨울, 하늘에서 하얀 폭풍이 내렸다. 그 뒤의 일은 아무도 기억하지 못한다.','moon');
-  if(S.world==='kara'&&y===1998&&a>=10&&S.country.n==='일본')log('관동 지방에서 엽기 연쇄 살인 사건 뉴스가 이어졌다.','risk');
-  if(S.world==='tsuki'&&y===1999&&a>=10&&S.country.n==='일본')log('미사키 시에서 피가 모두 빠진 시신이 연달아 발견됐다는 뉴스를 보았다.','risk');
+  if(S.world==='kara'&&y===1998&&a>=10&&S.country.n==='일본')logx('관동 지방에서 엽기 연쇄 살인 사건 뉴스가 이어졌다.',{mental:-2},'risk');
+  if(S.world==='tsuki'&&y===1999&&a>=10&&S.country.n==='일본')logx('미사키 시에서 피가 모두 빠진 시신이 연달아 발견됐다는 뉴스를 보았다.',{mental:-3},'risk');
   if(S.world==='apoc'&&y===2008&&S.aware)log('루마니아의 위그드밀레니아 가문이 시계탑에 독립을 선언했다는 소식이 돌았다.','moon');
   if(y===2020&&a>=1){
-    log('세계적인 감염병이 돌았다. 한동안 집 밖에 거의 나가지 못했다.','risk');
-    if(!S.long&&!S.apostle&&a>70&&S.year>S.lastJY&&chance(.02))die('감염병','감염병을 이겨 내지 못했다.');
+    logx('세계적인 감염병이 돌았다. 한동안 집 밖에 거의 나가지 못했다.',{mental:-6,wealth:-3},'risk');
+    if(!S.long&&!S.apostle&&!S.ill&&a>60&&chance(lucky(.15)*0+.12))catchIll();
   }
 }
 function eduP(){return clamp((S.country.le-45)/35,.15,.98);}
@@ -464,72 +551,91 @@ function lifeStage(){
   if(S.apostle&&a-S.apostleAge>0)return;
   if(a===7){
     if(S.church||S.mage&&S.birth!=='plain'){S.edu='primary';}
-    else if(chance(eduP())){S.edu='primary';log(pick(['초등학교에 입학했다.','학교에 다니기 시작했다. 가방이 몸보다 컸다.']));}
-    else log('학교 대신 집안일과 바깥일을 도왔다.');
+    else if(chance(eduP())){S.edu='primary';logx(pick(['초등학교에 입학했다.','학교에 다니기 시작했다. 가방이 몸보다 컸다.']),{mental:3});}
+    else logx('학교 대신 집안일과 바깥일을 도왔다.',{health:2,mental:-3,wealth:1});
   }
   if(a===13&&S.edu==='primary'){
-    if(chance(eduP()*.9+(S.wealth-50)/200)){S.edu='secondary';if(!S.mage)log('중학교에 진학했다.');}
-    else log('학교를 그만두고 일을 시작했다.');
+    if(chance(eduP()*.9+(S.wealth-50)/200)){S.edu='secondary';if(!S.mage)logx('중학교에 진학했다.',{mental:2});}
+    else logx('학교를 그만두고 일을 시작했다.',{wealth:2,mental:-4});
   }
-  if(S.country.n==='한국'&&S.gender==='m'&&a===20&&!S.mil&&!S.mage){S.mil=true;log('병역 의무로 입대했다. 달이 밝은 초소 근무가 기억에 남았다.');}
+  if(S.country.n==='한국'&&S.gender==='m'&&a===20&&!S.mil&&!S.mage){S.mil=true;logx('병역 의무로 입대했다. 달이 밝은 초소 근무가 기억에 남았다.',{health:5,mental:-4});}
   if(!S.job&&!S.mage&&!S.church&&a>=(S.edu==='univ'?23:S.edu==='secondary'?19:15)&&a<=30&&chance(.6)){
-    S.job=pick(JOBS[S.edu]);S.wealth+={none:-6,primary:-3,secondary:3,univ:10}[S.edu]+ri(-3,6);
-    log(`${S.job}(으)로 일하기 시작했다.`);
+    S.job=pick(JOBS[S.edu]);
+    logx(`${S.job}(으)로 일하기 시작했다.`,{wealth:{none:-2,primary:1,secondary:4,univ:10}[S.edu]+ri(-2,4),mental:3});
   }
-  if(!S.married&&a>=22&&a<=50&&chance(a<35?.1:.035)){
-    S.married=true;log(S.mage&&S.heir?'가문을 잇기 위해 다른 마술사 가문과 혼인했다.':pick(['결혼했다.','오래 사귄 사람과 결혼했다.','늦은 밤 고백을 받고, 이듬해 결혼했다.']),'joy');
+  if(!S.married&&a>=22&&a<=50&&chance((a<35?.1:.035)*(.6+S.mental/100))){
+    S.married=true;logx(S.mage&&S.heir?'가문을 잇기 위해 다른 마술사 가문과 혼인했다.':pick(['결혼했다.','오래 사귄 사람과 결혼했다.','늦은 밤 고백을 받고, 이듬해 결혼했다.']),{mental:12,wealth:-4},'joy');
   }
-  if(S.married&&a<=43&&S.kids<5&&chance(S.kids===0?.22:.12)){S.kids++;log(S.kids===1?'첫아이가 태어났다.':`${S.kids}째 아이가 태어났다.`,'joy');}
-  if(S.parents>0&&a>=30&&chance(.035+(a>50?.04:0))){S.parents--;log(S.parents===1?pick(['아버지가 세상을 떠났다.','어머니가 세상을 떠났다.']):'남은 부모님마저 세상을 떠났다.');S.mental-=6;}
-  if(S.job&&!S.retired&&a>=60&&chance(.2)){S.retired=true;log('일을 그만두고 은퇴했다.');}
+  if(S.married&&a<=43&&S.kids<5&&chance(S.kids===0?.22:.12)){S.kids++;logx(S.kids===1?'첫아이가 태어났다.':`${S.kids}째 아이가 태어났다.`,{mental:8,wealth:-5},'joy');}
+  if(S.parents>0&&a>=30&&chance(.035+(a>50?.04:0))){S.parents--;logx(S.parents===1?pick(['아버지가 세상을 떠났다.','어머니가 세상을 떠났다.']):'남은 부모님마저 세상을 떠났다.',{mental:-12,wealth:S.parents===0?4:0});}
+  if(S.job&&!S.retired&&a>=60&&chance(.2)){S.retired=true;logx('일을 그만두고 은퇴했다.',{mental:4,wealth:-3});}
 }
+/* 일상: [나이 최소, 최대, 문장, 효과, 좋음(g)/나쁨(b)/보통(n), 조건] — 행운이 높으면 좋은 일이 잦다 */
 const MUNDANE=[
-  {w:s=>s.age<7?3:0,run:()=>log(pick(['첫걸음을 뗐다.','처음 한 말은 "엄마"였다.','높은 열이 났다가 겨우 나았다.','밤하늘의 달을 오래 올려다보곤 했다.','처음으로 그림책을 끝까지 읽었다.']))},
-  {w:s=>s.age>=7&&s.age<13?3:0,run:()=>log(pick(['단짝 친구가 생겼다.','글짓기 대회에서 상을 받았다.','나무에서 떨어져 팔이 부러졌다.','여름방학 내내 곤충을 모았다.','이사를 가서 전학했다.']))},
-  {w:s=>s.age>=13&&s.age<20?3:0,run:()=>log(pick(['첫사랑을 했다.','시험을 망쳐 크게 혼났다.','밴드를 만들었다가 석 달 만에 해체했다.','친구와 밤새 미래 이야기를 했다.','운동부에서 주전이 되었다.','처음으로 아르바이트를 했다.']))},
-  {w:s=>s.age>=20&&s.age<60?4:0,run:()=>{
-    const e=pick([['승진했다.','joy',5],['직장을 옮겼다.','life',2],['일자리를 잃었다.','risk',-10],['새로운 동네로 이사했다.','life',0],['오래 꿈꾸던 긴 여행을 떠났다.','joy',-3],['고양이를 키우기 시작했다.','joy',0],['큰 빚을 졌다.','risk',-15],['투자로 꽤 큰돈을 벌었다.','joy',14],['취미로 시작한 요리에 빠졌다.','life',0],['복권 4등에 당첨됐다.','joy',3]]);
-    if(S.mage&&e[0].includes('직장'))return;
-    S.wealth+=e[2];log(e[0],e[1]);}},
-  {w:s=>s.age>=30?2:0,run:()=>{S.health-=ri(8,20);log(pick(['큰 병에 걸렸지만 치료를 받고 회복했다.','수술을 받았다.','오랫동안 앓아누웠다.','사고로 크게 다쳤다.']),'risk');}},
-  {w:s=>s.age>=55?3:0,run:()=>{if(S.kids&&chance(.5)){log('손주가 태어났다.','joy');return;}log(pick(['정원을 가꾸는 재미에 빠졌다.','오랜 친구의 장례식에 다녀왔다.','고향을 다시 찾아갔다.','젊은 시절 사진을 오래 들여다보았다.']));}}
+  [0,6,'첫걸음을 뗐다.',{mental:2},'n'],[0,6,'처음 한 말은 "엄마"였다.',{mental:3},'g'],[0,6,'높은 열이 났다가 겨우 나았다.',{hp:-8,health:-4},'b'],
+  [0,6,'밤하늘의 달을 오래 올려다보곤 했다.',{mental:2},'n'],[0,6,'처음으로 그림책을 끝까지 읽었다.',{mental:2},'g'],[0,6,'계단에서 굴러 이마를 꿰맸다.',{hp:-10},'b'],
+  [7,12,'단짝 친구가 생겼다.',{mental:6},'g'],[7,12,'글짓기 대회에서 상을 받았다.',{mental:5,luck:1},'g'],[7,12,'나무에서 떨어져 팔이 부러졌다.',{hp:-15,health:-3},'b'],
+  [7,12,'여름방학 내내 곤충을 모았다.',{mental:3},'n'],[7,12,'이사를 가서 전학했다. 친구들과 헤어졌다.',{mental:-5},'b'],[7,12,'반에서 따돌림을 당했다.',{mental:-10},'b'],[7,12,'달리기 대회에서 1등을 했다.',{health:3,mental:3},'g'],
+  [13,19,'첫사랑을 했다.',{mental:6},'g'],[13,19,'시험을 망쳐 크게 혼났다.',{mental:-6},'b'],[13,19,'밴드를 만들었다가 석 달 만에 해체했다.',{mental:2},'n'],[13,19,'친구와 밤새 미래 이야기를 했다.',{mental:5},'g'],
+  [13,19,'운동부에서 주전이 되었다.',{health:6,mental:4},'g'],[13,19,'처음으로 아르바이트를 했다.',{wealth:3},'n'],[13,19,'밤샘 공부로 몸이 상했다.',{health:-6},'b'],[13,19,'자전거 사고가 날 뻔했다.',{hp:-10},'b'],
+  [20,59,'승진했다.',{wealth:6,mental:5},'g',s=>!!s.job],[20,59,'직장을 옮겼다.',{wealth:2},'n',s=>!!s.job],[20,59,'일자리를 잃었다.',{wealth:-10,mental:-10},'b',s=>!!s.job&&!s.retired],
+  [20,59,'새로운 동네로 이사했다.',{wealth:-2,mental:2},'n'],[20,59,'오래 꿈꾸던 긴 여행을 떠났다.',{wealth:-4,mental:10},'g'],[20,59,'고양이를 키우기 시작했다.',{mental:6},'g'],
+  [20,59,'큰 빚을 졌다.',{wealth:-15,mental:-8},'b'],[20,59,'투자로 꽤 큰돈을 벌었다.',{wealth:14,mental:4},'g'],[20,59,'취미로 시작한 요리에 빠졌다.',{health:3,mental:4},'g'],
+  [20,59,'과로로 쓰러졌다.',{hp:-15,health:-8},'b'],[20,59,'운동을 시작했다.',{health:8},'g'],[20,59,'사기를 당했다.',{wealth:-12,mental:-6},'b'],[20,59,'오랜 친구와 크게 다퉜다.',{mental:-8},'b'],
+  [20,59,'담배를 끊었다.',{health:6},'g'],[20,59,'야근이 이어졌다.',{health:-5,wealth:3},'n'],[20,59,'술자리가 잦아졌다.',{health:-5,mental:3},'n'],
+  [55,120,'손주가 태어났다.',{mental:8},'g',s=>s.kids>0],[55,120,'정원을 가꾸는 재미에 빠졌다.',{health:3,mental:5},'g'],[55,120,'오랜 친구의 장례식에 다녀왔다.',{mental:-6},'b'],
+  [55,120,'고향을 다시 찾아갔다.',{mental:5},'g'],[55,120,'젊은 시절 사진을 오래 들여다보았다.',{mental:2},'n'],[55,120,'넘어져 고관절을 다쳤다.',{hp:-18,health:-6},'b'],
+  [55,120,'건강검진에서 이상이 발견되었다.',{health:-8,mental:-4},'b'],[55,120,'아침 산책을 시작했다.',{health:5},'g'],
+  [10,120,'길에서 지갑을 주워 주인에게 돌려주었다. 사례금을 받았다.',{wealth:4,mental:2},'g'],[10,120,'간발의 차로 사고를 피했다.',{luck:2,mental:-2},'g'],[10,120,'소매치기를 당했다.',{wealth:-5,mental:-2},'b'],
+  [18,120,'복권 4등에 당첨됐다.',{wealth:4,luck:1},'g'],[18,120,'검은 고양이가 앞을 가로질렀다. 그날 하루가 엉망이었다.',{luck:-2,mental:-2},'b']
 ];
-function mundane(){const e=wpick(MUNDANE,x=>x.w(S));if(e.w(S)>0)e.run();}
+function mundane(){
+  const L=S.luck/100;
+  const list=MUNDANE.filter(m=>S.age>=m[0]&&S.age<=m[1]&&(!m[5]||m[5](S))&&!(S.mage&&/직장|일자리|승진/.test(m[2])));
+  if(!list.length)return;
+  const m=wpick(list,x=>x[4]==='g'?.5+L:x[4]==='b'?1.5-L:1);
+  if(m[2].includes('검은 고양이')&&S.luck>70)return;
+  logx(m[2],m[3],m[4]==='g'?'joy':m[4]==='b'?'risk':'life');
+  if(S.age>=25&&chance(.0006*(S.luck/50))){logx('복권 1등에 당첨됐다!',{wealth:50,mental:10},'joy',true);addRar('복권 1등 당첨',.0003);}
+}
 
 /* ---------------- 계위 승진과 일상의 신비 ---------------- */
 function promote(){
   if(S.noRank||!S.academy)return;
   const t=rankTarget();
   if(S.curRank===0&&t>=1){S.curRank=1;log(`계위 「${RANK_FULL[1]}」을(를) 받았다.`,'moon');return;}
-  if(S.curRank<t&&S.age>=19&&(chance(.16)||S.age>=50)){
+  if(S.curRank<t&&S.age>=19&&(chance(.16+(S.mental-50)/500)||S.age>=50)){
     S.curRank++;fate(S.curRank>=5?2:1,`계위 「${RANK_FULL[S.curRank]}」`);
-    log(`계위가 「${RANK_FULL[S.curRank]}」(으)로 올랐다.`,S.curRank>=5?'joy':'moon',S.curRank>=5);
+    logx(`계위가 「${RANK_FULL[S.curRank]}」(으)로 올랐다.`,{mental:5,wealth:3},S.curRank>=5?'joy':'moon',S.curRank>=5);
     if(S.curRank===7)major({kind:'gold',img:'clocktower',eyebrow:'시계탑',title:'그랜드(관위)',body:'시계탑의 긴 역사에서도 손에 꼽는 전설의 계위에 올랐다.'});
   }
 }
 function flavor(){
   const a=S.age;
-  if(a===4&&S.mage&&S.birth!=='plain')log({magus:'마술 수련이 시작됐다. 몸 안의 회로를 여는 감각을 배웠다.',noble:'가정교사들이 붙었다. 하루의 절반은 마술, 나머지는 예법이었다.',lord:'로드의 후계자로서 교육이 시작됐다. 실수는 허락되지 않았다.',user:'첫 장난감은 마력을 재는 기계였다.'}[S.birth]||'마술 수련이 시작됐다.','moon');
-  if(a===5&&S.church)log('성경 대신 흑건을 쥐는 법부터 배웠다.','moon');
-  if(a===9&&S.heir){S.health-=6;log(S.fb.includes('last')?'마술각인을 이식받았다. 이것을 물려줄 다음 대는 없다. 당신이 마지막 후계자다.':`${S.crestGen}대의 마술각인을 이식받았다. 몇 주 동안 열이 내리지 않았다.`,'moon',true);}
+  if(a===4&&S.mage&&S.birth!=='plain')logx({magus:'마술 수련이 시작됐다. 몸 안의 회로를 여는 감각을 배웠다.',noble:'가정교사들이 붙었다. 하루의 절반은 마술, 나머지는 예법이었다.',lord:'로드의 후계자로서 교육이 시작됐다. 실수는 허락되지 않았다.',user:'첫 장난감은 마력을 재는 기계였다.'}[S.birth]||'마술 수련이 시작됐다.',{mental:-2},'moon');
+  if(a===5&&S.church)logx('성경 대신 흑건을 쥐는 법부터 배웠다.',{health:3,mental:-2},'moon');
+  if(a===9&&S.heir)logx(S.fb.includes('last')?'마술각인을 이식받았다. 이것을 물려줄 다음 대는 없다. 당신이 마지막 후계자다.':`${S.crestGen}대의 마술각인을 이식받았다. 몇 주 동안 열이 내리지 않았다.`,{hp:-15,health:-6,mental:-5},'moon',true);
   if(a===8&&S.mage&&S.birth==='plain'&&S.teacher==='독학'&&S.depts.length)log('어느 날 몸 안에서 뜨거운 것이 흘렀다. 떠돌이 마술사가 그걸 알아보고 제자로 삼았다.','moon',true);
-  if(S.noRank&&a===24&&S.mage)log('실력은 충분했지만 어떤 자리도 얻지 못했다. 집에 틀어박혀 연구를 이어 갔다.','moon');
-  if(a>=12&&S.abil.length&&chance(.12))log(`「${byId(CY_ABIL,pick(S.abil)).n}」을(를) ${pick(['처음으로 제대로 써 보았다','밤새 갈고닦았다','실전에서 썼다','몰래 시험해 보았다'])}.`,'moon');
+  if(S.noRank&&a===24&&S.mage)logx('실력은 충분했지만 어떤 자리도 얻지 못했다. 집에 틀어박혀 연구를 이어 갔다.',{mental:-6},'moon');
+  if(a>=12&&S.abil.length&&chance(.12))logx(`「${byId(CY_ABIL,pick(S.abil)).n}」을(를) ${pick(['처음으로 제대로 써 보았다','밤새 갈고닦았다','실전에서 썼다','몰래 시험해 보았다'])}.`,{mp:-10,mental:2},'moon');
   if(S.fb.length&&a>=10&&chance(.06)){
     const f=pick(S.fb);
     const t={legs:'휠체어 바퀴가 또 계단 앞에서 멈췄다.',dark:'어둠 속에서 소리로 세상을 그렸다.',small:'마나가 모자라 술식이 중간에 꺼졌다.',careless:'상대를 얕보다 큰코다칠 뻔했다.',numb:'남들이 우는 장면에서 우는 연기를 했다.',pacifist:'싸움을 피하려고 먼 길을 돌아갔다.',worldly:'근원보다 좋은 혼처와 명예가 먼저 눈에 들어왔다.',depend:'스승의 연락이 끊기자 불안해서 잠을 못 잤다.',home:'오늘도 집 밖에 나가지 않았다.',headache:'두통이 찾아왔다. 하루 종일 날이 서 있었다.',crimson:'피가 끓어올라 잠시 기억이 끊겼다.',waste:'또 쓸데없는 골동품을 샀다. 빚 독촉장이 쌓였다.',dual:'카드를 미리 만들어 두지 않아 손을 쓰지 못했다.',last:'친척들이 후계자 이야기를 꺼낼 때마다 숨이 막혔다.',knight:'모르는 사람을 돕다가 일에 휘말렸다.',kmagic:'마술이 쓸데없이 화려해서 또 협회의 경고를 받았다.',wrongorigin:'마술을 쓴 뒤 피를 토했다.',redshadow:'뒤돌아보면 붉은 그림자가 서 있다. 오늘은 조금 가까워졌다.'}[f];
-    log(t,f==='wrongorigin'||f==='crimson'?'risk':'life');if(f==='waste')S.wealth-=5;
+    const e={legs:{mental:-2},dark:{mental:-2},small:{mp:-15},careless:{hp:-6},numb:{mental:-3},pacifist:{mental:2},worldly:{wealth:3},depend:{mental:-5},home:{health:-2},headache:{mental:-4},crimson:{hp:-5,mental:-4},waste:{wealth:-5},dual:{mental:-2},last:{mental:-4},knight:{hp:-6,mental:3},kmagic:{mental:-2},wrongorigin:{hp:-10,health:-4},redshadow:{mental:-5}}[f];
+    logx(t,e,f==='wrongorigin'||f==='crimson'?'risk':'life');
   }
-  if(S.mage&&a>=15&&chance(.2))log(pick(['새로운 술식을 완성했다. 논문은 동료들에게 무시당했다.','공방의 결계를 다시 짰다.','라이벌 마술사와 결투했다. 무승부였다.','오래된 마도서를 해독했다.','실패한 실험이 공방 절반을 날려 버렸다.','근원에 관한 가설을 하나 세웠다.']),'moon');
-  if(S.church&&a>=16&&a<=55&&chance(.22))log(pick(['이단 마술사를 처단하는 임무에 나섰다.','사도의 권속을 정화했다.','성유물을 회수했다.','마술협회와 신경전을 벌였다.']),'moon');
-  if(S.church&&a>=18&&a<=55&&S.year>S.lastJY&&chance(S.burial?.02:.012))die('임무 중 전사',pick(['사도와 싸우다 쓰러졌다.','이단 마술사의 함정에 빠졌다.','임무에서 돌아오지 못했다. 동료들이 흑건 한 자루를 묻었다.']));
-  if(S.mage&&a>=15&&S.year>S.lastJY&&chance(.003)){if(chance(.4))die('마술 실험 사고','통제를 잃은 술식이 공방째로 삼켰다.');else{S.health-=25;log('실험 사고로 마술회로 일부가 타 버렸다.','risk');}}
-  if(S.race==='half'&&S.halfAwake&&a>=14&&chance(.05))log('피가 날뛰어 머리카락이 붉게 물들었다. 한동안 사람을 피했다.','risk');
+  if(S.mage&&a>=15&&chance(.2)){const r=pick([['새로운 술식을 완성했다. 논문은 동료들에게 무시당했다.',{mp:-15,mental:-2}],['공방의 결계를 다시 짰다.',{mp:-20,wealth:-2}],['라이벌 마술사와 결투했다. 무승부였다.',{hp:-10,mp:-25}],['오래된 마도서를 해독했다.',{mental:4}],['실패한 실험이 공방 절반을 날려 버렸다.',{hp:-8,wealth:-6,mental:-4}],['근원에 관한 가설을 하나 세웠다.',{mental:5}],['보석에 마력을 담아 팔았다.',{mp:-20,wealth:6}]]);logx(r[0],r[1],'moon');}
+  if(S.church&&a>=16&&a<=55&&chance(.22)){const r=pick([['이단 마술사를 처단하는 임무에 나섰다.',{hp:-10,mental:-3}],['사도의 권속을 정화했다.',{hp:-8,mp:-15}],['성유물을 회수했다.',{wealth:3,mental:2}],['마술협회와 신경전을 벌였다.',{mental:-3}]]);logx(r[0],r[1],'moon');}
+  if(S.church&&a>=18&&a<=55&&S.year>S.lastJY&&chance((S.burial?.02:.012)*(1.4-S.luck/100)))die('임무 중 전사',pick(['사도와 싸우다 쓰러졌다.','이단 마술사의 함정에 빠졌다.','임무에서 돌아오지 못했다. 동료들이 흑건 한 자루를 묻었다.']));
+  if(S.mage&&a>=15&&S.year>S.lastJY&&chance(.003*(1.4-S.luck/100))){if(chance(.4))die('마술 실험 사고','통제를 잃은 술식이 공방째로 삼켰다.');else logx('실험 사고로 마술회로 일부가 타 버렸다.',{hp:-25,health:-8,mp:-30},'risk');}
+  if(S.race==='half'&&S.halfAwake&&a>=14&&chance(.05))logx('피가 날뛰어 머리카락이 붉게 물들었다. 한동안 사람을 피했다.',{mental:-6},'risk');
 }
 function apostleYear(){
-  S.health=100;
-  if(chance(.45))log(pick(['이름과 얼굴을 바꾸고 다른 나라로 옮겼다.','오래된 성의 지하에서 한 해를 잠들었다.','피를 마셨다. 오늘 밤의 뉴스에 실종자가 한 명 늘었다.','흡혈충동을 억누르려 애썼다. 실패했다.','교회 대행자의 추적을 따돌렸다.','권속을 하나 만들었다.']),'moon');
-  if(S.race==='human'&&S.year>S.lastJY&&chance(S.ancestor?.008:.03))die('매장기관',pick(['검은 법의를 입은 대행자가 찾아왔다. 흑건이 몸을 꿰뚫었고, 몸은 재가 되어 흩어졌다.','아침 해가 뜰 때까지 도망치지 못했다. 몸이 햇빛 속에서 재가 되었다.']));
+  S.health=100;S.hp=100;
+  if(chance(.45)){const r=pick([['이름과 얼굴을 바꾸고 다른 나라로 옮겼다.',{wealth:-5}],['오래된 성의 지하에서 한 해를 잠들었다.',{mental:4}],['피를 마셨다. 오늘 밤의 뉴스에 실종자가 한 명 늘었다.',{mp:20,mental:-4}],['흡혈충동을 억누르려 애썼다. 실패했다.',{mental:-6}],['교회 대행자의 추적을 따돌렸다.',{luck:-1}],['권속을 하나 만들었다.',{mp:-10}]]);logx(r[0],r[1],'moon');}
+  const strongW=S.world==='tsuki'||S.world==='fake';
+  if(S.race==='human'&&S.year>S.lastJY&&chance((S.ancestor?.008:strongW?.025:.05)*(1.3-S.luck/150)))die('매장기관',pick(['검은 법의를 입은 대행자가 찾아왔다. 흑건이 몸을 꿰뚫었고, 몸은 재가 되어 흩어졌다.','아침 해가 뜰 때까지 도망치지 못했다. 몸이 햇빛 속에서 재가 되었다.']));
+  if(S.mental<=5){S.mental=5;}
 }
 
 /* ---------------- 기회 사건 ----------------
@@ -552,7 +658,7 @@ function offerMentor(kind){
       becomeMage({wander:'떠돌이 마술사',lecturer:'시계탑 강사',oldman:'벌레를 부리는 노인',puppeteer:'관위의 인형사'}[K]);
       if(K==='wander'){log('떠돌이 마술사의 제자가 되었다. 1대째 마술사의 길이다.','moon',true);const d=deptsForMe(1)[0];if(d)learnDept(d.id);}
       if(K==='lecturer'){log('강사를 따라 런던으로 건너갔다. 그는 무서울 만큼 정확하게 당신의 재능을 꿰뚫어 보았다.','moon',true);S.academy='시계탑';fate(2,'시계탑 입학');const d=deptsForMe(1)[0];if(d)learnDept(d.id);if(chance(.5))learnDept('modern');S.jexp+=.3;}
-      if(K==='oldman'){log('노인의 지하실에서 수련이 시작됐다. 몸 안을 무언가가 기어 다녔다.','risk',true);S.health-=20;S.mental-=20;addAp(1);gainAbility('insect',true);S.circuits+=10;if(chance(.12)){die('벌레의 식사','어느 날 지하실에서 나오지 못했다. 노인은 다음 제자를 찾으러 나갔다.');}}
+      if(K==='oldman'){log('노인의 지하실에서 수련이 시작됐다. 몸 안을 무언가가 기어 다녔다.','risk',true);hurt(20);S.mental-=20;addAp(1);gainAbility('insect',true);S.circuits+=10;if(chance(.12)){die('벌레의 식사','어느 날 지하실에서 나오지 못했다. 노인은 다음 제자를 찾으러 나갔다.');}}
       if(K==='puppeteer'){log('인형사의 공방에서 일하며 마술을 배웠다. 그녀는 가르쳐 주는 법이 없었다. 훔쳐 배워야 했다.','moon',true);learnDept('create');if(chance(.4))learnDetail('puppeteer');}
     }),
     opt('거절한다','지금의 삶을 지켜요',()=>{
@@ -576,6 +682,12 @@ function offerChurch(why){
   ]};
 }
 const EVENTS=[
+  {id:'crisis',repeat:true,w:()=>S.mental<20&&S.age>=12&&!S.apostle&&S.year-(S.lastCrisis||-99)>=3?100:0,make:()=>{S.lastCrisis=S.year;return {eyebrow:'마음',img:'end_dead',title:'무너지는 마음',body:`요즘 아무것도 하고 싶지 않아요. 정신이 ${Math.round(S.mental)}까지 떨어졌어요. 0이 되면 버티지 못해요.`,options:[
+    opt('상담을 받는다','재산 6',()=>{logx('상담을 받기 시작했다. 조금씩 숨이 쉬어졌다.',{wealth:-6,mental:25},'joy');},S.wealth<6),
+    opt('가까운 사람에게 털어놓는다',S.married||S.parents>0||Object.keys(S.bonds||{}).length?'곁에 누군가 있어요':'털어놓을 사람이 별로 없어요',()=>{const has=S.married||S.parents>0||Object.values(S.bonds||{}).some(v=>v>=20);logx(has?'오래 참았던 이야기를 털어놓았다. 누군가 끝까지 들어 주었다.':'어렵게 연락한 옛 친구가 짧게 답장을 보내왔다.',{mental:has?22:10},'joy');}),
+    opt('혼자 견딘다',`행운 ${luckRank(S.luck)}`,()=>{if(chance(lucky(.4)))logx('어느 날 아침, 창문으로 들어온 햇빛이 조금 따뜻했다.',{mental:15},'life');else logx('견디는 것밖에 할 수 없었다.',{mental:3},'risk');}),
+    opt('술에 기댄다','당장은 편해지지만',()=>{logx('술로 밤을 넘겼다.',{mental:10,health:-10},'risk');})
+  ]};}},
   {id:'path18',w:()=>S.age===18&&!S.mage&&!S.church&&S.edu==='secondary'?100:0,make:()=>({eyebrow:'열여덟',img:'birth_plain',title:'어른이 되는 해',body:'학교를 마칠 때가 됐어요. 어떤 길을 갈까요?',options:[
     opt('대학에 간다','공부를 이어 가요',()=>{if(chance(Math.pow(eduP(),2)*.8+(S.wealth-50)/150+.15)){S.edu='univ';S.wealth-=4;log(pick(['대학에 합격했다.','고향을 떠나 대학에 들어갔다.']),'joy');}else log('대학에 떨어졌다. 일을 하기로 했다.','risk');}),
     opt('바로 일을 시작한다','돈을 먼저 벌어요',()=>{S.job=pick(JOBS.secondary);S.wealth+=6;log(`${S.job}(으)로 일하기 시작했다.`);}),
@@ -598,31 +710,33 @@ const EVENTS=[
       const r=R();
       if(r<.45){log('수상한 책방 주인이 당신을 오래 쳐다봤다.','moon',true);becomeAware();offerMentor();}
       else if(r<.8){becomeMage('독학');log('낡은 마도서를 손에 넣고 혼자 마술을 익혔다.','moon',true);const d=deptsForMe(1)[0];if(d)learnDept(d.id);}
-      else{S.health-=25;becomeAware();log('제멋대로 회로를 열다가 쓰러졌다. 몸 안이 타는 것 같았다.','risk',true);}}),
+      else{hurt(25);becomeAware();log('제멋대로 회로를 열다가 쓰러졌다. 몸 안이 타는 것 같았다.','risk',true);}}),
     opt('병원에 간다','의학으로 설명할 수 있을지도',()=>{log('의사는 이상이 없다고 했다. 열은 가끔 계속됐다.');S.sensed=true;}),
     opt('잊고 산다','평범한 게 제일이에요',()=>{log('신경 쓰지 않기로 했다. 열은 조금씩 잦아들었다.');})
   ]})},
   {id:'mentor',w:()=>S.aware&&!S.mage&&!S.church&&S.age>=10&&S.age<=45?2.5:0,make:()=>{offerMentor();return S.pending;}},
-  {id:'bitten',w:()=>S.apostle||S.long||S.age<12?0:(S.city==='미사키 마을'&&S.year>=1996&&S.year<=2001?6:.45),make:()=>({eyebrow:'습격',img:'apostle',title:'창백한 얼굴',body:'밤길에서 창백한 얼굴의 남자와 눈이 마주쳤어요. 붉은 눈이 웃어요. 목덜미에 차가운 손가락이 닿아요.',options:[
+  {id:'bitten',w:()=>S.apostle||S.long||S.age<12?0:(S.city==='미사키 마을'&&S.year>=1996&&S.year<=2001?6:.1)*(S.world==='tsuki'?3.5:S.world==='fake'?2.5:1),make:()=>({eyebrow:'습격',img:'apostle',title:'창백한 얼굴',body:'밤길에서 창백한 얼굴의 남자와 눈이 마주쳤어요. 붉은 눈이 웃어요. 목덜미에 차가운 손가락이 닿아요.',options:[
     opt('맞서 싸운다','가진 힘을 다해요',()=>{chosen();becomeAware();
-      if(chance(odds(2.5))){log('온 힘을 다해 사도를 밀쳐 냈다. 그것은 아침 해를 피해 달아났다.','moon',true);fate(2,'사도를 물리침');}
+      if(chance(odds(['tsuki','fake'].includes(S.world)?3:1.8))){log('온 힘을 다해 사도를 밀쳐 냈다. 그것은 아침 해를 피해 달아났다.','moon',true);fate(2,'사도를 물리침');}
       else if(chance(.5)){log('쓰러지기 직전, 흑건이 사도를 꿰뚫었다.','moon',true);offerChurch('흑건을 던진 수녀가 다가왔다.');}
-      else die('사도의 습격','다음 날 아침, 뉴스는 이것을 "연쇄 엽기 살인"이라고 불렀다.');}),
+      else if(chance(['tsuki','fake'].includes(S.world)?1:.5))die('사도의 습격','다음 날 아침, 뉴스는 이것을 "연쇄 엽기 살인"이라고 불렀다.');else logx('사도를 떨쳐 냈지만 크게 다쳤다. 이 세계의 사도는 생각보다 약했다.',{hp:-35,mental:-10},'risk',true);}),
     opt('피를 받아들인다','죽지 않는 몸이 될지도',()=>{chosen();
-      const p=clamp(.06+S.circuits/180+(S.luck-50)/300+(S.race==='half'?.2:0),.04,.55);
+      const p=clamp((.06+S.circuits/180+(S.luck-50)/300+(S.race==='half'?.2:0))*(S.world==='tsuki'?1.3:['fake','kara'].includes(S.world)?1:.6),.03,.55);
       if(chance(p))becomeApostle('물린 뒤 죽지 않고 깨어났다. 햇빛이 아프다. 목이 마르다. 피가 마시고 싶다.');
-      else die('사도의 습격','몸은 버티지 못했다. 당신은 사도의 「구울」이 되어 거리를 헤맸다.');}),
+      else if(['tsuki','fake','kara'].includes(S.world)||chance(.5))die('사도의 습격','몸은 버티지 못했다. 당신은 사도의 「구울」이 되어 거리를 헤맸다.');
+      else logx('피는 몸에 맞지 않았다. 몇 주를 앓고 나서야 일어났다. 이 세계의 흡혈종은 힘이 약했다.',{hp:-40,health:-10,mental:-8},'risk',true);}),
     opt('도망치며 기도한다','누군가 들어 주기를',()=>{becomeAware();
       const r=R();
       if(r<.5){log('골목 끝에서 검은 법의를 입은 사람이 나타났다.','moon',true);offerChurch('흑건이 사도를 벽에 꿰어 놓았다.');}
       else if(r<.8)log('정신을 차려 보니 병원이었다. 흰 옷의 수녀가 "운이 좋았네요"라고 말하고 사라졌다.','moon');
-      else die('사도의 습격','달아나지 못했다.');})
+      else if(['tsuki','fake'].includes(S.world)||chance(.4))die('사도의 습격','달아나지 못했다.');
+      else logx('간신히 달아났다. 목덜미의 상처는 오래 낫지 않았다.',{hp:-25,mental:-8},'risk',true);})
   ]})},
   {id:'church',w:()=>S.aware&&!S.church&&!S.mage&&S.country.cath&&S.circuits>=5&&S.age>=12&&S.age<=30?1:0,make:()=>{offerChurch();return S.pending;}},
   {id:'eyes',w:()=>S.eye&&!S.eyesKnown&&S.age>=5&&S.age<=25?6:0,make:()=>({eyebrow:'마안',img:'eyes',title:'남들과 다른 눈',body:`보지 말아야 할 것이 보여요. 의사도 부모도 이해하지 못해요. 훗날 이것을 「${S.eye.n}」이라고 부른다는 걸 알게 돼요.`,options:[
     opt('숨기고 산다','아무도 모르게',()=>{S.eyesKnown=true;log('눈의 비밀을 숨기고 살기로 했다.','moon');}),
     opt('힘을 시험해 본다','어디까지 할 수 있을까',()=>{chosen();S.eyesKnown=true;becomeAware();
-      if(['jewel','rainbow'].includes(S.eye.id)){S.health-=15;log('눈이 불타는 것 같았다. 세상이 다른 모습으로 보였다.','risk',true);}
+      if(['jewel','rainbow'].includes(S.eye.id)){hurt(15);log('눈이 불타는 것 같았다. 세상이 다른 모습으로 보였다.','risk',true);}
       else log('시선 하나로 남을 움직일 수 있었다. 겁이 났다.','moon',true);
       if(chance(.5)){log('그 소문을 듣고 누군가 찾아왔다.','moon');S.circuits>=3?offerMentor():offerChurch('교회는 마안을 그냥 두지 않았다.');}}),
     opt('봉인구를 찾는다','안경 하나로 세상이 조용해진다면',()=>{S.eyesKnown=true;becomeAware();S.mental+=10;log('어느 노인이 준 안경을 쓰자 세상이 조용해졌다.','moon',true);})
@@ -644,7 +758,7 @@ const EVENTS=[
     const ds=deptsForMe(2),myDet=S.depts.flatMap(d=>byId(CY_DEPTS,d).det.map(x=>x[0])).filter(id=>!S.details.includes(id));
     const options=ds.map(d=>opt(`「${d.n}」을(를) 공부한다`,d.d,()=>{chosen();learnDept(d.id);}));
     if(myDet.length){const id=pick(myDet);options.push(opt(`「${CY_DET[id].n}」을(를) 파고든다`,CY_DET[id].d,()=>{chosen();if(chance(odds(1.5,.5)))learnDetail(id);else log('연구는 벽에 부딪혔다.','risk');}));}
-    options.push(opt('새로운 능력을 개발한다','억지력의 눈길을 끌 수도 있어요',()=>{chosen();if(chance(.6))randomAbility(false);else{S.health-=10;log('실험이 실패해 몸을 다쳤다.','risk');}}));
+    options.push(opt('새로운 능력을 개발한다','억지력의 눈길을 끌 수도 있어요',()=>{chosen();if(chance(.6))randomAbility(false);else{hurt(10);log('실험이 실패해 몸을 다쳤다.','risk');}}));
     return {eyebrow:'연구',img:'research',title:'다음 연구 주제',body:'공방의 촛불 아래서 다음에 파고들 주제를 정해요.',options};
   }},
   {id:'faction',w:()=>S.academy==='시계탑'&&!S.faction&&S.age>=18?2:0,make:()=>({eyebrow:'시계탑 정치',img:'clocktower',title:'파벌의 권유',body:'시계탑은 세 파벌로 나뉘어 있어요. 어느 쪽에 설지 정해야 해요.',options:[
@@ -672,7 +786,7 @@ const EVENTS=[
       if(chance(S.route==='sn'?.03:.12)){die('후유키 대화재','불길 속에서 빠져나오지 못했다. 후유키 대화재의 사망자 명단에 이름이 올랐다.');return;}
       if(S.age<=15){S.parents=0;log('모든 것을 잃었다. 쓰러진 아이를 낯선 남자가 안아 올리며 울었다. "살아 있어 줘서 고마워."','moon',true);
         if(chance(.5)){becomeMage('마법사라 자칭한 남자');log('남자는 "나는 마법사야"라고 말했다. 그에게서 마술을 배우기 시작했다.','moon');gainAbility('proj',true);}}
-      else{log('두 사람을 끌어냈다. 팔에 남은 화상은 평생 갔다.','moon',true);S.health-=10;S.mental+=5;fate(2,'사람을 구함');}}),
+      else{log('두 사람을 끌어냈다. 팔에 남은 화상은 평생 갔다.','moon',true);hurt(10);S.mental+=5;fate(2,'사람을 구함');}}),
     opt('도망친다','살아남는 게 먼저',()=>{log('불길을 등지고 달렸다. 그날의 비명은 오래 남았다.','risk');S.mental-=10;}),
     opt('하늘의 구멍을 올려다본다','저것은 무엇인가',()=>{chosen();becomeAware();S.mental-=15;log('하늘의 구멍을 똑바로 보았다. 그 너머에서 무언가가 이쪽을 보고 있었다.','moon',true);if(S.circuits>=3&&chance(.3))gainAbility('pureeye',true);})
   ]})},
@@ -701,7 +815,7 @@ const EVENTS=[
     opt('도전한다','모든 마술사의 비원',()=>{chosen();S.rootTried=true;
       if(chance(odds(8)*(S.ap>=5?.6:1))){S.root=true;S.alive=false;S.cause='근원 도달';S.deathAge=S.age;log('공방의 마법진이 빛을 삼켰다. 소용돌이 너머를 보았다. 그 뒤로 당신을 본 사람은 없다.','death',true);}
       else if(chance(.4)){S.deadEnd='근원 도전';S.deadText='억지력의 수호자가 나타났다. 붉은 외투의 그림자가 마지막으로 본 것이었다.';die('억지력의 수호자',S.deadText);}
-      else{addAp(2);S.health-=20;log('문턱에서 튕겨 나왔다. 억지력의 눈길이 당신에게 머물렀다.','risk',true);}}),
+      else{addAp(2);hurt(20);log('문턱에서 튕겨 나왔다. 억지력의 눈길이 당신에게 머물렀다.','risk',true);}}),
     opt('아직은 때가 아니다','준비를 더 해요',()=>{S.used.root=0;S.rootWait=(S.rootWait||0)+1;if(S.rootWait>2)S.rootTried=true;log('길을 덮어 두었다.','moon');})
   ]})}
 ];
@@ -783,12 +897,13 @@ function runJourney(j){
   const gap=pw-J.rec;
   const hint=J.deadly===0?'':gap>=1?'당신에게는 쉬운 일이에요.':gap>=0?'해볼 만해요.':gap>=-1.5?'버거운 상대예요.':'추천 계위에 한참 못 미쳐요. 목숨이 걸렸어요.';
   S.pending={eyebrow:`${J.src} · 추천 ${RANK_FULL[J.rec]}`,img:JR_IMG[J.id]||'research',title:J.n,body:J.intro+(hint?' '+hint:''),tone:J.war?'summon':'',
-    options:J.ch.map((c,i)=>opt(c[0],c[1],()=>resolveJourney(j,J,i,sv)))};
+    options:J.ch.map((c,i)=>opt(c[0],c[1],()=>resolveJourney(j,J,i,sv))).concat(magicOpt(m=>resolveJourney(j,J,0,sv,m)))};
 }
-function resolveJourney(j,J,i,sv){
+function magicOpt(fn){return mpMax()>=30?[opt('마술을 전력으로 쓴다',`마력 30 (지금 ${Math.round(S.mp)}) · 성공률이 크게 올라요`,()=>{S.mp-=30;log('가진 마력을 전부 쏟아부었다.','moon',false,[['마력',-30]]);fn(.7);},S.mp<30)]:[];}
+function resolveJourney(j,J,i,sv,extra){
   const c=J.ch[i];
-  log(c[2],J.war?'grail':'moon');
-  let mod=(sv?(sv.tier-3)*.7:0)+c[3];
+  if(!extra)log(c[2],J.war?'grail':'moon');
+  let mod=(sv?(sv.tier-3)*.7:0)+(extra?extra:c[3]);
   if(J.need==='concept'&&!hasConcept())mod-=2;
   if(sv&&S.seals>0&&power()+mod<J.rec){S.seals--;mod+=.6;log(`영주 1획을 사용했다. "${pick(['이겨라','보구를 해방해','물러서지 마'])}!"`,'grail');}
   const p=J.deadly===0?1:odds(J.rec,mod);
@@ -802,7 +917,7 @@ function resolveJourney(j,J,i,sv){
     const dp=clamp(.3+(J.rec-power()-mod)*.12,.08,.85)*(J.deadly===undefined?1:J.deadly);
     if(sv)S.servant=null;
     if(chance(dp)){j.st='dead';S.deadEnd=J.n;S.deadText=J.die;die(J.n,J.die);}
-    else{j.st='fail';fate(1,`행적 「${J.n}」 생존`);S.health-=18;S.mental-=10;log(J.lose,'risk',true);if(J.r.t==='academy'&&!S.academy)S.academy='시계탑';}
+    else{j.st='fail';fate(1,`행적 「${J.n}」 생존`);hurt(18);S.mental-=10;log(J.lose,'risk',true);if(J.r.t==='academy'&&!S.academy)S.academy='시계탑';}
   }
 }
 function giveReward(J){
@@ -835,6 +950,10 @@ function applyEffects(e,ctx){
   if(!e||typeof e!=='object')return;
   const n=(v,lo,hi)=>clamp(Math.round(+v||0),lo,hi);
   if(e.health)S.health+=n(e.health,-40,30);
+  if(e.hp)S.hp+=n(e.hp,-40,20);
+  if(e.mp&&mpMax())S.mp+=n(e.mp,-40,30);
+  if(e.luck)S.luck+=n(e.luck,-10,10);
+  fixStats();
   if(e.fame&&S.fame!=null)S.fame+=n(e.fame,-20,30);
   if(e.bond&&e.char&&charInfo(e.char).n)addBond(e.char,n(e.bond,-10,15));
   if(e.mental)S.mental+=n(e.mental,-40,30);
